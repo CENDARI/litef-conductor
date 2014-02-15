@@ -17,13 +17,13 @@
 
 package api
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.ActorRef
 import akka.pattern.ask
-import scala.concurrent.{Future, ExecutionContext}
-import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 import spray.routing._
 import core.ResourcesActor._
 import spray.http.HttpResponse
+import java.sql.Timestamp
 
 // Needed for implicit conversions, not unused:
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -32,11 +32,11 @@ import reflect.ClassTag
 
 class ResourcesService(resources: ActorRef)(implicit executionContext: ExecutionContext)
     extends Directives
+    with DefaultFormats
+    with api.DefaultValues
 {
-    implicit val timeout: akka.util.Timeout = 25.seconds
-
     // Resources and metadata
-    def listResources(since: Option[Long], until: Option[Long]) = complete {
+    def listResources(since: Option[Timestamp], until: Option[Timestamp]) = complete {
         (resources ? ListResources(since, until)).mapTo[HttpResponse]
     }
 
@@ -56,7 +56,7 @@ class ResourcesService(resources: ActorRef)(implicit executionContext: Execution
         }
 
     // Resource attachments
-    def listResourceAttachments(id: String, since: Option[Long], until: Option[Long]) = complete {
+    def listResourceAttachments(id: String, since: Option[Timestamp], until: Option[Timestamp]) = complete {
         (resources ? ListResourceAttachments(id, since, until)).mapTo[String]
     }
 
@@ -66,8 +66,8 @@ class ResourcesService(resources: ActorRef)(implicit executionContext: Execution
 
     // Resource listing can be filtered on the modification time.
     val timeRestriction =
-        parameter('since.as[Long]?) &
-        parameter('until.as[Long]?)
+        parameter('since.as[Timestamp]?) &
+        parameter('until.as[Timestamp]?)
 
     // Defining the routes for different methods of the service
     val route = pathPrefix("resources") {

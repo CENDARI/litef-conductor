@@ -20,36 +20,45 @@ package core
 import akka.actor.Actor
 import akka.io.IO
 import akka.pattern.ask
-import scala.concurrent.duration._
 import spray.can.Http
 import spray.http._
 import spray.httpx.RequestBuilding._
 
+import com.typesafe.config.{Config, ConfigFactory}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 import spray.http.HttpResponse
+import java.sql.Timestamp
 
 object ResourcesActor {
-    case class ListResources(val since: Option[Long], val until: Option[Long])
+    case class ListResources(val since: Option[Timestamp], val until: Option[Timestamp])
     case class GetResourceData(id: String)
     case class GetResourceMetadata(id: String)
     case class GetResourceMetadataItem(id: String, item: String)
-    case class ListResourceAttachments(id: String, since: Option[Long], until: Option[Long])
+    case class ListResourceAttachments(id: String, since: Option[Timestamp], until: Option[Timestamp])
     case class GetResourceAttachment(id: String, mimetype: String)
 }
 
-class ResourcesActor extends Actor {
+class ResourcesActor
+    extends Actor
+    with api.DefaultValues
+{
     import ResourcesActor._
     import context.system
 
-    implicit val timeout: akka.util.Timeout = 25.seconds
+    val _config = ConfigFactory.load getConfig "litef.conductor.ckan"
+    def config(key: String): String = _config getString key
 
-    val validCredentials = BasicHttpCredentials("cendariuser", "ck2n1f40f")
+    val validCredentials = BasicHttpCredentials(
+        config("username"),
+        config("password")
+    )
 
     def receive: Receive = {
         case ListResources(since, until) =>
             IO(Http) forward (
-                Get("http://134.76.21.222/ckan/api/3/action/package_list") ~>
+                Get(config("namespace") + "action/group_list") ~>
                     addCredentials(validCredentials)
             )
 
