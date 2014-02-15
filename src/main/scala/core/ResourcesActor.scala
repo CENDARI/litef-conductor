@@ -18,21 +18,50 @@
 package core
 
 import akka.actor.Actor
-import java.security.Timestamp
+import akka.io.IO
+import akka.pattern.ask
+import scala.concurrent.duration._
+import spray.can.Http
+import spray.http._
+import spray.httpx.RequestBuilding._
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success}
+import spray.http.HttpResponse
 
 object ResourcesActor {
-  case class GetResources(implicit val since: Option[Timestamp], implicit val until: Option[Timestamp])
-  case class GetResource(id: String, implicit val since: Option[Timestamp], implicit val until: Option[Timestamp])
+    case class ListResources(val since: Option[Long], val until: Option[Long])
+    case class GetResourceData(id: String)
+    case class GetResourceMetadata(id: String)
+    case class GetResourceMetadataItem(id: String, item: String)
+    case class ListResourceAttachments(id: String, since: Option[Long], until: Option[Long])
+    case class GetResourceAttachment(id: String, mimetype: String)
 }
 
-class ResourcesActor extends Actor{
-  import ResourcesActor._
+class ResourcesActor extends Actor {
+    import ResourcesActor._
+    import context.system
 
-  // notice that we don't actually perform any DB operations.
-  // that's for another template
-  def receive: Receive = {
-    case GetResource(id, since, until) =>
-      sender ! "Hi!"
-  }
+    implicit val timeout: akka.util.Timeout = 25.seconds
+
+    val validCredentials = BasicHttpCredentials("cendariuser", "ck2n1f40f")
+
+    def receive: Receive = {
+        case ListResources(since, until) =>
+            IO(Http) forward (
+                Get("http://134.76.21.222/ckan/api/3/action/package_list") ~>
+                    addCredentials(validCredentials)
+            )
+
+        case GetResourceMetadata(id) =>
+            sender ! s"Resources Actor: Getting the resource $id metadata"
+
+        case response: HttpResponse =>
+            println(s"Sending the response back to the requester $response")
+
+        case other =>
+            println(s"Found an unknown thing: $other")
+            sender ! other
+    }
 
 }

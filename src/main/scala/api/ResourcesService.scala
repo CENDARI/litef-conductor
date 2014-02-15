@@ -17,29 +17,52 @@
 
 package api
 
-import akka.actor.ActorRef
-import scala.concurrent.ExecutionContext
+import akka.actor.{Actor, ActorRef}
+import akka.pattern.ask
+import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.duration._
 import spray.routing._
+import core.ResourcesActor._
+import spray.http.HttpResponse
 
+// Needed for implicit conversions, not unused:
+import scala.concurrent.ExecutionContext.Implicits.global
+import reflect.ClassTag
 
 
 class ResourcesService(resources: ActorRef)(implicit executionContext: ExecutionContext)
     extends Directives
 {
-    def listResources(since: Option[Long], until: Option[Long]) =
-        complete { s"Returning resources from $since to $until" }
+    implicit val timeout: akka.util.Timeout = 25.seconds
 
-    def getResourceMetadata(id: String) =
-        complete { s"Out resource: $id" }
+    // Resources and metadata
+    def listResources(since: Option[Long], until: Option[Long]) = complete {
+        (resources ? ListResources(since, until)).mapTo[HttpResponse]
+    }
+
+    def getResourceMetadata(id: String) = complete {
+        (resources ? GetResourceMetadata(id)).mapTo[String]
+    }
+
+    def getResourceData(id: String) = complete {
+        (resources ? GetResourceData(id)).mapTo[String]
+    }
 
     def getResourceMetadataItem(id: String, item: String) =
-        complete { s"Out resource meta item: $id $item" }
+        if (item == "data")
+            getResourceData(id)
+        else complete {
+            (resources ? GetResourceMetadataItem(id, item)).mapTo[String]
+        }
 
-    def listResourceAttachments(id: String, since: Option[Long], until: Option[Long]) =
-        complete { s"Geting the resource attachments $id" }
+    // Resource attachments
+    def listResourceAttachments(id: String, since: Option[Long], until: Option[Long]) = complete {
+        (resources ? ListResourceAttachments(id, since, until)).mapTo[String]
+    }
 
-    def getResourceAttachment(id: String, mimetype: String) =
-        complete { s"Geting the resource attachment $id $mimetype" }
+    def getResourceAttachment(id: String, mimetype: String) = complete {
+        (resources ? GetResourceAttachment(id, mimetype)).mapTo[String]
+    }
 
     // Resource listing can be filtered on the modification time.
     val timeRestriction =

@@ -17,15 +17,25 @@
 
 package core
 
-import akka.actor.{Props, ActorSystem}
+import akka.actor._
+import akka.actor.DeadLetter
 
 trait Core {
-  // Creating the system actor
-  implicit lazy val system = ActorSystem("akka-spray")
+    // Creating the system actor
+    implicit lazy val system = ActorSystem("akka-spray")
 
-  // Kill the application on jvm exit
-  sys addShutdownHook system.shutdown()
+    class Listener extends Actor {
+        def receive = {
+            case d: DeadLetter =>
+                println(s"Found a dead letter: $d")
+        }
+    }
+    val listener = system.actorOf(Props(classOf[Listener], this))
+    system.eventStream.subscribe(listener, classOf[DeadLetter])
 
-  // System actors
-  val resources = system actorOf Props[ResourcesActor]
+    // Kill the application on jvm exit
+    sys addShutdownHook system.shutdown()
+
+    // System actors
+    val resources = system.actorOf(Props[ResourcesActor], "resources-actor")
 }

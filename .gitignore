@@ -50,4 +50,5 @@ tmp/
 build/
 akka-patterns-store/
 activator-sbt-*-shim.sbt
+src/main/resources/application.conf
 /logs/

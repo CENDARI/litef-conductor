@@ -15,10 +15,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+package core
+
 import akka.io.IO
 import akka.actor.Props
 import api.{RoutedHttpService, ResourcesService}
-import core.Core
 import spray.can.Http
 import spray.routing.RouteConcatenation
 
@@ -36,5 +37,5 @@ object Rest extends App
   val rootService = system.actorOf(Props(new RoutedHttpService(routes)))
 
   // Binding the 8080 port to our server
-  IO(Http)(system) ! Http.Bind(rootService, "0.0.0.0", port = 8080)
+  IO(Http)(system) ! Http.Bind(rootService, "0.0.0.0", port = 8081)
 }
