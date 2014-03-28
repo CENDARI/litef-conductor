@@ -31,21 +31,19 @@ import reflect.ClassTag
 
 
 class ResourcesService(resources: ActorRef)(implicit executionContext: ExecutionContext)
-    extends Directives
-    with DefaultFormats
-    with api.DefaultValues
+    extends CommonDirectives
 {
     // Resources and metadata
     def listResources(since: Option[Timestamp], until: Option[Timestamp]) = complete {
-        (resources ? ListResources(since, until)).mapTo[HttpResponse]
+        (resources ? ListResources(since, until)).mapTo[String]
     }
 
     def getResourceMetadata(id: String) = complete {
-        (resources ? GetResourceMetadata(id)).mapTo[String]
+        (resources ? GetResourceMetadata(id)).mapTo[HttpResponse]
     }
 
     def getResourceData(id: String) = complete {
-        (resources ? GetResourceData(id)).mapTo[String]
+        (resources ? GetResourceData(id)).mapTo[HttpResponse]
     }
 
     def getResourceMetadataItem(id: String, item: String) =
@@ -64,29 +62,25 @@ class ResourcesService(resources: ActorRef)(implicit executionContext: Execution
         (resources ? GetResourceAttachment(id, mimetype)).mapTo[String]
     }
 
-    // Resource listing can be filtered on the modification time.
-    val timeRestriction =
-        parameter('since.as[Timestamp]?) &
-        parameter('until.as[Timestamp]?)
-
     // Defining the routes for different methods of the service
-    val route = pathPrefix("resources") {
-        get {
-            /*
-             * Getting the lists of results
-             */
-            (path(PathEnd) & timeRestriction)                 { listResources } ~
-            (path(Segment / "attachments") & timeRestriction) { listResourceAttachments } ~
-            /*
-             * Getting the specific result item
-             */
-            path(Segment)                           { getResourceMetadata } ~
-            path(Segment / Segment)                 { getResourceMetadataItem } ~
-            path(Segment / "attachments" / Segment) { getResourceAttachment }
-        } ~
-        put {
-            complete { s"What to put?" }
+    val route =
+        pathPrefix("resources") {
+            get {
+                /*
+                 * Getting the lists of results
+                 */
+                (path(PathEnd) & timeRestriction)                 { listResources } ~
+                (path(Segment / "attachments") & timeRestriction) { listResourceAttachments } ~
+                /*
+                 * Getting the specific result item
+                 */
+                path(Segment)                           { getResourceMetadata } ~
+                path(Segment / Segment)                 { getResourceMetadataItem } ~
+                path(Segment / "attachments" / Segment) { getResourceAttachment }
+            } ~
+            put {
+                complete { s"What to put?" }
+            }
         }
-    }
 
 }

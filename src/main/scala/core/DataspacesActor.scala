@@ -31,35 +31,26 @@ import common.Config.{ Ckan => CkanConfig }
 import scala.concurrent.ExecutionContext.Implicits.global
 import spray.http.HttpResponse
 import java.sql.Timestamp
-import core.ckan.{CkanInterface, ResourceTable}
+import core.ckan.{CkanInterface, DataspaceTable}
 import scala.slick.lifted.{Column, Query}
 import spray.http.HttpHeaders.Location
 
-object ResourcesActor {
+object DataspacesActor {
     /// Gets the list of resources modified in the specified time range
-    case class ListResources(val since: Option[Timestamp], val until: Option[Timestamp])
-
-    /// Gets the data of the specified resource
-    case class GetResourceData(id: String)
+    case class ListDataspaces(val since: Option[Timestamp], val until: Option[Timestamp])
 
     /// Gets the meta data for the the specified resource
-    case class GetResourceMetadata(id: String)
+    case class GetDataspaceMetadata(id: String)
 
     /// Gets a specific meta-data item for the specified resource
-    case class GetResourceMetadataItem(id: String, item: String)
-
-    /// Lists the attachments for the specified resource
-    case class ListResourceAttachments(id: String, since: Option[Timestamp], until: Option[Timestamp])
-
-    /// Gets the specified resource attachment
-    case class GetResourceAttachment(id: String, mimetype: String)
+    case class GetDataspaceMetadataItem(id: String, item: String)
 }
 
-class ResourcesActor
+class DataspacesActor
     extends Actor
     with api.DefaultValues
 {
-    import ResourcesActor._
+    import DataspacesActor._
     import context.system
 
     val validCredentials = BasicHttpCredentials(
@@ -69,38 +60,18 @@ class ResourcesActor
 
     def receive: Receive = {
         /// Gets the list of resources modified in the specified time range
-        case ListResources(since, until) =>
+        case ListDataspaces(since, until) =>
             CkanInterface.database withSession { implicit session: Session =>
-                sender ! CkanInterface.getResourcesQuery(since, until)
-                            .map(res => (res.id, res.name))
-                            .take(10)
-                            .list.map(res => res._1 + " " + res._2.get).mkString("\n")
+                sender ! CkanInterface.getDataspacesQuery(since, until)
+                    .map(res => (res.id, res.title))
+                    .take(10)
+                    .list.map(res => res._1 + " " + res._2.get).mkString("\n")
             }
 
         /// Gets the meta data for the the specified resource
-        case GetResourceMetadata(id) => IO(Http) forward {
+        case GetDataspaceMetadata(id) => IO(Http) forward {
             Get(CkanConfig.namespace + "action/resource_show?id=" + id) ~>
                 addCredentials(validCredentials)
-        }
-
-        /// Gets the data of the specified resource
-        case GetResourceData(id) => {
-            CkanInterface.database withSession { implicit session: Session =>
-                val resource = CkanInterface.getResource(id)
-
-                resource map { resource =>
-                    HttpResponse(
-                        status  = StatusCodes.MovedPermanently,
-                        headers = Location(resource.url) :: Nil,
-                        entity  = EmptyEntity
-                    )
-                } getOrElse {
-                    HttpResponse(
-                        status  = StatusCodes.NotFound,
-                        entity  = EmptyEntity
-                    )
-                }
-            }
         }
 
         case response: HttpResponse =>
