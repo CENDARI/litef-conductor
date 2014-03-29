@@ -25,6 +25,8 @@ import akka.pattern.ask
 import spray.can.Http
 import spray.http._
 import spray.httpx.RequestBuilding._
+import spray.json._
+import DefaultJsonProtocol._
 
 import common.Config.{ Ckan => CkanConfig }
 
@@ -32,12 +34,22 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import spray.http.HttpResponse
 import java.sql.Timestamp
 import core.ckan.{CkanInterface, DataspaceTable}
+import core.ckan.DataspaceJsonProtocol._
 import scala.slick.lifted.{Column, Query}
 import spray.http.HttpHeaders.Location
+import core.ckan.CkanInterface.IteratorData
 
 object DataspacesActor {
     /// Gets the list of resources modified in the specified time range
-    case class ListDataspaces(val since: Option[Timestamp], val until: Option[Timestamp])
+    case class ListDataspaces(
+            val since: Option[Timestamp],
+            val until: Option[Timestamp],
+            val start: Int = 0,
+            val count: Int = CkanInterface.queryResultDefaultLimit
+        )
+
+    /// Gets the next results for the iterator
+    case class ListDataspacesFromIterator(val iterator: String)
 
     /// Gets the meta data for the the specified resource
     case class GetDataspaceMetadata(id: String)
@@ -60,13 +72,25 @@ class DataspacesActor
 
     def receive: Receive = {
         /// Gets the list of resources modified in the specified time range
-        case ListDataspaces(since, until) =>
+        case ListDataspaces(since, until, start, count) =>
+            val (query, nextPage, currentPage) = CkanInterface.listDataspacesQuery(since, until, start, count)
+
             CkanInterface.database withSession { implicit session: Session =>
-                sender ! CkanInterface.getDataspacesQuery(since, until)
-                    .map(res => (res.id, res.title))
-                    .take(10)
-                    .list.map(res => res._1 + " " + res._2.get).mkString("\n")
+                sender ! JsObject(
+                    "nextPage"    -> JsString("/resources/query/results/" + nextPage),
+                    "currentPage" -> JsString("/resources/query/results/" + currentPage),
+                    "data"        -> query.list.toJson
+                ).prettyPrint
             }
+
+        case ListDataspacesFromIterator(iteratorData) =>
+            val iterator = IteratorData.fromId(iteratorData).get
+            receive(ListDataspaces(
+                Some(iterator.since),
+                Some(iterator.until),
+                iterator.start,
+                iterator.count
+            ))
 
         /// Gets the meta data for the the specified resource
         case GetDataspaceMetadata(id) => IO(Http) forward {

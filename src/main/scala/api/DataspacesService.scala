@@ -21,12 +21,10 @@ import akka.actor.ActorRef
 import akka.pattern.ask
 import scala.concurrent.ExecutionContext
 import spray.routing._
+import spray.json._
 import core.DataspacesActor._
 import spray.http.HttpResponse
 import java.sql.Timestamp
-
-// Needed for implicit conversions, not unused:
-
 
 class DataspacesService(dataspaces: ActorRef)(implicit executionContext: ExecutionContext)
     extends CommonDirectives
@@ -34,6 +32,10 @@ class DataspacesService(dataspaces: ActorRef)(implicit executionContext: Executi
     // Dataspaces and metadata
     def listDataspaces(since: Option[Timestamp], until: Option[Timestamp]) = complete {
         (dataspaces ? ListDataspaces(since, until)).mapTo[String]
+    }
+
+    def listDataspacesFromIterator(iteratorData: String) = complete {
+        (dataspaces ? ListDataspacesFromIterator(iteratorData)).mapTo[String]
     }
 
     def getDataspaceMetadata(id: String) = complete {
@@ -52,7 +54,8 @@ class DataspacesService(dataspaces: ActorRef)(implicit executionContext: Executi
                 /*
                  * Getting the lists of results
                  */
-                (path(PathEnd) & timeRestriction)       { listDataspaces }
+                (path(PathEnd) & timeRestriction)   { listDataspaces } ~
+                path("query" / "results" / Segment) { listDataspacesFromIterator }
             }
         }
 

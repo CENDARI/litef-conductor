@@ -38,6 +38,10 @@ class ResourcesService(resources: ActorRef)(implicit executionContext: Execution
         (resources ? ListResources(since, until)).mapTo[String]
     }
 
+    def listResourcesFromIterator(iteratorData: String) = complete {
+        (resources ? ListResourcesFromIterator(iteratorData)).mapTo[String]
+    }
+
     def getResourceMetadata(id: String) = complete {
         (resources ? GetResourceMetadata(id)).mapTo[HttpResponse]
     }
@@ -70,6 +74,7 @@ class ResourcesService(resources: ActorRef)(implicit executionContext: Execution
                  * Getting the lists of results
                  */
                 (path(PathEnd) & timeRestriction)                 { listResources } ~
+                path("query" / "results" / Segment)               { listResourcesFromIterator } ~
                 (path(Segment / "attachments") & timeRestriction) { listResourceAttachments } ~
                 /*
                  * Getting the specific result item

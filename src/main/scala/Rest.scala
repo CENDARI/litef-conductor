@@ -19,7 +19,7 @@ package core
 
 import akka.io.IO
 import akka.actor.Props
-import api.{RoutedHttpService, ResourcesService}
+import api.{RoutedHttpService, ResourcesService, DataspacesService}
 import spray.can.Http
 import spray.routing.RouteConcatenation
 
@@ -31,7 +31,8 @@ object Rest extends App
 
   // Defining the routes for the service
   val routes =
-    new ResourcesService(resources).route
+    new ResourcesService(resources).route ~
+    new DataspacesService(dataspaces).route
 
   // Creating the service
   val rootService = system.actorOf(Props(new RoutedHttpService(routes)))

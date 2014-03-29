@@ -18,6 +18,7 @@ package core.ckan
 
 import slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp
+import spray.json._
 
 case class Resource(
     id            : String,
@@ -41,11 +42,11 @@ case class Resource(
 )
 
 class ResourceTable(tag: Tag)
-    extends Table[core.ckan.Resource](tag, "resource")
+    extends Table[core.ckan.Resource](tag, "litef_ckan_resource_view")
 {
     def id            = column[String]("id", O.PrimaryKey)
-    def resourceGroup = column[Option[String]]("resource_group_id")
     def url           = column[String]("url", O.NotNull)
+    def resourceGroup = column[Option[String]]("resource_group_id")
     def format        = column[Option[String]]("format")
     def description   = column[Option[String]]("description")
     def position      = column[Option[Int]]("position")
@@ -58,7 +59,7 @@ class ResourceTable(tag: Tag)
     def mimetype      = column[Option[String]]("mimetype")
     def mimetypeInner = column[Option[String]]("mimetype_inner")
     def size          = column[Option[Long]]("size")
-    def modified      = column[Option[Timestamp]]("last_modified")
+    def modified      = column[Option[Timestamp]]("modified") // coalesce(last_modified, created)
     def created       = column[Option[Timestamp]]("created")
     def cacheUrl      = column[Option[String]]("cache_url")
 
@@ -88,3 +89,36 @@ class ResourceTable(tag: Tag)
 object ResourceTable {
     val query = TableQuery[ResourceTable]
 }
+
+object ResourceJsonProtocol extends DefaultJsonProtocol {
+    implicit object ResourceJsonFormat extends RootJsonFormat[Resource] {
+        def write(rs: Resource) =
+            JsObject(
+                "id"             -> JsString(rs.id),
+
+                "dataUrl"        -> JsString(rs.url),
+                "cacheUrl"       -> JsString(rs.cacheUrl getOrElse ""),
+
+                "name"           -> JsString(rs.name     getOrElse ""),
+                "format"         -> JsString(rs.format   getOrElse ""),
+                "mimetype"       -> JsString(rs.mimetype getOrElse ""),
+                "size"           -> JsNumber(rs.size     getOrElse 0L),
+
+                "created"        -> JsNumber(rs.created.map  { _.getTime } getOrElse 0L),
+                "modified"       -> JsNumber(rs.modified.map { _.getTime } getOrElse 0L)
+            )
+
+        def read(value: JsValue) = {
+            throw new DeserializationException("Resource can not be read from JSON")
+        }
+    }
+
+    implicit object ResourceSeqJsonFormat extends RootJsonFormat[List[Resource]] {
+        def write(ds: List[Resource]) =
+            JsArray(ds.map{ _.toJson })
+
+        def read(value: JsValue) =
+            throw new DeserializationException("Resource can not be read from JSON")
+    }
+}
+

@@ -25,6 +25,10 @@ import akka.pattern.ask
 import spray.can.Http
 import spray.http._
 import spray.httpx.RequestBuilding._
+import spray.json._
+import DefaultJsonProtocol._
+import MediaTypes._
+import HttpCharsets._
 
 import common.Config.{ Ckan => CkanConfig }
 
@@ -32,12 +36,22 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import spray.http.HttpResponse
 import java.sql.Timestamp
 import core.ckan.{CkanInterface, ResourceTable}
+import core.ckan.ResourceJsonProtocol._
 import scala.slick.lifted.{Column, Query}
 import spray.http.HttpHeaders.Location
+import core.ckan.CkanInterface.IteratorData
 
 object ResourcesActor {
     /// Gets the list of resources modified in the specified time range
-    case class ListResources(val since: Option[Timestamp], val until: Option[Timestamp])
+    case class ListResources(
+            val since: Option[Timestamp],
+            val until: Option[Timestamp],
+            val start: Int = 0,
+            val count: Int = CkanInterface.queryResultDefaultLimit
+        )
+
+    /// Gets the next results for the iterator
+    case class ListResourcesFromIterator(val iterator: String)
 
     /// Gets the data of the specified resource
     case class GetResourceData(id: String)
@@ -69,19 +83,61 @@ class ResourcesActor
 
     def receive: Receive = {
         /// Gets the list of resources modified in the specified time range
-        case ListResources(since, until) =>
+        case ListResources(since, until, start, count) =>
+            val (query, nextPage, currentPage) = CkanInterface.listResourcesQuery(since, until, start, count)
+
             CkanInterface.database withSession { implicit session: Session =>
-                sender ! CkanInterface.getResourcesQuery(since, until)
-                            .map(res => (res.id, res.name))
-                            .take(10)
-                            .list.map(res => res._1 + " " + res._2.get).mkString("\n")
+                sender ! JsObject(
+                    "nextPage"    -> JsString("/resources/query/results/" + nextPage),
+                    "currentPage" -> JsString("/resources/query/results/" + currentPage),
+                    "data"        -> query.list.toJson
+                ).prettyPrint
             }
 
+        case ListResourcesFromIterator(iteratorData) =>
+            val iterator = IteratorData.fromId(iteratorData).get
+            receive(ListResources(
+                Some(iterator.since),
+                Some(iterator.until),
+                iterator.start,
+                iterator.count
+            ))
+
         /// Gets the meta data for the the specified resource
-        case GetResourceMetadata(id) => IO(Http) forward {
-            Get(CkanConfig.namespace + "action/resource_show?id=" + id) ~>
-                addCredentials(validCredentials)
-        }
+        // case GetResourceMetadata(id) => IO(Http) forward {
+        //     Get(CkanConfig.namespace + "action/resource_show?id=" + id) ~>
+        //         addCredentials(validCredentials)
+        // }
+
+        case GetResourceMetadata(request) =>
+            CkanInterface.database withSession { implicit session: Session =>
+                val requestParts = request.split('.')
+
+                val id = requestParts.head
+                val format = if (requestParts.size == 2) requestParts(1) else "json"
+                val mimetype = if (format == "html") `text/html` else `application/json`
+
+                val resource = CkanInterface.getResource(id)
+                sender ! HttpResponse(
+                    status = StatusCodes.OK,
+                    entity = HttpEntity(
+                        ContentType(mimetype, `UTF-8`),
+                        if (format == "html") {
+                            resource.map {
+                                templates.html.resource(_).toString
+                            }.getOrElse {
+                                templates.html.error(505, id).toString
+                            }
+                        } else {
+                            resource.map {
+                                _.toJson.toString
+                            }.getOrElse {
+                                ""
+                            }
+                        }
+                    )
+                )
+            }
 
         /// Gets the data of the specified resource
         case GetResourceData(id) => {

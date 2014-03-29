@@ -1,0 +1,21 @@
+@(resource: core.ckan.Resource)
+
+<dl class="resource-definition">
+  @if(resource.mimetype getOrElse "" startsWith "image/") {
+    <a href="@resource.url"><img class="resource-preview" src="@resource.url" height="128" /></a>
+  }
+  <dt>Name:</dt>
+    <dd>@resource.name</dd>
+  <dt>Id:</dt>
+    <dd>@resource.id</dd>
+  <dt>URL:</dt>
+    <dd><a href="@resource.url">@resource.url</a></dd>
+  <dt>Mimetype:</dt>
+    <dd>@resource.mimetype</dd>
+  <dt>Size:</dt>
+    <dd>@resource.size</dd>
+  <dt>Created:</dt>
+    <dd>@resource.created</dd>
+  <dt>Modified:</dt>
+    <dd>@resource.modified</dd>
+</dl>

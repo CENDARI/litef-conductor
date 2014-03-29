@@ -18,19 +18,21 @@ package core.ckan
 
 import slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp
+import spray.json._
 
+// Dataspace
 case class Dataspace(
     id             : String,
     name           : String,
+    dsType         : String,
+    isOrganization : Boolean           = false,
     title          : Option[String]    = None,
     description    : Option[String]    = None,
     created        : Option[Timestamp] = None,
     state          : Option[String]    = None,
     revisionId     : Option[String]    = None,
-    dsType         : String,
     approvalStatus : Option[String]    = None,
-    imageUrl       : Option[String]    = None,
-    isOrganization : Boolean           = false
+    imageUrl       : Option[String]    = None
 )
 
 class DataspaceTable(tag: Tag)
@@ -38,32 +40,63 @@ class DataspaceTable(tag: Tag)
 {
     def id             = column[String]("id", O.PrimaryKey)
     def name           = column[String]("name", O.NotNull)
+    def dsType         = column[String]("type", O.NotNull)
+    def isOrganization = column[Boolean]("is_organization", O.NotNull)
     def title          = column[Option[String]]("title")
     def description    = column[Option[String]]("description")
     def created        = column[Option[Timestamp]]("created")
     def state          = column[Option[String]]("state")
     def revisionId     = column[Option[String]]("revision_id")
-    def dsType         = column[String]("type", O.NotNull)
     def approvalStatus = column[Option[String]]("approval_status")
     def imageUrl       = column[Option[String]]("image_url")
-    def isOrganization = column[Boolean]("is_organization", O.NotNull)
 
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
         id             ,
         name           ,
+        dsType         ,
+        isOrganization ,
         title          ,
         description    ,
         created        ,
         state          ,
         revisionId     ,
-        dsType         ,
         approvalStatus ,
-        imageUrl       ,
-        isOrganization
+        imageUrl
     ) <> (Dataspace.tupled, Dataspace.unapply)
 }
 
 object DataspaceTable {
     val query = TableQuery[DataspaceTable]
 }
+
+object DataspaceJsonProtocol extends DefaultJsonProtocol {
+    implicit object DataspaceJsonFormat extends RootJsonFormat[Dataspace] {
+        def write(ds: Dataspace) =
+            JsObject(
+                "id"             -> JsString(ds.id),
+
+                "name"           -> JsString(ds.name),
+                "title"          -> JsString(ds.title       getOrElse ""),
+                "description"    -> JsString(ds.description getOrElse ""),
+
+                // "image"          -> JsString(ds.imageUrl getOrElse ""),
+                "isOrganization" -> JsBoolean(ds.isOrganization),
+                "type"           -> JsString(ds.dsType),
+                "state"          -> JsString(ds.state getOrElse "")
+            )
+
+        def read(value: JsValue) = {
+            throw new DeserializationException("Dataspace can not be read from JSON")
+        }
+    }
+
+    implicit object DataspaceSeqJsonFormat extends RootJsonFormat[List[Dataspace]] {
+        def write(ds: List[Dataspace]) =
+            JsArray(ds.map{ _.toJson })
+
+        def read(value: JsValue) =
+            throw new DeserializationException("Dataspace can not be read from JSON")
+    }
+}
+

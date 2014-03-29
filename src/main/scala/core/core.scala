@@ -37,5 +37,6 @@ trait Core {
     sys addShutdownHook system.shutdown()
 
     // System actors
-    val resources = system.actorOf(Props[ResourcesActor], "resources-actor")
+    val resources  = system.actorOf(Props[ResourcesActor],  "resources-actor")
+    val dataspaces = system.actorOf(Props[DataspacesActor], "dataspaces-actor")
 }

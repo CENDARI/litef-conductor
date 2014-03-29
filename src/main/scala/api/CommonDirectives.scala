@@ -21,9 +21,6 @@ import scala.concurrent.ExecutionContext
 import spray.routing._
 import java.sql.Timestamp
 
-/**
- * Created by ivan on 28/03/14.
- */
 class CommonDirectives(implicit executionContext: ExecutionContext)
     extends Directives
     with DefaultFormats
@@ -32,5 +29,5 @@ class CommonDirectives(implicit executionContext: ExecutionContext)
     // Dataspace listing can be filtered on the creation time.
     val timeRestriction =
         parameter('since.as[Timestamp]?) &
-            parameter('until.as[Timestamp]?)
+        parameter('until.as[Timestamp]?)
 }
