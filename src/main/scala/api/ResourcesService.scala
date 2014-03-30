@@ -34,58 +34,60 @@ class ResourcesService(resources: ActorRef)(implicit executionContext: Execution
     extends CommonDirectives
 {
     // Resources and metadata
-    def listResources(since: Option[Timestamp], until: Option[Timestamp]) = complete {
-        (resources ? ListResources(since, until)).mapTo[String]
-    }
+    def listResources(since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) =
+        complete {
+            (resources ? ListResources(since, until)).mapTo[String]
+        }
 
-    def listResourcesFromIterator(iteratorData: String) = complete {
-        (resources ? ListResourcesFromIterator(iteratorData)).mapTo[String]
-    }
+    def listResourcesFromIterator(iteratorData: String)(implicit authorizationKey: String) =
+        complete {
+            (resources ? ListResourcesFromIterator(iteratorData)).mapTo[String]
+        }
 
-    def getResourceMetadata(id: String) = complete {
-        (resources ? GetResourceMetadata(id)).mapTo[HttpResponse]
-    }
+    def getResourceMetadata(id: String)(implicit authorizationKey: String) =
+        complete {
+            (resources ? GetResourceMetadata(id)).mapTo[HttpResponse]
+        }
 
-    def getResourceData(id: String) = complete {
-        (resources ? GetResourceData(id)).mapTo[HttpResponse]
-    }
+    def getResourceData(id: String)(implicit authorizationKey: String) =
+        complete {
+            (resources ? GetResourceData(id)).mapTo[HttpResponse]
+        }
 
-    def getResourceMetadataItem(id: String, item: String) =
+    def getResourceMetadataItem(id: String, item: String)(implicit authorizationKey: String) =
         if (item == "data")
             getResourceData(id)
         else complete {
             (resources ? GetResourceMetadataItem(id, item)).mapTo[String]
         }
 
-    // Resource attachments
-    def listResourceAttachments(id: String, since: Option[Timestamp], until: Option[Timestamp]) = complete {
-        (resources ? ListResourceAttachments(id, since, until)).mapTo[String]
-    }
-
-    def getResourceAttachment(id: String, mimetype: String) = complete {
-        (resources ? GetResourceAttachment(id, mimetype)).mapTo[String]
-    }
+    def test(argument: String)(implicit authorizationKey: String) =
+        complete {
+            authorizationKey
+        }
 
     // Defining the routes for different methods of the service
-    val route =
+    val route = headerValueByName("Authorization") { implicit authorizationKey =>
         pathPrefix("resources") {
             get {
                 /*
+                 * Nothing to see here
+                 */
+                path("test" / Segment)              { test } ~
+                /*
                  * Getting the lists of results
                  */
-                (path(PathEnd) & timeRestriction)                 { listResources } ~
-                path("query" / "results" / Segment)               { listResourcesFromIterator } ~
-                (path(Segment / "attachments") & timeRestriction) { listResourceAttachments } ~
+                (path(PathEnd) & timeRestriction)   { listResources } ~
+                path("query" / "results" / Segment) { listResourcesFromIterator } ~
                 /*
                  * Getting the specific result item
                  */
-                path(Segment)                           { getResourceMetadata } ~
-                path(Segment / Segment)                 { getResourceMetadataItem } ~
-                path(Segment / "attachments" / Segment) { getResourceAttachment }
+                path(Segment)                       { getResourceMetadata } ~
+                path(Segment / Segment)             { getResourceMetadataItem }
             } ~
             put {
                 complete { s"What to put?" }
             }
         }
-
+    }
 }
