@@ -24,19 +24,18 @@ import spray.can.Http
 import spray.routing.RouteConcatenation
 
 object Rest extends App
-            with Core
             with RouteConcatenation
 {
-  private implicit val _ = system.dispatcher
+  private implicit val _ = Core.system.dispatcher
 
   // Defining the routes for the service
   val routes =
-    new ResourcesService(resources).route ~
-    new DataspacesService(dataspaces).route
+    new ResourcesService().route ~
+    new DataspacesService().route
 
   // Creating the service
-  val rootService = system.actorOf(Props(new RoutedHttpService(routes)))
+  val rootService = Core.system.actorOf(Props(new RoutedHttpService(routes)))
 
   // Binding the 8080 port to our server
-  IO(Http)(system) ! Http.Bind(rootService, "0.0.0.0", port = 8081)
+  IO(Http)(Core.system) ! Http.Bind(rootService, "0.0.0.0", port = 8081)
 }

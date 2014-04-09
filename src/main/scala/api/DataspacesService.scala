@@ -25,26 +25,27 @@ import spray.json._
 import core.DataspacesActor._
 import spray.http.HttpResponse
 import java.sql.Timestamp
+import core.Core
 
-class DataspacesService(dataspaces: ActorRef)(implicit executionContext: ExecutionContext)
+class DataspacesService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
 {
     // Dataspaces and metadata
     def listDataspaces(since: Option[Timestamp], until: Option[Timestamp]) = complete {
-        (dataspaces ? ListDataspaces(since, until)).mapTo[String]
+        (Core.dataspaces ? ListDataspaces(since, until)).mapTo[String]
     }
 
     def listDataspacesFromIterator(iteratorData: String) = complete {
-        (dataspaces ? ListDataspacesFromIterator(iteratorData)).mapTo[String]
+        (Core.dataspaces ? ListDataspacesFromIterator(iteratorData)).mapTo[String]
     }
 
     def getDataspaceMetadata(id: String) = complete {
-        (dataspaces ? GetDataspaceMetadata(id)).mapTo[HttpResponse]
+        (Core.dataspaces ? GetDataspaceMetadata(id)).mapTo[HttpResponse]
     }
 
     def getDataspaceMetadataItem(id: String, item: String) =
         complete {
-            (dataspaces ? GetDataspaceMetadataItem(id, item)).mapTo[String]
+            (Core.dataspaces ? GetDataspaceMetadataItem(id, item)).mapTo[String]
         }
 
     // Defining the routes for different methods of the service

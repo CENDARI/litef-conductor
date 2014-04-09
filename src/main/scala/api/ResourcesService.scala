@@ -24,41 +24,42 @@ import spray.routing._
 import core.ResourcesActor._
 import spray.http.HttpResponse
 import java.sql.Timestamp
+import core.Core
 
 // Needed for implicit conversions, not unused:
 import scala.concurrent.ExecutionContext.Implicits.global
 import reflect.ClassTag
 
 
-class ResourcesService(resources: ActorRef)(implicit executionContext: ExecutionContext)
+class ResourcesService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
 {
     // Resources and metadata
     def listResources(since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) =
         complete {
-            (resources ? ListResources(since, until)).mapTo[String]
+            (Core.resources ? ListResources(since, until)).mapTo[String]
         }
 
     def listResourcesFromIterator(iteratorData: String)(implicit authorizationKey: String) =
         complete {
-            (resources ? ListResourcesFromIterator(iteratorData)).mapTo[String]
+            (Core.resources ? ListResourcesFromIterator(iteratorData)).mapTo[String]
         }
 
     def getResourceMetadata(id: String)(implicit authorizationKey: String) =
         complete {
-            (resources ? GetResourceMetadata(id)).mapTo[HttpResponse]
+            (Core.resources ? GetResourceMetadata(id)).mapTo[HttpResponse]
         }
 
     def getResourceData(id: String)(implicit authorizationKey: String) =
         complete {
-            (resources ? GetResourceData(id)).mapTo[HttpResponse]
+            (Core.resources ? GetResourceData(id)).mapTo[HttpResponse]
         }
 
     def getResourceMetadataItem(id: String, item: String)(implicit authorizationKey: String) =
         if (item == "data")
             getResourceData(id)
         else complete {
-            (resources ? GetResourceMetadataItem(id, item)).mapTo[String]
+            (Core.resources ? GetResourceMetadataItem(id, item)).mapTo[String]
         }
 
     def test(argument: String)(implicit authorizationKey: String) =

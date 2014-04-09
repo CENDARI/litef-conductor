@@ -38,17 +38,17 @@ case class Dataspace(
 class DataspaceTable(tag: Tag)
     extends Table[Dataspace](tag, "group")
 {
-    def id             = column[ String            ] ("id", O.PrimaryKey)
-    def name           = column[ String            ] ("name", O.NotNull)
-    def dsType         = column[ String            ] ("type", O.NotNull)
-    def isOrganization = column[ Boolean           ] ("is_organization", O.NotNull)
-    def title          = column[ Option[String]    ] ("title")
-    def description    = column[ Option[String]    ] ("description")
-    def created        = column[ Option[Timestamp] ] ("created")
-    def state          = column[ Option[String]    ] ("state")
-    def revisionId     = column[ Option[String]    ] ("revision_id")
-    def approvalStatus = column[ Option[String]    ] ("approval_status")
-    def imageUrl       = column[ Option[String]    ] ("image_url")
+    val id             = column[ String            ] ("id", O.PrimaryKey)
+    val name           = column[ String            ] ("name", O.NotNull)
+    val dsType         = column[ String            ] ("type", O.NotNull)
+    val isOrganization = column[ Boolean           ] ("is_organization", O.NotNull)
+    val title          = column[ Option[String]    ] ("title")
+    val description    = column[ Option[String]    ] ("description")
+    val created        = column[ Option[Timestamp] ] ("created")
+    val state          = column[ Option[String]    ] ("state")
+    val revisionId     = column[ Option[String]    ] ("revision_id")
+    val approvalStatus = column[ Option[String]    ] ("approval_status")
+    val imageUrl       = column[ Option[String]    ] ("image_url")
 
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (

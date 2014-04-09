@@ -35,11 +35,11 @@ import common.Config.{ Ckan => CkanConfig }
 import scala.concurrent.ExecutionContext.Implicits.global
 import spray.http.HttpResponse
 import java.sql.Timestamp
-import core.ckan.{CkanInterface, ResourceTable}
+import core.ckan.{CkanGodInterface, ResourceTable}
 import core.ckan.ResourceJsonProtocol._
 import scala.slick.lifted.{Column, Query}
 import spray.http.HttpHeaders.Location
-import core.ckan.CkanInterface.IteratorData
+import core.ckan.CkanGodInterface.IteratorData
 
 object ResourcesActor {
     /// Gets the list of resources modified in the specified time range
@@ -47,7 +47,7 @@ object ResourcesActor {
             val since: Option[Timestamp],
             val until: Option[Timestamp],
             val start: Int = 0,
-            val count: Int = CkanInterface.queryResultDefaultLimit
+            val count: Int = CkanGodInterface.queryResultDefaultLimit
         )
 
     /// Gets the next results for the iterator
@@ -84,9 +84,9 @@ class ResourcesActor
     def receive: Receive = {
         /// Gets the list of resources modified in the specified time range
         case ListResources(since, until, start, count) =>
-            val (query, nextPage, currentPage) = CkanInterface.listResourcesQuery(since, until, start, count)
+            val (query, nextPage, currentPage) = CkanGodInterface.listResourcesQuery(since, until, start, count)
 
-            CkanInterface.database withSession { implicit session: Session =>
+            CkanGodInterface.database withSession { implicit session: Session =>
                 sender ! JsObject(
                     "nextPage"    -> JsString("/resources/query/results/" + nextPage),
                     "currentPage" -> JsString("/resources/query/results/" + currentPage),
@@ -110,14 +110,14 @@ class ResourcesActor
         // }
 
         case GetResourceMetadata(request) =>
-            CkanInterface.database withSession { implicit session: Session =>
+            CkanGodInterface.database withSession { implicit session: Session =>
                 val requestParts = request.split('.')
 
                 val id = requestParts.head
                 val format = if (requestParts.size == 2) requestParts(1) else "json"
                 val mimetype = if (format == "html") `text/html` else `application/json`
 
-                val resource = CkanInterface.getResource(id)
+                val resource = CkanGodInterface.getResource(id)
                 sender ! HttpResponse(
                     status = StatusCodes.OK,
                     entity = HttpEntity(
@@ -141,8 +141,8 @@ class ResourcesActor
 
         /// Gets the data of the specified resource
         case GetResourceData(id) => {
-            CkanInterface.database withSession { implicit session: Session =>
-                val resource = CkanInterface.getResource(id)
+            CkanGodInterface.database withSession { implicit session: Session =>
+                val resource = CkanGodInterface.getResource(id)
 
                 resource map { resource =>
                     HttpResponse(

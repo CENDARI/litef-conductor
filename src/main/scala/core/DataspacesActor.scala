@@ -33,11 +33,11 @@ import common.Config.{ Ckan => CkanConfig }
 import scala.concurrent.ExecutionContext.Implicits.global
 import spray.http.HttpResponse
 import java.sql.Timestamp
-import core.ckan.{CkanInterface, DataspaceTable}
+import core.ckan.{CkanGodInterface, DataspaceTable}
 import core.ckan.DataspaceJsonProtocol._
 import scala.slick.lifted.{Column, Query}
 import spray.http.HttpHeaders.Location
-import core.ckan.CkanInterface.IteratorData
+import core.ckan.CkanGodInterface.IteratorData
 
 object DataspacesActor {
     /// Gets the list of resources modified in the specified time range
@@ -45,7 +45,7 @@ object DataspacesActor {
             val since: Option[Timestamp],
             val until: Option[Timestamp],
             val start: Int = 0,
-            val count: Int = CkanInterface.queryResultDefaultLimit
+            val count: Int = CkanGodInterface.queryResultDefaultLimit
         )
 
     /// Gets the next results for the iterator
@@ -73,9 +73,9 @@ class DataspacesActor
     def receive: Receive = {
         /// Gets the list of resources modified in the specified time range
         case ListDataspaces(since, until, start, count) =>
-            val (query, nextPage, currentPage) = CkanInterface.listDataspacesQuery(since, until, start, count)
+            CkanGodInterface.database withSession { implicit session: Session =>
+                val (query, nextPage, currentPage) = CkanGodInterface.listDataspacesQuery(since, until, start, count)
 
-            CkanInterface.database withSession { implicit session: Session =>
                 sender ! JsObject(
                     "nextPage"    -> JsString("/resources/query/results/" + nextPage),
                     "currentPage" -> JsString("/resources/query/results/" + currentPage),
