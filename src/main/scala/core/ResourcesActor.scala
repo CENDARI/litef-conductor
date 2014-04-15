@@ -35,23 +35,24 @@ import common.Config.{ Ckan => CkanConfig }
 import scala.concurrent.ExecutionContext.Implicits.global
 import spray.http.HttpResponse
 import java.sql.Timestamp
-import core.ckan.{CkanGodInterface, ResourceTable}
+import core.ckan.{CkanGodInterface, ResourceTable, DataspaceResourceTable}
 import core.ckan.ResourceJsonProtocol._
+import core.ckan.DataspaceResourceJsonProtocol._
 import scala.slick.lifted.{Column, Query}
 import spray.http.HttpHeaders.Location
 import core.ckan.CkanGodInterface.IteratorData
 
 object ResourcesActor {
     /// Gets the list of resources modified in the specified time range
-    case class ListResources(
-            val since: Option[Timestamp],
-            val until: Option[Timestamp],
-            val start: Int = 0,
-            val count: Int = CkanGodInterface.queryResultDefaultLimit
-        )
+    // case class ListResources(
+    //         val since: Option[Timestamp],
+    //         val until: Option[Timestamp],
+    //         val start: Int = 0,
+    //         val count: Int = CkanGodInterface.queryResultDefaultLimit
+    //     )
 
     /// Gets the next results for the iterator
-    case class ListResourcesFromIterator(val iterator: String)
+    // case class ListResourcesFromIterator(val iterator: String)
 
     /// Gets the data of the specified resource
     case class GetResourceData(id: String)
@@ -59,14 +60,20 @@ object ResourcesActor {
     /// Gets the meta data for the the specified resource
     case class GetResourceMetadata(id: String)
 
-    /// Gets a specific meta-data item for the specified resource
-    case class GetResourceMetadataItem(id: String, item: String)
+    /// Gets the resources for the specified dataset
+    case class ListDataspaceResources(
+            val dataspaceId: String,
+            val since: Option[Timestamp],
+            val until: Option[Timestamp],
+            val start: Int = 0,
+            val count: Int = CkanGodInterface.queryResultDefaultLimit
+        )
 
-    /// Lists the attachments for the specified resource
-    case class ListResourceAttachments(id: String, since: Option[Timestamp], until: Option[Timestamp])
-
-    /// Gets the specified resource attachment
-    case class GetResourceAttachment(id: String, mimetype: String)
+    /// Gets the resources for the specified dataset
+    case class ListDataspaceResourcesFromIterator(
+            val dataspaceId: String,
+            val iterator: String
+        )
 }
 
 class ResourcesActor
@@ -83,25 +90,27 @@ class ResourcesActor
 
     def receive: Receive = {
         /// Gets the list of resources modified in the specified time range
-        case ListResources(since, until, start, count) =>
-            val (query, nextPage, currentPage) = CkanGodInterface.listResourcesQuery(since, until, start, count)
-
-            CkanGodInterface.database withSession { implicit session: Session =>
-                sender ! JsObject(
-                    "nextPage"    -> JsString("/resources/query/results/" + nextPage),
-                    "currentPage" -> JsString("/resources/query/results/" + currentPage),
-                    "data"        -> query.list.toJson
-                ).prettyPrint
-            }
-
-        case ListResourcesFromIterator(iteratorData) =>
-            val iterator = IteratorData.fromId(iteratorData).get
-            receive(ListResources(
-                Some(iterator.since),
-                Some(iterator.until),
-                iterator.start,
-                iterator.count
-            ))
+        // case ListResources(since, until, start, count) =>
+        //     CkanGodInterface.database withSession { implicit session: Session =>
+        //
+        //         val (query, nextPage, currentPage) = CkanGodInterface.listResourcesQuery(since, until, start, count)
+        //
+        //         sender ! JsObject(
+        //             "nextPage"    -> JsString(nextPage.map("/resources/query/results/" + _)    getOrElse ""),
+        //             "currentPage" -> JsString(currentPage.map("/resources/query/results/" + _) getOrElse ""),
+        //             "data"        -> query.list.toJson
+        //         ).prettyPrint
+        //
+        //     }
+        //
+        // case ListResourcesFromIterator(iteratorData) =>
+        //     val iterator = IteratorData.fromId(iteratorData).get
+        //     receive(ListResources(
+        //         Some(iterator.since),
+        //         Some(iterator.until),
+        //         iterator.start,
+        //         iterator.count
+        //     ))
 
         /// Gets the meta data for the the specified resource
         // case GetResourceMetadata(id) => IO(Http) forward {
@@ -111,6 +120,7 @@ class ResourcesActor
 
         case GetResourceMetadata(request) =>
             CkanGodInterface.database withSession { implicit session: Session =>
+
                 val requestParts = request.split('.')
 
                 val id = requestParts.head
@@ -140,8 +150,9 @@ class ResourcesActor
             }
 
         /// Gets the data of the specified resource
-        case GetResourceData(id) => {
+        case GetResourceData(id) =>
             CkanGodInterface.database withSession { implicit session: Session =>
+
                 val resource = CkanGodInterface.getResource(id)
 
                 resource map { resource =>
@@ -157,7 +168,31 @@ class ResourcesActor
                     )
                 }
             }
-        }
+
+        /// Gets the resources for the specified dataspace
+        case ListDataspaceResources(dataspaceId, since, until, start, count) =>
+            CkanGodInterface.database withSession { implicit session: Session =>
+
+                val (query, nextPage, currentPage) = CkanGodInterface.listDataspaceResourcesQuery(dataspaceId, since, until, start, count)
+
+                sender ! JsObject(
+                    "nextPage"    -> JsString(nextPage.map(s"/dataspaces/$dataspaceId/resources/query/results/" + _)    getOrElse ""),
+                    "currentPage" -> JsString(currentPage.map(s"/dataspaces/$dataspaceId/resources/query/results/" + _) getOrElse ""),
+                    "data"        -> query.list.toJson
+                ).prettyPrint
+            }
+
+
+        /// Gets the resources for the specified dataspace
+        case ListDataspaceResourcesFromIterator(dataspaceId, iteratorData) =>
+            val iterator = IteratorData.fromId(iteratorData).get
+            receive(ListDataspaceResources(
+                dataspaceId,
+                Some(iterator.since),
+                Some(iterator.until),
+                iterator.start,
+                iterator.count
+            ))
 
         case response: HttpResponse =>
             println(s"Sending the response back to the requester $response")

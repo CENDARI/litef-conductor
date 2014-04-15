@@ -35,36 +35,40 @@ class ResourcesService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
 {
     // Resources and metadata
-    def listResources(since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) =
-        complete {
-            (Core.resources ? ListResources(since, until)).mapTo[String]
-        }
-
-    def listResourcesFromIterator(iteratorData: String)(implicit authorizationKey: String) =
-        complete {
-            (Core.resources ? ListResourcesFromIterator(iteratorData)).mapTo[String]
-        }
+    // def listResources(since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) =
+    //     complete {
+    //         (Core.resources ? ListResources(since, until)).mapTo[String]
+    //     }
+    //
+    // def listResourcesFromIterator(iteratorData: String)(implicit authorizationKey: String) =
+    //     complete {
+    //         (Core.resources ? ListResourcesFromIterator(iteratorData)).mapTo[String]
+    //     }
 
     def getResourceMetadata(id: String)(implicit authorizationKey: String) =
-        complete {
-            (Core.resources ? GetResourceMetadata(id)).mapTo[HttpResponse]
+        authorize(core.ckan.CkanGodInterface.isResourceAccessibleToUser(id, authorizationKey)) {
+            complete {
+                (Core.resources ? GetResourceMetadata(id)).mapTo[HttpResponse]
+            }
         }
 
     def getResourceData(id: String)(implicit authorizationKey: String) =
-        complete {
-            (Core.resources ? GetResourceData(id)).mapTo[HttpResponse]
+        authorize(core.ckan.CkanGodInterface.isResourceAccessibleToUser(id, authorizationKey)) {
+            complete {
+                (Core.resources ? GetResourceData(id)).mapTo[HttpResponse]
+            }
         }
 
-    def getResourceMetadataItem(id: String, item: String)(implicit authorizationKey: String) =
-        if (item == "data")
-            getResourceData(id)
-        else complete {
-            (Core.resources ? GetResourceMetadataItem(id, item)).mapTo[String]
-        }
+    // def getResourceMetadataItem(id: String, item: String)(implicit authorizationKey: String) =
+    //     if (item == "data")
+    //         getResourceData(id)
+    //     else complete {
+    //         (Core.resources ? GetResourceMetadataItem(id, item)).mapTo[String]
+    //     }
 
     def test(argument: String)(implicit authorizationKey: String) =
         complete {
-            authorizationKey
+            argument + " " + authorizationKey
         }
 
     // Defining the routes for different methods of the service
@@ -78,13 +82,16 @@ class ResourcesService()(implicit executionContext: ExecutionContext)
                 /*
                  * Getting the lists of results
                  */
+                /*
                 (path(PathEnd) & timeRestriction)   { listResources } ~
                 path("query" / "results" / Segment) { listResourcesFromIterator } ~
+                */
                 /*
                  * Getting the specific result item
                  */
-                path(Segment)                       { getResourceMetadata } ~
-                path(Segment / Segment)             { getResourceMetadataItem }
+                path(Segment)                         { getResourceData } ~
+                path(Segment / "$metadata")           { getResourceMetadata }
+                // path(Segment / "$metadata" / Segment) { getResourceMetadataItem }
             } ~
             put {
                 complete { s"What to put?" }

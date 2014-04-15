@@ -31,6 +31,7 @@ object CkanGodInterface {
     val queryResultDefaultLimit = 10
     val queryResultMaximumLimit = 20
 
+
     lazy val database = Database.forURL(
         CkanDatabaseConfig.url,
         user     = CkanDatabaseConfig.user,
@@ -38,9 +39,11 @@ object CkanGodInterface {
         driver   = CkanDatabaseConfig.driver
     )
 
+
     def getResourceQuery(id: String) = database withSession { implicit session: Session =>
-        ResourceTable.query.withFilter(_.id === id)
+        ResourceTable.query.where(_.id === id)
     }
+
 
     def getResource(id: String): Option[Resource] = {
         database withSession { implicit session: Session =>
@@ -48,11 +51,12 @@ object CkanGodInterface {
         }
     }
 
+
     def listResourcesQuery(_since: Option[Timestamp], _until: Option[Timestamp],
                            start: Int, _count: Int) = database withSession { implicit session: Session =>
 
-        val since = _since.getOrElse(new Timestamp(0))
-        val until = _until.getOrElse(new Timestamp(System.currentTimeMillis()))
+        val since = _since getOrElse (new Timestamp(0))
+        val until = _until getOrElse (new Timestamp(System.currentTimeMillis()))
         val count = math.min(_count, queryResultMaximumLimit)
 
         (
@@ -62,30 +66,97 @@ object CkanGodInterface {
                 .drop(start)
                 .take(count)
             ,
-            IteratorData(since, until, start + count, count).generateId, // next
-            IteratorData(since, until, start,         count).generateId  // current
+            Some(IteratorData(since, until, start + count, count).generateId), // next
+            Some(IteratorData(since, until, start,         count).generateId)  // current
         )
     }
 
-    def listDataspacesQuery(_since: Option[Timestamp], _until: Option[Timestamp],
-                            start: Int, _count: Int) = database withSession { implicit session: Session =>
 
-        val since = _since.getOrElse(new Timestamp(0))
-        val until = _until.getOrElse(new Timestamp(System.currentTimeMillis()))
+    def listDataspacesQuery(authorizationKey: String,
+                            _since: Option[Timestamp], _until: Option[Timestamp],
+                            start: Int, _count: Int
+                            ) = database withSession { implicit session: Session =>
+
+        val since = _since getOrElse (new Timestamp(0))
+        val until = _until getOrElse (new Timestamp(System.currentTimeMillis()))
         val count = math.min(_count, queryResultMaximumLimit)
 
         (
             DataspaceTable.query
                 .where(_.isOrganization)
-                .where(_.created.between(since, until))
-                .sortBy(_.created asc)
+                .where(_.id in UserDataspaceRoleTable.query
+                    .where { _.userApiKey === authorizationKey }
+                    .map   { _.dataspaceId }
+                )
+                .sortBy(_.title asc)
+            ,
+            None, // Dataspaces do not support iterators // IteratorData(since, until, start + count, count).generateId, // next
+            None  // Dataspaces do not support iterators // IteratorData(since, until, start,         count).generateId  // current
+        )
+    }
+
+
+
+    def getDataspaceQuery(authorizationKey: String, id: String) = database withSession { implicit session: Session =>
+        DataspaceTable.query
+            .where(_.id === id)
+            .where(_.id in UserDataspaceRoleTable.query
+                .where { _.userApiKey === authorizationKey }
+                .map   { _.dataspaceId }
+            )
+    }
+
+    def getDataspace(authorizationKey: String, id: String) = {
+        database withSession { implicit session: Session =>
+            getDataspaceQuery(authorizationKey, id).list.headOption
+        }
+    }
+
+
+    def listDataspaceResourcesQuery(
+                            // already authorized // authorizationKey: String,
+                            dataspaceId: String,
+                            _since: Option[Timestamp], _until: Option[Timestamp],
+                            start: Int, _count: Int
+                            ) = database withSession { implicit session: Session =>
+
+        val since = _since getOrElse (new Timestamp(0))
+        val until = _until getOrElse (new Timestamp(System.currentTimeMillis()))
+        val count = math.min(_count, queryResultMaximumLimit)
+
+        (
+            DataspaceResourceTable.query
+                .where(_.dataspaceId === dataspaceId)
+                .where(_.modified.between(since, until))
+                .sortBy(_.modified asc)
                 .drop(start)
                 .take(count)
             ,
-            IteratorData(since, until, start + count, count).generateId, // next
-            IteratorData(since, until, start,         count).generateId  // current
+            Some(IteratorData(since, until, start + count, count).generateId), // next
+            Some(IteratorData(since, until, start,         count).generateId)  // current
         )
     }
+
+
+    def isDataspaceAccessibleToUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
+        UserDataspaceRoleTable.query
+            .where(_.dataspaceId === id)
+            .where(_.userApiKey === authorizationKey)
+            .take(1)
+            .list
+            .size > 0
+    }
+
+
+    def isResourceAccessibleToUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
+        DataspaceResourceTable.query
+            .where(_.resourceId === id)
+            .where(_.dataspaceId in UserDataspaceRoleTable.query.where(_.userApiKey === authorizationKey).map(_.dataspaceId))
+            .take(1)
+            .list
+            .size > 0
+    }
+
 
     case class IteratorData(val since: Timestamp, val until: Timestamp, val start: Int, val count: Int) {
         def generateId: String = {
@@ -102,6 +173,7 @@ object CkanGodInterface {
             IteratorData.base64encoder.encode(bytes)
         }
     }
+
 
     object IteratorData {
         val base64encoder = new BASE64Encoder()

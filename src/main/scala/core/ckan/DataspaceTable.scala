@@ -81,9 +81,10 @@ object DataspaceJsonProtocol extends DefaultJsonProtocol {
                 "description"    -> JsString(ds.description getOrElse ""),
                 // "image"          -> JsString(ds.imageUrl getOrElse ""),
 
-                "isOrganization" -> JsBoolean(ds.isOrganization),
-                "type"           -> JsString(ds.dsType),
-                "state"          -> JsString(ds.state getOrElse "")
+                // "isOrganization" -> JsBoolean(ds.isOrganization),
+                // "type"           -> JsString(ds.dsType),
+                "state"          -> JsString(ds.state getOrElse ""),
+                "resources"      -> JsString("/dataspaces/" + ds.id + "/resources")
             )
 
         def read(value: JsValue) = {

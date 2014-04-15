@@ -27,6 +27,8 @@ import spray.http._
 import spray.httpx.RequestBuilding._
 import spray.json._
 import DefaultJsonProtocol._
+import MediaTypes._
+import HttpCharsets._
 
 import common.Config.{ Ckan => CkanConfig }
 
@@ -42,6 +44,7 @@ import core.ckan.CkanGodInterface.IteratorData
 object DataspacesActor {
     /// Gets the list of resources modified in the specified time range
     case class ListDataspaces(
+            val authorizationKey: String,
             val since: Option[Timestamp],
             val until: Option[Timestamp],
             val start: Int = 0,
@@ -49,13 +52,15 @@ object DataspacesActor {
         )
 
     /// Gets the next results for the iterator
-    case class ListDataspacesFromIterator(val iterator: String)
+    case class ListDataspacesFromIterator(
+            val authorizationKey: String,
+            val iterator: String
+        )
 
     /// Gets the meta data for the the specified resource
-    case class GetDataspaceMetadata(id: String)
-
-    /// Gets a specific meta-data item for the specified resource
-    case class GetDataspaceMetadataItem(id: String, item: String)
+    case class GetDataspaceMetadata(
+            val authorizationKey: String,
+            val id: String)
 }
 
 class DataspacesActor
@@ -72,20 +77,23 @@ class DataspacesActor
 
     def receive: Receive = {
         /// Gets the list of resources modified in the specified time range
-        case ListDataspaces(since, until, start, count) =>
+        case ListDataspaces(authorizationKey, since, until, start, count) =>
             CkanGodInterface.database withSession { implicit session: Session =>
-                val (query, nextPage, currentPage) = CkanGodInterface.listDataspacesQuery(since, until, start, count)
+                val (query, nextPage, currentPage) =
+                    CkanGodInterface.listDataspacesQuery(authorizationKey, since, until, start, count)
 
                 sender ! JsObject(
-                    "nextPage"    -> JsString("/resources/query/results/" + nextPage),
-                    "currentPage" -> JsString("/resources/query/results/" + currentPage),
+                    // Dataspaces do not support iterators thanks to CKAN //
+                    // "nextPage"    -> JsString(nextPage.map("/resources/query/results/" + _)    getOrElse ""),
+                    // "currentPage" -> JsString(currentPage.map("/resources/query/results/" + _) getOrElse ""),
                     "data"        -> query.list.toJson
                 ).prettyPrint
             }
 
-        case ListDataspacesFromIterator(iteratorData) =>
+        case ListDataspacesFromIterator(authorizationKey, iteratorData) =>
             val iterator = IteratorData.fromId(iteratorData).get
             receive(ListDataspaces(
+                authorizationKey,
                 Some(iterator.since),
                 Some(iterator.until),
                 iterator.start,
@@ -93,10 +101,38 @@ class DataspacesActor
             ))
 
         /// Gets the meta data for the the specified resource
-        case GetDataspaceMetadata(id) => IO(Http) forward {
-            Get(CkanConfig.namespace + "action/resource_show?id=" + id) ~>
-                addCredentials(validCredentials)
-        }
+        case GetDataspaceMetadata(authorizationKey, request) =>
+            CkanGodInterface.database withSession { implicit session: Session =>
+
+                val requestParts = request.split('.')
+
+                val id = requestParts.head
+                val format = if (requestParts.size == 2) requestParts(1) else "json"
+                val mimetype = if (format == "html") `text/html` else `application/json`
+
+                val dataspace = CkanGodInterface.getDataspace(authorizationKey, id)
+
+                sender ! HttpResponse(
+                    status = StatusCodes.OK,
+                    entity = HttpEntity(
+                        ContentType(mimetype, `UTF-8`),
+                        if (format == "html") {
+                            dataspace.map {
+                                templates.html.dataspace(_).toString
+                            }.getOrElse {
+                                templates.html.error(403, id).toString
+                            }
+                        } else {
+                            dataspace.map {
+                                _.toJson.prettyPrint
+                            }.getOrElse {
+                                ""
+                            }
+                        }
+                    )
+                )
+            }
+
 
         case response: HttpResponse =>
             println(s"Sending the response back to the requester $response")

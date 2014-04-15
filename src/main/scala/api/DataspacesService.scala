@@ -23,6 +23,7 @@ import scala.concurrent.ExecutionContext
 import spray.routing._
 import spray.json._
 import core.DataspacesActor._
+import core.ResourcesActor._
 import spray.http.HttpResponse
 import java.sql.Timestamp
 import core.Core
@@ -31,33 +32,58 @@ class DataspacesService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
 {
     // Dataspaces and metadata
-    def listDataspaces(since: Option[Timestamp], until: Option[Timestamp]) = complete {
-        (Core.dataspaces ? ListDataspaces(since, until)).mapTo[String]
+    def listDataspaces(since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) = complete {
+        (Core.dataspaces ? ListDataspaces(authorizationKey, since, until))
+            .mapTo[String]
     }
 
-    def listDataspacesFromIterator(iteratorData: String) = complete {
-        (Core.dataspaces ? ListDataspacesFromIterator(iteratorData)).mapTo[String]
+    def listDataspacesFromIterator(iteratorData: String)(implicit authorizationKey: String) = complete {
+        (Core.dataspaces ? ListDataspacesFromIterator(authorizationKey, iteratorData))
+            .mapTo[String]
     }
 
-    def getDataspaceMetadata(id: String) = complete {
-        (Core.dataspaces ? GetDataspaceMetadata(id)).mapTo[HttpResponse]
+    def getDataspaceMetadata(id: String)(implicit authorizationKey: String) = complete {
+        (Core.dataspaces ? GetDataspaceMetadata(authorizationKey, id))
+            .mapTo[HttpResponse]
     }
 
-    def getDataspaceMetadataItem(id: String, item: String) =
-        complete {
-            (Core.dataspaces ? GetDataspaceMetadataItem(id, item)).mapTo[String]
+    def listDataspaceResources(id: String, since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) =
+        authorize(core.ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
+            complete {
+                (Core.resources ? ListDataspaceResources(id, since, until))
+                .mapTo[String]
+            }
+        }
+
+    def listDataspaceResourcesFromIterator(id: String, iteratorData: String)(implicit authorizationKey: String) =
+        authorize(core.ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
+            complete {
+                (Core.resources ? ListDataspaceResourcesFromIterator(id, iteratorData))
+                .mapTo[String]
+            }
         }
 
     // Defining the routes for different methods of the service
-    val route =
+    val route = headerValueByName("Authorization") { implicit authorizationKey =>
         pathPrefix("dataspaces") {
             get {
                 /*
-                 * Getting the lists of results
+                 * Getting the list of dataspaces
                  */
                 (path(PathEnd) & timeRestriction)   { listDataspaces } ~
-                path("query" / "results" / Segment) { listDataspacesFromIterator }
+                (path(PathEnd) & timeRestriction)   { listDataspaces } ~
+                path("query" / "results" / Segment) { listDataspacesFromIterator } ~
+                /*
+                 * Getting the dataspace meta data
+                 */
+                path(Segment) { getDataspaceMetadata } ~
+                /**
+                 * Getting the list of resources that belong to a dataspace
+                 */
+                (path(Segment / "resources" ~ PathEnd) & timeRestriction)   { listDataspaceResources } ~
+                path(Segment / "resources" / "query" / "results" / Segment) { listDataspaceResourcesFromIterator }
             }
         }
+    }
 
 }

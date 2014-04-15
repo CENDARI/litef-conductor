@@ -21,25 +21,25 @@ import java.sql.Timestamp
 import spray.json._
 
 case class UserPackage(
-    user_id          : String,
-    user_apikey      : String,
-    package_role     : String,
-    id               : String,
-    name             : String,
-    title            : String,
-    version          : String,
-    url              : String,
-    notes            : String,
-    license_id       : String,
-    revision_id      : String,
-    author           : String,
-    author_email     : String,
-    maintainer       : String,
-    maintainer_email : String,
-    state            : String,
-    `type`           : String,
-    owner_org        : String,
-    `private`        : String
+    userId          : String,
+    userApiKey      : String,
+    packageRole     : Option[String],
+    id              : String,
+    name            : String,
+    title           : Option[String],
+    version         : Option[String],
+    url             : Option[String],
+    notes           : Option[String],
+    licenseId       : Option[String],
+    revisionId      : Option[String],
+    author          : Option[String],
+    authorEmail     : Option[String],
+    maintainer      : Option[String],
+    maintainerEmail : Option[String],
+    state           : Option[String],
+    `type`          : Option[String],
+    ownerOrg        : Option[String],
+    `private`       : Boolean
 )
 
 // Was:
@@ -56,45 +56,47 @@ case class UserPackage(
 class UserPackageTable(tag: Tag)
     extends Table[core.ckan.UserPackage](tag, "litef_ckan_user_package_view")
 {
-    val id            = column[ String            ]  ("id", O.PrimaryKey)
-    val url           = column[ String            ]  ("url", O.NotNull)
-    val resourceGroup = column[ Option[String]    ]  ("resource_group_id")
-    val format        = column[ Option[String]    ]  ("format")
-    val description   = column[ Option[String]    ]  ("description")
-    val position      = column[ Option[Int]       ]  ("position")
-    val revisionId    = column[ Option[String]    ]  ("revision_id")
-    val hash          = column[ Option[String]    ]  ("hash")
-    val state         = column[ Option[String]    ]  ("state")
-    val extras        = column[ Option[String]    ]  ("extras")
-    val name          = column[ Option[String]    ]  ("name")
-    val resourceType  = column[ Option[String]    ]  ("resource_type")
-    val mimetype      = column[ Option[String]    ]  ("mimetype")
-    val mimetypeInner = column[ Option[String]    ]  ("mimetype_inner")
-    val size          = column[ Option[Long]      ]  ("size")
-    val modified      = column[ Option[Timestamp] ]  ("modified") // greatest(last_modified, created), better than just coalesce
-    val created       = column[ Option[Timestamp] ]  ("created")
-    val cacheUrl      = column[ Option[String]    ]  ("cache_url")
+    val userId          = column[ String          ] ("user_id", O.NotNull)
+    val userApiKey      = column[ String          ] ("user_apikey", O.NotNull)
+    val packageRole     = column[ Option[String]  ] ("package_role")
+    val id              = column[ String          ] ("id", O.NotNull)
+    val name            = column[ String          ] ("name", O.NotNull)
+    val title           = column[ Option[String]  ] ("title")
+    val version         = column[ Option[String]  ] ("version")
+    val url             = column[ Option[String]  ] ("url")
+    val notes           = column[ Option[String]  ] ("notes")
+    val licenseId       = column[ Option[String]  ] ("license_id")
+    val revisionId      = column[ Option[String]  ] ("revision_id")
+    val author          = column[ Option[String]  ] ("author")
+    val authorEmail     = column[ Option[String]  ] ("author_email")
+    val maintainer      = column[ Option[String]  ] ("maintainer")
+    val maintainerEmail = column[ Option[String]  ] ("maintainer_email")
+    val state           = column[ Option[String]  ] ("state")
+    val `type`          = column[ Option[String]  ] ("type")
+    val ownerOrg        = column[ Option[String]  ] ("owner_or")
+    val `private`       = column[ Boolean         ] ("title")
 
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
-        id             ,
-        resourceGroup  ,
-        url            ,
-        format         ,
-        description    ,
-        position       ,
-        revisionId     ,
-        hash           ,
-        state          ,
-        extras         ,
-        name           ,
-        resourceType   ,
-        mimetype       ,
-        mimetypeInner  ,
-        size           ,
-        modified       ,
-        created        ,
-        cacheUrl
+        userId          ,
+        userApiKey      ,
+        packageRole     ,
+        id              ,
+        name            ,
+        title           ,
+        version         ,
+        url             ,
+        notes           ,
+        licenseId       ,
+        revisionId      ,
+        author          ,
+        authorEmail     ,
+        maintainer      ,
+        maintainerEmail ,
+        state           ,
+        `type`          ,
+        ownerOrg        ,
+        `private`
     ) <> (UserPackage.tupled, UserPackage.unapply)
 }
 
@@ -104,20 +106,12 @@ object UserPackageTable {
 
 object UserResourceJsonProtocol extends DefaultJsonProtocol {
     implicit object UserResourceJsonFormat extends RootJsonFormat[UserPackage] {
-        def write(rs: UserPackage) =
+        def write(up: UserPackage) =
             JsObject(
-                "id"             -> JsString(rs.id),
-
-                "dataUrl"        -> JsString(rs.url),
-                "cacheUrl"       -> JsString(rs.cacheUrl getOrElse ""),
-
-                "name"           -> JsString(rs.name     getOrElse ""),
-                "format"         -> JsString(rs.format   getOrElse ""),
-                "mimetype"       -> JsString(rs.mimetype getOrElse ""),
-                "size"           -> JsNumber(rs.size     getOrElse 0L),
-
-                "created"        -> JsNumber(rs.created.map  { _.getTime } getOrElse 0L),
-                "modified"       -> JsNumber(rs.modified.map { _.getTime } getOrElse 0L)
+                "id"             -> JsString(up.id),
+                "url"            -> JsString(up.url   getOrElse ""),
+                "name"           -> JsString(up.name),
+                "title"          -> JsString(up.title getOrElse "")
             )
 
         def read(value: JsValue) = {

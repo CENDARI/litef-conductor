@@ -1,0 +1,13 @@
+@(dataspace: core.ckan.Dataspace)
+
+<dl class="dataspace-definition">
+  @if(dataspace.imageUrl != "") {
+    <img class="dataspace-preview" src="@dataspace.imageUrl" height="128" />
+  }
+  <dt>Name:</dt>
+    <dd>@dataspace.name</dd>
+  <dt>Id:</dt>
+    <dd>@dataspace.id</dd>
+  <dt>Created:</dt>
+    <dd>@dataspace.created</dd>
+</dl>
