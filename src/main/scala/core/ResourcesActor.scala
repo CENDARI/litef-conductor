@@ -133,15 +133,15 @@ class ResourcesActor
                     entity = HttpEntity(
                         ContentType(mimetype, `UTF-8`),
                         if (format == "html") {
-                            resource.map {
+                            resource map {
                                 templates.html.resource(_).toString
-                            }.getOrElse {
+                            } getOrElse {
                                 templates.html.error(505, id).toString
                             }
                         } else {
-                            resource.map {
-                                _.toJson.toString
-                            }.getOrElse {
+                            resource map {
+                                _.toJson.prettyPrint
+                            } getOrElse {
                                 ""
                             }
                         }
@@ -155,7 +155,7 @@ class ResourcesActor
 
                 val resource = CkanGodInterface.getResource(id)
 
-                resource map { resource =>
+                val result = resource map { resource =>
                     HttpResponse(
                         status  = StatusCodes.MovedPermanently,
                         headers = Location(resource.url) :: Nil,
@@ -167,6 +167,8 @@ class ResourcesActor
                         entity  = EmptyEntity
                     )
                 }
+
+                sender ! result
             }
 
         /// Gets the resources for the specified dataspace
@@ -176,8 +178,8 @@ class ResourcesActor
                 val (query, nextPage, currentPage) = CkanGodInterface.listDataspaceResourcesQuery(dataspaceId, since, until, start, count)
 
                 sender ! JsObject(
-                    "nextPage"    -> JsString(nextPage.map(s"/dataspaces/$dataspaceId/resources/query/results/" + _)    getOrElse ""),
-                    "currentPage" -> JsString(currentPage.map(s"/dataspaces/$dataspaceId/resources/query/results/" + _) getOrElse ""),
+                    "nextPage"    -> JsString(nextPage map (s"/dataspaces/$dataspaceId/resources/query/results/" + _)    getOrElse ""),
+                    "currentPage" -> JsString(currentPage map (s"/dataspaces/$dataspaceId/resources/query/results/" + _) getOrElse ""),
                     "data"        -> query.list.toJson
                 ).prettyPrint
             }

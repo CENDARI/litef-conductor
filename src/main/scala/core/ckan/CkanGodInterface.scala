@@ -150,8 +150,11 @@ object CkanGodInterface {
 
     def isResourceAccessibleToUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
         DataspaceResourceTable.query
-            .where(_.resourceId === id)
-            .where(_.dataspaceId in UserDataspaceRoleTable.query.where(_.userApiKey === authorizationKey).map(_.dataspaceId))
+            .map(_.justIds)
+            .where(_._2 === id)
+            .where(_._1 in UserDataspaceRoleTable.query
+                               .where(_.userApiKey === authorizationKey)
+                               .map(_.dataspaceId))
             .take(1)
             .list
             .size > 0

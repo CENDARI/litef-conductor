@@ -53,11 +53,14 @@ class ResourcesService()(implicit executionContext: ExecutionContext)
         }
 
     def getResourceData(id: String)(implicit authorizationKey: String) =
-        authorize(core.ckan.CkanGodInterface.isResourceAccessibleToUser(id, authorizationKey)) {
-            complete {
-                (Core.resources ? GetResourceData(id)).mapTo[HttpResponse]
+        if (id.endsWith("$metadata"))
+            getResourceMetadata(id.dropRight(9))
+        else
+            authorize(core.ckan.CkanGodInterface.isResourceAccessibleToUser(id, authorizationKey)) {
+                complete {
+                    (Core.resources ? GetResourceData(id)).mapTo[HttpResponse]
+                }
             }
-        }
 
     // def getResourceMetadataItem(id: String, item: String)(implicit authorizationKey: String) =
     //     if (item == "data")

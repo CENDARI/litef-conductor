@@ -42,6 +42,11 @@ case class DataspaceResource(
     cacheUrl      : Option[String]    = None
 )
 
+case class DataspaceResourcePair(
+    dataspaceId   : String,
+    resourceId    : String
+)
+
 class DataspaceResourceTable(tag: Tag)
     extends Table[DataspaceResource](tag, "litef_ckan_group_resource_view")
 {
@@ -87,6 +92,11 @@ class DataspaceResourceTable(tag: Tag)
         created        ,
         cacheUrl
     ) <> (DataspaceResource.tupled, DataspaceResource.unapply)
+
+    def justIds = (
+        dataspaceId,
+        resourceId
+    )
 }
 
 object DataspaceResourceTable {
@@ -107,8 +117,8 @@ object DataspaceResourceJsonProtocol extends DefaultJsonProtocol {
                 "mimetype"       -> JsString(rs.mimetype getOrElse ""),
                 "size"           -> JsNumber(rs.size     getOrElse 0L),
 
-                "created"        -> JsNumber(rs.created.map  { _.getTime } getOrElse 0L),
-                "modified"       -> JsNumber(rs.modified.map { _.getTime } getOrElse 0L)
+                "created"        -> JsNumber(rs.created map  { _.getTime } getOrElse 0L),
+                "modified"       -> JsNumber(rs.modified map { _.getTime } getOrElse 0L)
             )
 
         def read(value: JsValue) = {
