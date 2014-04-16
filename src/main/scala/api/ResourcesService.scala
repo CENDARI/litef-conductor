@@ -46,21 +46,18 @@ class ResourcesService()(implicit executionContext: ExecutionContext)
     //     }
 
     def getResourceMetadata(id: String)(implicit authorizationKey: String) =
-        authorize(core.ckan.CkanGodInterface.isResourceAccessibleToUser(id, authorizationKey)) {
+        authorize(core.ckan.CkanGodInterface.isResourceAccessibleToUser(id.split('.').head, authorizationKey)) {
             complete {
                 (Core.resources ? GetResourceMetadata(id)).mapTo[HttpResponse]
             }
         }
 
     def getResourceData(id: String)(implicit authorizationKey: String) =
-        if (id.endsWith("$metadata"))
-            getResourceMetadata(id.dropRight(9))
-        else
-            authorize(core.ckan.CkanGodInterface.isResourceAccessibleToUser(id, authorizationKey)) {
-                complete {
-                    (Core.resources ? GetResourceData(id)).mapTo[HttpResponse]
-                }
+        authorize(core.ckan.CkanGodInterface.isResourceAccessibleToUser(id, authorizationKey)) {
+            complete {
+                (Core.resources ? GetResourceData(id)).mapTo[HttpResponse]
             }
+        }
 
     // def getResourceMetadataItem(id: String, item: String)(implicit authorizationKey: String) =
     //     if (item == "data")
@@ -92,8 +89,8 @@ class ResourcesService()(implicit executionContext: ExecutionContext)
                 /*
                  * Getting the specific result item
                  */
-                path(Segment)                         { getResourceData } ~
-                path(Segment / "$metadata")           { getResourceMetadata }
+                path(Segment)                       { getResourceMetadata } ~
+                path(Segment / "data")              { getResourceData }
                 // path(Segment / "$metadata" / Segment) { getResourceMetadataItem }
             } ~
             put {

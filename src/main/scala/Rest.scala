@@ -21,21 +21,24 @@ import akka.io.IO
 import akka.actor.Props
 import api.{RoutedHttpService, ResourcesService, DataspacesService}
 import spray.can.Http
-import spray.routing.RouteConcatenation
+import spray.routing._
 
 object Rest extends App
             with RouteConcatenation
+            with Directives
 {
-  private implicit val _ = Core.system.dispatcher
+    private implicit val _ = Core.system.dispatcher
 
-  // Defining the routes for the service
-  val routes =
-    new ResourcesService().route ~
-    new DataspacesService().route
+    // Defining the routes for the service
+    val routes =
+        pathPrefix("v1") {
+            new ResourcesService().route ~
+            new DataspacesService().route
+        }
 
-  // Creating the service
-  val rootService = Core.system.actorOf(Props(new RoutedHttpService(routes)))
+    // Creating the service
+    val rootService = Core.system.actorOf(Props(new RoutedHttpService(routes)))
 
-  // Binding the 8080 port to our server
-  IO(Http)(Core.system) ! Http.Bind(rootService, "0.0.0.0", port = 8081)
+    // Binding the 8080 port to our server
+    IO(Http)(Core.system) ! Http.Bind(rootService, "0.0.0.0", port = 8081)
 }
