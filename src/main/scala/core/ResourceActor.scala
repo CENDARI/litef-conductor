@@ -42,7 +42,7 @@ import scala.slick.lifted.{Column, Query}
 import spray.http.HttpHeaders.Location
 import core.ckan.CkanGodInterface.IteratorData
 
-object ResourcesActor {
+object ResourceActor {
     /// Gets the list of resources modified in the specified time range
     // case class ListResources(
     //         val since: Option[Timestamp],
@@ -76,11 +76,11 @@ object ResourcesActor {
         )
 }
 
-class ResourcesActor
+class ResourceActor
     extends Actor
     with api.DefaultValues
 {
-    import ResourcesActor._
+    import ResourceActor._
     import context.system
 
     val validCredentials = BasicHttpCredentials(

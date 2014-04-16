@@ -21,7 +21,7 @@ import akka.actor.ActorRef
 import akka.pattern.ask
 import scala.concurrent.ExecutionContext
 import spray.routing._
-import core.ResourcesActor._
+import core.ResourceActor._
 import spray.http.HttpResponse
 import java.sql.Timestamp
 import core.Core
@@ -31,31 +31,31 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import reflect.ClassTag
 
 
-class ResourcesService()(implicit executionContext: ExecutionContext)
+class ResourceService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
 {
     // Resources and metadata
     // def listResources(since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) =
     //     complete {
-    //         (Core.resources ? ListResources(since, until)).mapTo[String]
+    //         (Core.resourceActor ? ListResources(since, until)).mapTo[String]
     //     }
     //
     // def listResourcesFromIterator(iteratorData: String)(implicit authorizationKey: String) =
     //     complete {
-    //         (Core.resources ? ListResourcesFromIterator(iteratorData)).mapTo[String]
+    //         (Core.resourceActor ? ListResourcesFromIterator(iteratorData)).mapTo[String]
     //     }
 
     def getResourceMetadata(id: String)(implicit authorizationKey: String) =
         authorize(core.ckan.CkanGodInterface.isResourceAccessibleToUser(id.split('.').head, authorizationKey)) {
             complete {
-                (Core.resources ? GetResourceMetadata(id)).mapTo[HttpResponse]
+                (Core.resourceActor ? GetResourceMetadata(id)).mapTo[HttpResponse]
             }
         }
 
     def getResourceData(id: String)(implicit authorizationKey: String) =
         authorize(core.ckan.CkanGodInterface.isResourceAccessibleToUser(id, authorizationKey)) {
             complete {
-                (Core.resources ? GetResourceData(id)).mapTo[HttpResponse]
+                (Core.resourceActor ? GetResourceData(id)).mapTo[HttpResponse]
             }
         }
 
@@ -63,7 +63,7 @@ class ResourcesService()(implicit executionContext: ExecutionContext)
     //     if (item == "data")
     //         getResourceData(id)
     //     else complete {
-    //         (Core.resources ? GetResourceMetadataItem(id, item)).mapTo[String]
+    //         (Core.resourceActor ? GetResourceMetadataItem(id, item)).mapTo[String]
     //     }
 
     def test(argument: String)(implicit authorizationKey: String) =

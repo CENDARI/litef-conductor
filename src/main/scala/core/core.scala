@@ -38,6 +38,6 @@ object Core {
     sys addShutdownHook system.shutdown()
 
     // System actors
-    lazy val resources  = system.actorOf(Props[ResourcesActor],  "resources-actor")
-    lazy val dataspaces = system.actorOf(Props[DataspacesActor], "dataspaces-actor")
+    lazy val resourceActor  = system.actorOf(Props[ResourceActor],  "resource-actor")
+    lazy val dataspaceActor = system.actorOf(Props[DataspaceActor], "dataspace-actor")
 }

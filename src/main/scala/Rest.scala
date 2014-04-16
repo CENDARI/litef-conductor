@@ -19,7 +19,7 @@ package core
 
 import akka.io.IO
 import akka.actor.Props
-import api.{RoutedHttpService, ResourcesService, DataspacesService}
+import api.{RoutedHttpService, ResourceService, DataspaceService}
 import spray.can.Http
 import spray.routing._
 
@@ -32,8 +32,8 @@ object Rest extends App
     // Defining the routes for the service
     val routes =
         pathPrefix("v1") {
-            new ResourcesService().route ~
-            new DataspacesService().route
+            new ResourceService().route ~
+            new DataspaceService().route
         }
 
     // Creating the service

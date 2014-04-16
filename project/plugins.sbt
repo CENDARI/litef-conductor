@@ -6,3 +6,5 @@ addSbtPlugin("io.spray" % "sbt-twirl"    % "0.7.0")
 
 addSbtPlugin("com.dscleaver.sbt" % "sbt-quickfix" % "0.4.1")
 
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.11.2")
+

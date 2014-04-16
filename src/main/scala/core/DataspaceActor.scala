@@ -41,7 +41,7 @@ import scala.slick.lifted.{Column, Query}
 import spray.http.HttpHeaders.Location
 import core.ckan.CkanGodInterface.IteratorData
 
-object DataspacesActor {
+object DataspaceActor {
     /// Gets the list of resources modified in the specified time range
     case class ListDataspaces(
             val authorizationKey: String,
@@ -63,11 +63,11 @@ object DataspacesActor {
             val id: String)
 }
 
-class DataspacesActor
+class DataspaceActor
     extends Actor
     with api.DefaultValues
 {
-    import DataspacesActor._
+    import DataspaceActor._
     import context.system
 
     val validCredentials = BasicHttpCredentials(

@@ -22,35 +22,35 @@ import akka.pattern.ask
 import scala.concurrent.ExecutionContext
 import spray.routing._
 import spray.json._
-import core.DataspacesActor._
-import core.ResourcesActor._
+import core.DataspaceActor._
+import core.ResourceActor._
 import spray.http.HttpResponse
 import java.sql.Timestamp
 import core.Core
 
-class DataspacesService()(implicit executionContext: ExecutionContext)
+class DataspaceService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
 {
     // Dataspaces and metadata
     def listDataspaces(since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) = complete {
-        (Core.dataspaces ? ListDataspaces(authorizationKey, since, until))
+        (Core.dataspaceActor ? ListDataspaces(authorizationKey, since, until))
             .mapTo[String]
     }
 
     def listDataspacesFromIterator(iteratorData: String)(implicit authorizationKey: String) = complete {
-        (Core.dataspaces ? ListDataspacesFromIterator(authorizationKey, iteratorData))
+        (Core.dataspaceActor ? ListDataspacesFromIterator(authorizationKey, iteratorData))
             .mapTo[String]
     }
 
     def getDataspaceMetadata(id: String)(implicit authorizationKey: String) = complete {
-        (Core.dataspaces ? GetDataspaceMetadata(authorizationKey, id))
+        (Core.dataspaceActor ? GetDataspaceMetadata(authorizationKey, id))
             .mapTo[HttpResponse]
     }
 
     def listDataspaceResources(id: String, since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) =
         authorize(core.ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
             complete {
-                (Core.resources ? ListDataspaceResources(id, since, until))
+                (Core.resourceActor ? ListDataspaceResources(id, since, until))
                 .mapTo[String]
             }
         }
@@ -58,7 +58,7 @@ class DataspacesService()(implicit executionContext: ExecutionContext)
     def listDataspaceResourcesFromIterator(id: String, iteratorData: String)(implicit authorizationKey: String) =
         authorize(core.ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
             complete {
-                (Core.resources ? ListDataspaceResourcesFromIterator(id, iteratorData))
+                (Core.resourceActor ? ListDataspaceResourcesFromIterator(id, iteratorData))
                 .mapTo[String]
             }
         }
