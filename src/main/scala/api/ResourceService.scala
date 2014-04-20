@@ -66,19 +66,10 @@ class ResourceService()(implicit executionContext: ExecutionContext)
     //         (Core.resourceActor ? GetResourceMetadataItem(id, item)).mapTo[String]
     //     }
 
-    def test(argument: String)(implicit authorizationKey: String) =
-        complete {
-            argument + " " + authorizationKey
-        }
-
     // Defining the routes for different methods of the service
     val route = headerValueByName("Authorization") { implicit authorizationKey =>
         pathPrefix("resources") {
             get {
-                /*
-                 * Nothing to see here
-                 */
-                path("test" / Segment)              { test } ~
                 /*
                  * Getting the lists of results
                  */
