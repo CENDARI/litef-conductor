@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package core
+package dataapi
 
 import slick.driver.PostgresDriver.simple._
 
@@ -78,7 +78,7 @@ object ResourceActor {
 
 class ResourceActor
     extends Actor
-    with api.DefaultValues
+    with dataapi.DefaultValues
 {
     import ResourceActor._
     import context.system

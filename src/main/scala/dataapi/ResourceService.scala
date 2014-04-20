@@ -15,13 +15,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package api
+package dataapi
 
 import akka.actor.ActorRef
 import akka.pattern.ask
 import scala.concurrent.ExecutionContext
 import spray.routing._
-import core.ResourceActor._
+import dataapi.ResourceActor._
 import spray.http.HttpResponse
 import java.sql.Timestamp
 import core.Core

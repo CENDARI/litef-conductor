@@ -19,7 +19,7 @@ package core
 
 import akka.io.IO
 import akka.actor.Props
-import api.{RoutedHttpService, ResourceService, DataspaceService}
+import dataapi.{RoutedHttpService, ResourceService, DataspaceService}
 import spray.can.Http
 import spray.routing._
 

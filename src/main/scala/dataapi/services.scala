@@ -1,4 +1,4 @@
-package api
+package dataapi
 
 import spray.http.StatusCodes._
 import spray.http._

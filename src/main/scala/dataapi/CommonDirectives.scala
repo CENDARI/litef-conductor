@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package api
+package dataapi
 
 import scala.concurrent.ExecutionContext
 import spray.routing._
@@ -24,7 +24,7 @@ import java.sql.Timestamp
 class CommonDirectives(implicit executionContext: ExecutionContext)
     extends Directives
     with DefaultFormats
-    with api.DefaultValues
+    with dataapi.DefaultValues
 {
     // Dataspace listing can be filtered on the creation time.
     val timeRestriction =
