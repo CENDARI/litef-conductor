@@ -14,14 +14,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package core.ckan
+package ckan
 
 import slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp
 import spray.json._
 
-case class Resource(
-    id            : String,
+case class DataspaceResource(
+    dataspaceId   : String,
+    resourceId    : String,
     resourceGroup : Option[String]    = None,
     url           : String,
     format        : Option[String]    = None,
@@ -41,10 +42,16 @@ case class Resource(
     cacheUrl      : Option[String]    = None
 )
 
-class ResourceTable(tag: Tag)
-    extends Table[core.ckan.Resource](tag, "litef_ckan_resource_view")
+case class DataspaceResourcePair(
+    dataspaceId   : String,
+    resourceId    : String
+)
+
+class DataspaceResourceTable(tag: Tag)
+    extends Table[DataspaceResource](tag, "litef_ckan_group_resource_view")
 {
-    val id            = column[ String            ]  ("id", O.PrimaryKey)
+    val dataspaceId   = column[ String            ]  ("group_id", O.NotNull)
+    val resourceId    = column[ String            ]  ("id", O.NotNull)
     val url           = column[ String            ]  ("url", O.NotNull)
     val resourceGroup = column[ Option[String]    ]  ("resource_group_id")
     val format        = column[ Option[String]    ]  ("format")
@@ -65,7 +72,8 @@ class ResourceTable(tag: Tag)
 
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
-        id             ,
+        dataspaceId    ,
+        resourceId     ,
         resourceGroup  ,
         url            ,
         format         ,
@@ -83,18 +91,23 @@ class ResourceTable(tag: Tag)
         modified       ,
         created        ,
         cacheUrl
-    ) <> (Resource.tupled, Resource.unapply)
+    ) <> (DataspaceResource.tupled, DataspaceResource.unapply)
+
+    def justIds = (
+        dataspaceId,
+        resourceId
+    )
 }
 
-object ResourceTable {
-    val query = TableQuery[ResourceTable]
+object DataspaceResourceTable {
+    val query = TableQuery[DataspaceResourceTable]
 }
 
-object ResourceJsonProtocol extends DefaultJsonProtocol {
-    implicit object ResourceJsonFormat extends RootJsonFormat[Resource] {
-        def write(rs: Resource) =
+object DataspaceResourceJsonProtocol extends DefaultJsonProtocol {
+    implicit object DataspaceResourceJsonFormat extends RootJsonFormat[DataspaceResource] {
+        def write(rs: DataspaceResource) =
             JsObject(
-                "id"             -> JsString(rs.id),
+                "id"             -> JsString(rs.resourceId),
 
                 "dataUrl"        -> JsString(rs.url),
                 "cacheUrl"       -> JsString(rs.cacheUrl getOrElse ""),
@@ -104,21 +117,21 @@ object ResourceJsonProtocol extends DefaultJsonProtocol {
                 "mimetype"       -> JsString(rs.mimetype getOrElse ""),
                 "size"           -> JsNumber(rs.size     getOrElse 0L),
 
-                "created"        -> JsNumber(rs.created.map  { _.getTime } getOrElse 0L),
-                "modified"       -> JsNumber(rs.modified.map { _.getTime } getOrElse 0L)
+                "created"        -> JsNumber(rs.created map  { _.getTime } getOrElse 0L),
+                "modified"       -> JsNumber(rs.modified map { _.getTime } getOrElse 0L)
             )
 
         def read(value: JsValue) = {
-            throw new DeserializationException("Resource can not be read from JSON")
+            throw new DeserializationException("DataspaceResource can not be read from JSON")
         }
     }
 
-    implicit object ResourceSeqJsonFormat extends RootJsonFormat[List[Resource]] {
-        def write(ds: List[Resource]) =
+    implicit object DataspaceResourceSeqJsonFormat extends RootJsonFormat[List[DataspaceResource]] {
+        def write(ds: List[DataspaceResource]) =
             JsArray(ds.map{ _.toJson })
 
         def read(value: JsValue) =
-            throw new DeserializationException("Resource can not be read from JSON")
+            throw new DeserializationException("DataspaceResource can not be read from JSON")
     }
 }
 

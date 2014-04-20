@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package core.ckan
+package ckan
 
 import slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp

@@ -48,7 +48,7 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
     }
 
     def listDataspaceResources(id: String, since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) =
-        authorize(core.ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
+        authorize(ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
             complete {
                 (Core.resourceActor ? ListDataspaceResources(id, since, until))
                 .mapTo[String]
@@ -56,7 +56,7 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
         }
 
     def listDataspaceResourcesFromIterator(id: String, iteratorData: String)(implicit authorizationKey: String) =
-        authorize(core.ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
+        authorize(ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
             complete {
                 (Core.resourceActor ? ListDataspaceResourcesFromIterator(id, iteratorData))
                 .mapTo[String]

@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package core.ckan
+package ckan
 
 import slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp
@@ -54,7 +54,7 @@ case class UserPackage(
 // Now, just the second part of the union
 
 class UserPackageTable(tag: Tag)
-    extends Table[core.ckan.UserPackage](tag, "litef_ckan_user_package_view")
+    extends Table[ckan.UserPackage](tag, "litef_ckan_user_package_view")
 {
     val userId          = column[ String          ] ("user_id", O.NotNull)
     val userApiKey      = column[ String          ] ("user_apikey", O.NotNull)

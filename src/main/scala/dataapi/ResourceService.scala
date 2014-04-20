@@ -46,14 +46,14 @@ class ResourceService()(implicit executionContext: ExecutionContext)
     //     }
 
     def getResourceMetadata(id: String)(implicit authorizationKey: String) =
-        authorize(core.ckan.CkanGodInterface.isResourceAccessibleToUser(id.split('.').head, authorizationKey)) {
+        authorize(ckan.CkanGodInterface.isResourceAccessibleToUser(id.split('.').head, authorizationKey)) {
             complete {
                 (Core.resourceActor ? GetResourceMetadata(id)).mapTo[HttpResponse]
             }
         }
 
     def getResourceData(id: String)(implicit authorizationKey: String) =
-        authorize(core.ckan.CkanGodInterface.isResourceAccessibleToUser(id, authorizationKey)) {
+        authorize(ckan.CkanGodInterface.isResourceAccessibleToUser(id, authorizationKey)) {
             complete {
                 (Core.resourceActor ? GetResourceData(id)).mapTo[HttpResponse]
             }

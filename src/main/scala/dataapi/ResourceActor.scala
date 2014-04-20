@@ -35,12 +35,12 @@ import common.Config.{ Ckan => CkanConfig }
 import scala.concurrent.ExecutionContext.Implicits.global
 import spray.http.HttpResponse
 import java.sql.Timestamp
-import core.ckan.{CkanGodInterface, ResourceTable, DataspaceResourceTable}
-import core.ckan.ResourceJsonProtocol._
-import core.ckan.DataspaceResourceJsonProtocol._
+import ckan.{CkanGodInterface, ResourceTable, DataspaceResourceTable}
+import ckan.ResourceJsonProtocol._
+import ckan.DataspaceResourceJsonProtocol._
 import scala.slick.lifted.{Column, Query}
 import spray.http.HttpHeaders.Location
-import core.ckan.CkanGodInterface.IteratorData
+import ckan.CkanGodInterface.IteratorData
 
 object ResourceActor {
     /// Gets the list of resources modified in the specified time range
