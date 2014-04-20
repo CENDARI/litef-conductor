@@ -8,22 +8,28 @@ resolvers += "spray repo" at "http://repo.spray.io"
 
 resolvers += "spray nightlies" at "http://nightlies.spray.io"
 
-libraryDependencies ++= Seq(
-    "com.typesafe.akka"  %% "akka-actor"       % "2.2.0"         withSources,
-    "com.typesafe.akka"  %% "akka-slf4j"       % "2.2.0"         withSources,
-    "com.typesafe.akka"  %% "akka-testkit"     % "2.2.0"         % "test",
-    "ch.qos.logback"      % "logback-classic"  % "1.0.13"        withSources,
-    "io.spray"            % "spray-can"        % "1.2-20130712"  withSources,
-    "io.spray"            % "spray-routing"    % "1.2-20130712"  withSources,
-    "io.spray"           %% "spray-json"       % "1.2.3"         withSources,
-    "org.specs2"         %% "specs2"           % "1.14"          % "test",
-    "io.spray"            % "spray-testkit"    % "1.2-20130712"  % "test",
-    "com.novocode"        % "junit-interface"  % "0.7"           % "test->default",
-    "com.typesafe.slick" %% "slick"            % "2.0.0"         withSources,
-    // "org.slf4j"           % "slf4j-nop"        % "1.6.4"         withSources,
-    "postgresql"          % "postgresql"       % "9.1-901.jdbc4" withSources,
-    "org.scalatest"       % "scalatest_2.10"   % "2.0"
-)
+libraryDependencies ++= {
+    object V {
+        val spray = "1.2-20130712"
+        val akka  = "2.2.0"
+    }
+    Seq(
+        "com.typesafe.akka"  %% "akka-actor"       % V.akka          withSources,
+        "com.typesafe.akka"  %% "akka-slf4j"       % V.akka          withSources,
+        "com.typesafe.akka"  %% "akka-testkit"     % V.akka          % "test",
+        "ch.qos.logback"      % "logback-classic"  % "1.0.13"        withSources,
+        "io.spray"            % "spray-can"        % V.spray         withSources,
+        "io.spray"            % "spray-routing"    % V.spray         withSources,
+        "io.spray"            % "spray-testkit"    % V.spray         % "test",
+        "io.spray"           %% "spray-json"       % "1.2.3"         withSources,
+        "org.specs2"         %% "specs2"           % "1.14"          % "test",
+        "com.novocode"        % "junit-interface"  % "0.7"           % "test->default",
+        "com.typesafe.slick" %% "slick"            % "2.0.0"         withSources,
+        // "org.slf4j"           % "slf4j-nop"        % "1.6.4"         withSources,
+        "postgresql"          % "postgresql"       % "9.1-901.jdbc4" withSources,
+        "org.scalatest"       % "scalatest_2.10"   % "2.0"
+    )
+}
 
 scalacOptions ++= Seq(
     "-unchecked",

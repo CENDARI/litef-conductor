@@ -155,6 +155,8 @@ class ResourceActor
 
                 val resource = CkanGodInterface.getResource(id)
 
+                // TODO: File as response, not redirection
+
                 val result = resource map { resource =>
                     HttpResponse(
                         status  = StatusCodes.MovedPermanently,
