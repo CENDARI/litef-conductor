@@ -20,7 +20,9 @@ package common
 import com.typesafe.config.ConfigFactory
 
 object Config {
-    lazy val config = ConfigFactory.load getConfig "litef.conductor"
+    lazy val config = ConfigFactory.load getConfig "litef"
+
+    lazy val namespace = config getString "namespace"
 
     object Ckan {
         // lazy val

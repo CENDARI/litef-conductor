@@ -19,6 +19,7 @@ package ckan
 import slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp
 import spray.json._
+import common.Config
 
 // Dataspace
 case class Dataspace(
@@ -75,6 +76,8 @@ object DataspaceJsonProtocol extends DefaultJsonProtocol {
         def write(ds: Dataspace) =
             JsObject(
                 "id"             -> JsString(ds.id),
+                "url"            -> JsString(s"${Config.namespace}dataspaces/${ds.id}"),
+                "resources"      -> JsString(s"${Config.namespace}dataspaces/${ds.id}/resources"),
 
                 "name"           -> JsString(ds.name),
                 "title"          -> JsString(ds.title       getOrElse ""),
@@ -83,8 +86,7 @@ object DataspaceJsonProtocol extends DefaultJsonProtocol {
 
                 // "isOrganization" -> JsBoolean(ds.isOrganization),
                 // "type"           -> JsString(ds.dsType),
-                "state"          -> JsString(ds.state getOrElse ""),
-                "resources"      -> JsString("/dataspaces/" + ds.id + "/resources")
+                "state"          -> JsString(ds.state getOrElse "")
             )
 
         def read(value: JsValue) = {

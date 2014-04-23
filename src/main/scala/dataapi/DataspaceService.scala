@@ -81,7 +81,7 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
                  * Getting the list of resources that belong to a dataspace
                  */
                 (path(Segment / "resources" ~ PathEnd) & timeRestriction)   { listDataspaceResources } ~
-                path(Segment / "resources" / "query" / "results" / Segment) { listDataspaceResourcesFromIterator }
+                path(Segment / "resources" / "query" / "results" / Rest) { listDataspaceResourcesFromIterator }
             }
         }
     }

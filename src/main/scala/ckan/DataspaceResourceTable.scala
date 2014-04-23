@@ -19,6 +19,7 @@ package ckan
 import slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp
 import spray.json._
+import common.Config
 
 case class DataspaceResource(
     dataspaceId   : String,
@@ -103,14 +104,15 @@ object DataspaceResourceTable {
     val query = TableQuery[DataspaceResourceTable]
 }
 
+// TODO: This needs to be united with ResourceJsonProtocol
 object DataspaceResourceJsonProtocol extends DefaultJsonProtocol {
     implicit object DataspaceResourceJsonFormat extends RootJsonFormat[DataspaceResource] {
         def write(rs: DataspaceResource) =
             JsObject(
                 "id"             -> JsString(rs.resourceId),
 
-                "dataUrl"        -> JsString(rs.url),
-                "cacheUrl"       -> JsString(rs.cacheUrl getOrElse ""),
+                "url"        -> JsString(s"${Config.namespace}resources/${rs.resourceId}"),
+                "dataUrl"        -> JsString(s"${Config.namespace}resources/${rs.resourceId}/data"),
 
                 "name"           -> JsString(rs.name     getOrElse ""),
                 "format"         -> JsString(rs.format   getOrElse ""),

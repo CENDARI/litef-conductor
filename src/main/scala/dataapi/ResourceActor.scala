@@ -31,6 +31,7 @@ import MediaTypes._
 import HttpCharsets._
 
 import common.Config.{ Ckan => CkanConfig }
+import common.Config
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import spray.http.HttpResponse
@@ -180,8 +181,8 @@ class ResourceActor
                 val (query, nextPage, currentPage) = CkanGodInterface.listDataspaceResourcesQuery(dataspaceId, since, until, start, count)
 
                 sender ! JsObject(
-                    "nextPage"    -> JsString(nextPage map (s"/dataspaces/$dataspaceId/resources/query/results/" + _)    getOrElse ""),
-                    "currentPage" -> JsString(currentPage map (s"/dataspaces/$dataspaceId/resources/query/results/" + _) getOrElse ""),
+                    "nextPage"    -> JsString(nextPage map (s"${Config.namespace}dataspaces/$dataspaceId/resources/query/results/" + _)    getOrElse ""),
+                    "currentPage" -> JsString(currentPage map (s"${Config.namespace}dataspaces/$dataspaceId/resources/query/results/" + _) getOrElse ""),
                     "data"        -> query.list.toJson
                 ).prettyPrint
             }

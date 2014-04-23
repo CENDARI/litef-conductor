@@ -19,6 +19,7 @@ package ckan
 import slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp
 import spray.json._
+import common.Config
 
 case class Resource(
     id            : String,
@@ -96,8 +97,10 @@ object ResourceJsonProtocol extends DefaultJsonProtocol {
             JsObject(
                 "id"             -> JsString(rs.id),
 
-                "dataUrl"        -> JsString(rs.url),
-                "cacheUrl"       -> JsString(rs.cacheUrl getOrElse ""),
+                "url"        -> JsString(s"${Config.namespace}resources/${rs.id}"),
+                "dataUrl"        -> JsString(s"${Config.namespace}resources/${rs.id}/data"),
+                // "dataUrl"        -> JsString(rs.url),
+                // "cacheUrl"       -> JsString(rs.cacheUrl getOrElse ""),
 
                 "name"           -> JsString(rs.name     getOrElse ""),
                 "format"         -> JsString(rs.format   getOrElse ""),
