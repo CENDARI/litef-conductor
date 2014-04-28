@@ -40,4 +40,7 @@ object Core {
     // System actors
     lazy val resourceActor  = system.actorOf(Props[dataapi.ResourceActor],  "resource-actor")
     lazy val dataspaceActor = system.actorOf(Props[dataapi.DataspaceActor], "dataspace-actor")
+
+    lazy val collectorActor = system.actorOf(Props[conductor.CollectorActor], "collector-actor")
+
 }

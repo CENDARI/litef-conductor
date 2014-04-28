@@ -31,11 +31,19 @@ object Config {
         lazy val httpPassword = config getString "ckan.httpPassword"
         lazy val apiKey       = config getString "ckan.apiKey"
 
+        lazy val urlStoragePrefix   = config getString "ckan.urlStoragePrefix"
+        lazy val localStoragePrefix = config getString "ckan.localStoragePrefix"
+
         object Database {
             lazy val url      : String = config getString "ckan.postgres.url"
             lazy val user     : String = config getString "ckan.postgres.username"
             lazy val password : String = config getString "ckan.postgres.password"
             lazy val driver   : String = config getString "ckan.postgres.driver"
         }
+    }
+
+    object Conductor {
+        lazy val fileSizeLimit = config getLong "conductor.fileSizeLimit"
+        lazy val plugins       = config getString "conductor.plugins" split ','
     }
 }

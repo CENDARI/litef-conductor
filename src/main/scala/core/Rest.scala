@@ -39,6 +39,8 @@ object Rest extends App
     // Creating the service
     val rootService = Core.system.actorOf(Props(new RoutedHttpService(routes)))
 
+    Core.collectorActor
+
     // Binding the 8080 port to our server
     IO(Http)(Core.system) ! Http.Bind(rootService, "0.0.0.0", port = 8081)
 }

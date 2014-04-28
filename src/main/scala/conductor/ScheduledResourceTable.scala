@@ -22,42 +22,38 @@ import scala.slick.model.ForeignKeyAction
 import java.sql.Timestamp
 import spray.json._
 
-// ResourceAttachment
-case class ResourceAttachment(
+// ScheduledResource
+case class ScheduledResource(
     resourceId     : String,
-    format         : String,
-    created        : Timestamp,
-    modified       : Timestamp,
-    content        : Option[String]
+    format         : Option[String],
+    lastProcessed  : Timestamp,
+    scheduled      : Boolean
 )
 
-class ResourceAttachmentTable(tag: Tag)
-    extends Table[ResourceAttachment](tag, "litef_resource_attachment")
+class ScheduledResourceTable(tag: Tag)
+    extends Table[ScheduledResource](tag, "litef_resource_schedule")
 {
-    val resourceId     = column [ String         ] ("resource_id", O.NotNull)
-    val format         = column [ String         ] ("format",      O.NotNull)
-    val created        = column [ Timestamp      ] ("created",     O.NotNull)
-    val modified       = column [ Timestamp      ] ("modified",    O.NotNull)
-    val content        = column [ Option[String] ] ("content")
+    val resourceId     = column [ String         ] ("resource_id",    O.NotNull)
+    val format         = column [ Option[String] ] ("format")
+    val lastProcessed  = column [ Timestamp      ] ("last_processed", O.NotNull)
+    val scheduled      = column [ Boolean        ] ("scheduled",      O.NotNull)
 
-    val pk             = primaryKey("litef_resource_attachment_pk", (resourceId, format))
+    val pk             = primaryKey("litef_scheduled_resource_pk", (resourceId, format))
 
     // We can not make FK on a view :/
-    // val resourceFKey   = foreignKey("litef_resource_attachment_resource_fk",
+    // val resourceFKey   = foreignKey("litef_scheduled_resource_resource_fk",
     //                                 resourceId, ckan.ResourceTable.query)(_.id, onDelete = ForeignKeyAction.Cascade)
-
 
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
         resourceId ,
         format     ,
-        created    ,
-        modified   ,
-        content
-    ) <> (ResourceAttachment.tupled, ResourceAttachment.unapply)
+        lastProcessed,
+        scheduled
+    ) <> (ScheduledResource.tupled, ScheduledResource.unapply)
 }
 
-object ResourceAttachmentTable {
-    val query = TableQuery[ResourceAttachmentTable]
+object ScheduledResourceTable {
+    val query = TableQuery[ScheduledResourceTable]
 }
 
