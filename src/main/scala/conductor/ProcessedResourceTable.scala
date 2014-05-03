@@ -22,23 +22,17 @@ import scala.slick.model.ForeignKeyAction
 import java.sql.Timestamp
 import spray.json._
 
-// ScheduledResource
-case class ScheduledResource(
-    resourceId     : String,
-    format         : Option[String],
-    lastProcessed  : Timestamp,
-    scheduled      : Boolean
+// ProcessedResource
+case class ProcessedResource(
+    id             : String,
+    lastProcessed  : Option[Timestamp]
 )
 
-class ScheduledResourceTable(tag: Tag)
-    extends Table[ScheduledResource](tag, "litef_resource_schedule")
+class ProcessedResourceTable(tag: Tag)
+    extends Table[ProcessedResource](tag, "litef_processed_resource")
 {
-    val resourceId     = column [ String         ] ("resource_id",    O.NotNull)
-    val format         = column [ Option[String] ] ("format")
-    val lastProcessed  = column [ Timestamp      ] ("last_processed", O.NotNull)
-    val scheduled      = column [ Boolean        ] ("scheduled",      O.NotNull)
-
-    val pk             = primaryKey("litef_scheduled_resource_pk", (resourceId, format))
+    val id             = column [ String            ] ("resource_id",    O.NotNull, O.PrimaryKey)
+    val lastProcessed  = column [ Option[Timestamp] ] ("last_processed", O.Nullable, O.Default(None))
 
     // We can not make FK on a view :/
     // val resourceFKey   = foreignKey("litef_scheduled_resource_resource_fk",
@@ -46,14 +40,12 @@ class ScheduledResourceTable(tag: Tag)
 
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
-        resourceId ,
-        format     ,
-        lastProcessed,
-        scheduled
-    ) <> (ScheduledResource.tupled, ScheduledResource.unapply)
+        id ,
+        lastProcessed
+    ) <> (ProcessedResource.tupled, ProcessedResource.unapply)
 }
 
-object ScheduledResourceTable {
-    val query = TableQuery[ScheduledResourceTable]
+object ProcessedResourceTable {
+    val query = TableQuery[ProcessedResourceTable]
 }
 

@@ -40,6 +40,24 @@ case class Resource(
     modified      : Option[Timestamp] = None,
     created       : Option[Timestamp] = None,
     cacheUrl      : Option[String]    = None
+) {
+    lazy val isLocal = url.startsWith(Config.Ckan.urlStoragePrefix)
+    lazy val localPath = url.replaceFirst(Config.Ckan.urlStoragePrefix, Config.Ckan.localStoragePrefix)
+    lazy val isBelowSizeThreshold = {
+        val fileSize = (new java.io.File(localPath)).length
+        fileSize <= Config.Conductor.fileSizeLimit
+    }
+
+    lazy val isProcessable = isLocal && isBelowSizeThreshold
+    lazy val content = io.Source.fromFile(localPath).mkString
+
+    override
+    def toString = s"resource://$id?$url"
+}
+
+case class ResourceModification(
+    id            : String,
+    modified      : Option[Timestamp] = None
 )
 
 class ResourceTable(tag: Tag)

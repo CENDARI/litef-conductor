@@ -42,25 +42,21 @@ import scala.slick.lifted.{Column, Query}
 import spray.http.HttpHeaders.Location
 import ckan.CkanGodInterface.database
 import scala.concurrent.duration._
+import akka.event.Logging._
+import akka.event.Logging
 
 object CollectorActor {
+
+    case class Start()
+
     /// Starts the processing of the next resource
     case class ProcessNext()
 
-    /// Notifies the actor that the processing of the previous one has finished
-    case class ResourceProcessed(resourceId: String, format: Option[String], modified: Timestamp)
-
-    /// Notifies the actor that the processing of the previous one has finished
-    case class ResourceProcessingFailed(resourceId: String, format: Option[String])
-
-    /// Notifies the actor that the processing of the previous one has finished
-    case class ResourceAttachmentProcessingFailed(resourceId: String, format: Option[String])
-
-    /// Requests the update to the queue
-    case class UpdateQueue()
-
-    /// The queue has been updated
-    case class QueueUpdateFinished()
+    // /// Requests the update to the queue
+    // case class UpdateQueue()
+    //
+    // /// The queue has been updated
+    // case class QueueUpdateFinished()
 }
 
 class CollectorActor
@@ -70,118 +66,97 @@ class CollectorActor
     import CollectorActor._
     import context.system
 
+    val log = Logging(context.system, this)
+
     override
     def preStart(): Unit = database withSession { implicit session: Session =>
-        // ScheduledResourceTable.query.ddl.create
+        // ProcessedResourceTable.query.ddl.create
         // ResourceAttachmentTable.query.ddl.create
+
+        system.scheduler.scheduleOnce(5 seconds, self, Start())
     }
 
     lazy val dispatcherActor = system.actorOf(Props[conductor.DispatcherActor], "dispatcher-actor")
 
-    def processNextResource(resourceId: String, format: Option[String]) = Future {
-        database withSession { implicit session: Session =>
-            val resourceOption: Option[(String, String, String)] =
-                if (format.isEmpty) {
-                    ckan.ResourceTable.query
-                        .where(_.id === resourceId)
-                        .list
-                        .headOption
-                        .filter(_.url startsWith CkanConfig.urlStoragePrefix)
-                        .flatMap { resource =>
-                            val file = resource.url.replaceFirst(CkanConfig.urlStoragePrefix, CkanConfig.localStoragePrefix)
+    def processResource(resource: ckan.Resource) = Future {
+        log.info(s"Lets find the resource we want ${resource.id} / ${resource.url}")
 
-                            val fileSize = (new java.io.File(file)).length
-
-                            if (fileSize > ConductorConfig.fileSizeLimit) {
-                                None
-                            } else {
-                                Some((resource.id, resource.mimetype getOrElse "", io.Source.fromFile(file).mkString))
-                            }
-                        }
-
-                } else {
-                    ResourceAttachmentTable.query
-                        .where(_.resourceId === resourceId)
-                        .where(_.format === format.get)
-                        .where(_.content.isNotNull)
-                        .map(resource => (resource.resourceId, resource.format, resource.content.get))
-                        .list
-                        .headOption
-                }
-
-            if (resourceOption.isEmpty) {
-                self ! ResourceProcessingFailed(resourceId, format)
-
-            } else {
-                // Actual processing is deferred to the dispatcher actor
-                dispatcherActor ! DispatcherActor.Process.tupled(resourceOption.get)
-
-                // self ! ResourceProcessed(resourceId, format)
-
-            }
+        if (resource.isProcessable) {
+            log.info("Sending the request to the dispatcher")
+            dispatcherActor ! DispatcherActor.ProcessResource(resource)
+        } else {
+            log.info("An error occured - unable to process the resource")
+            self ! DispatcherActor.ResourceProcessingFailed(DispatcherActor.ResourceNotProcessableException(resource))
         }
     }
 
     def processNext() = database withSession { implicit session: Session =>
-        val next = ScheduledResourceTable.query
-            .where(_.scheduled)
+
+        log.info("Processing the next resource:")
+
+        val nextQuery =
+            ckan.ResourceTable.query
+                .filter(_.modified.isNotNull)
+                .filter(_.url startsWith CkanConfig.urlStoragePrefix)
+                .filterNot(resource =>
+                    resource.id in ProcessedResourceTable.query
+                        .filter{ p => resource.id === p.id && p.lastProcessed <= resource.modified }
+                        .map(_.id)
+                )
             .take(1)
+
+        val next = nextQuery
             .list
             .headOption
 
         if (next.isEmpty) {
             // If not, update the queue
-            system.scheduler.scheduleOnce(60 seconds, self, UpdateQueue())
+            log.info("The queue is empty, waiting for 60 seconds...")
+            system.scheduler.scheduleOnce(60 seconds, self, Start())
 
         } else {
             // If yes, process it
             val resource = next.get
-            processNextResource(resource.resourceId, resource.format)
+            log.info(s"Processing resource: ${resource.id} / ${resource.url}")
+            processResource(resource)
         }
     }
 
-    def updateQueue() = database withSession { implicit session: Session =>
-        // Find items whose lastProcessed time is earlier than
-        // modification time of a resource and
-        // set the lastProcessed time to null
-        val lastUpdate = ScheduledResourceTable.query
-            .where(!_.scheduled)
-            .map(_.lastProcessed)
-            .max
-
-        val newResources = ckan.ResourceTable.query
-            .where(_.modified >= lastUpdate)
-            .sortBy(_.modified asc)
-            .map(_.id)
-
-        val count: Int = ScheduledResourceTable.query
-            .where(_.format isNull)
-            .where(_.resourceId in newResources)
-            .map(_.scheduled)
-            .update(true)
-
-    }
-
-    def resourceProcessed(resourceId: String, format: Option[String], modified: Timestamp) = database withSession { implicit session: Session =>
-        val lastUpdate = ScheduledResourceTable.query
-            .where(!_.scheduled)
-            .map(row => (row.scheduled, row.lastProcessed))
-            .update((false, modified))
+    def markResourceAsProcessed(resource: ckan.Resource) = database withSession { implicit session: Session =>
+        ProcessedResourceTable.query
+            .filter(r => r.id === resource.id)
+            .delete
+        ProcessedResourceTable.query += ProcessedResource(resource.id, resource.modified)
     }
 
     def receive: Receive = {
+        case Start() =>
+            receive(ProcessNext())
+
         case ProcessNext() =>
+            log.info("Got the request to process the next resource")
             processNext
 
-        case ResourceProcessed(resourceId, format, modified) =>
-            resourceProcessed(resourceId, format, modified)
+        case DispatcherActor.ResourceProcessingFinished(resource) =>
+            log.info(s"The dispatcher said it has finished processing $resource")
+            markResourceAsProcessed(resource)
             processNext
 
-        case UpdateQueue() =>
-            updateQueue
+        case DispatcherActor.ResourceProcessingFailed(ex) =>
+            ex match {
+                case DispatcherActor.ResourceProcessingException(resource) =>
+                    log.info(s"The dispatcher said it has failed to process $ex")
+                    markResourceAsProcessed(resource)
+                case _ =>
+                    // nothing
+            }
 
-        case QueueUpdateFinished() =>
-            self ! ProcessNext()
+            processNext
+
+        // Messages meant for the dispatcher:
+        case msg =>
+            log.info("Passing to the dispatcherActor " + msg.toString)
+            dispatcherActor ! msg
     }
 
 }
