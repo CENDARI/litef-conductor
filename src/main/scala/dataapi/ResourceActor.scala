@@ -39,9 +39,14 @@ import java.sql.Timestamp
 import ckan.{CkanGodInterface, ResourceTable, DataspaceResourceTable}
 import ckan.ResourceJsonProtocol._
 import ckan.DataspaceResourceJsonProtocol._
+import CkanJsonProtocol._
+import spray.httpx.SprayJsonSupport._
 import scala.slick.lifted.{Column, Query}
 import spray.http.HttpHeaders.Location
 import ckan.CkanGodInterface.IteratorData
+import HttpCharsets._
+import HttpMethods._
+import HttpHeaders._
 
 object ResourceActor {
     /// Gets the list of resources modified in the specified time range
@@ -74,6 +79,27 @@ object ResourceActor {
     case class ListDataspaceResourcesFromIterator(
             val dataspaceId: String,
             val iterator: String
+        )
+    case class UploadFile(
+            val authorizationKey: String,
+            val data: MultipartFormData,
+            val key: String
+        )
+    case class CreateResourceMetadata(
+            val authorizationKey: String,
+            val dataspaceId: String,
+            val resource: ResourceMetadataCreateWithId
+        )
+    case class UpdateResourceMetadata(
+            val authorizationKey: String,
+            val resourceId: String,
+            val format: Option[String],
+            val name: Option[String],
+            val description: Option[String]
+        )
+    case class UpdateResourceMetadataAndUrl(
+            val authorizationKey: String,
+            val resource: ResourceMetadataUpdateWithId
         )
 }
 
@@ -162,12 +188,12 @@ class ResourceActor
                     HttpResponse(
                         status  = StatusCodes.MovedPermanently,
                         headers = Location(resource.url) :: Nil,
-                        entity  = EmptyEntity
+                        entity  = HttpEntity.Empty
                     )
                 } getOrElse {
                     HttpResponse(
                         status  = StatusCodes.NotFound,
-                        entity  = EmptyEntity
+                        entity  = HttpEntity.Empty
                     )
                 }
 
@@ -208,6 +234,73 @@ class ResourceActor
                 iterator.start,
                 iterator.count
             ))
+
+        case UploadFile (authorizationKey, data, key) => {
+            val originalSender = sender
+
+            // TODO: Send to CKAN a form containing just file and key
+            val keyField = BodyPart(key)
+            val namedKeyField = keyField.copy(headers = `Content-Disposition`("form-data", Map("name" -> "key")) +: keyField.headers)
+            val seqWithKey = data.fields :+ namedKeyField
+            val dataWithKey = MultipartFormData(seqWithKey)
+
+            (IO(Http) ? (Post(CkanConfig.storage + "upload_handle", dataWithKey)~>addHeader("Authorization", authorizationKey)))
+            .mapTo[HttpResponse]
+            .map { response => originalSender ! response }
+        }
+        case CreateResourceMetadata(authorizationKey, dataspaceId, resource) => {
+            val originalSender = sender
+            (IO(Http) ? (Post(CkanConfig.namespace + "action/resource_create", resource)~>addHeader("Authorization", authorizationKey)))
+            .mapTo[HttpResponse]
+            .map { response => response.status match {
+                    case StatusCodes.OK =>
+                        // TODO: Try to read resource from (ugly) CKAN response, not from db
+                        val createdResource = CkanGodInterface.getResource(resource.id)
+                        originalSender ! HttpResponse(status = StatusCodes.Created,
+                                                      entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
+                                                                             createdResource.map { _.toJson.prettyPrint}.getOrElse {""}),
+                                                         headers = List(Location(s"${common.Config.namespace}resources/${resource.id}")))
+                    case _ => originalSender ! HttpResponse(response.status,
+                                                            entity = HttpEntity(ContentType(`text/html`, `UTF-8`),
+                                                                                "File uploaded to ${resource.url} \nError creating resource metadata!"))
+                    }
+            }
+        }
+        case UpdateResourceMetadata(authorizationKey, resourceId, format, name, description) => {
+            val originalSender = sender
+            CkanGodInterface.getResourceUrl(resourceId) match {
+                case None =>
+                    originalSender ! HttpResponse(StatusCodes.NotFound)
+                case Some(url) =>
+                    val resource = ResourceMetadataUpdateWithId(resourceId, name, description, format, url)
+                    (IO(Http) ? (Post(CkanConfig.namespace + "action/resource_update", resource)~>addHeader("Authorization", authorizationKey)))
+                    .mapTo[HttpResponse]
+                    .map { response => response.status match {
+                        case StatusCodes.OK =>
+                            // TODO: Try to read resource from (ugly) CKAN response, not from db
+                            val updatedResource = CkanGodInterface.getResource(resourceId)
+                            originalSender ! HttpResponse(status = StatusCodes.OK,
+                                                          entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
+                                                                                 updatedResource.map { _.toJson.prettyPrint}.getOrElse {""}))
+                        case _ => originalSender ! HttpResponse(response.status, "Error updating resource!")}
+                    }
+            }
+        }
+
+        case UpdateResourceMetadataAndUrl(authorizationKey, resource) => {
+            val originalSender = sender
+            (IO(Http) ? (Post(CkanConfig.namespace + "action/resource_update", resource)~>addHeader("Authorization", authorizationKey)))
+            .mapTo[HttpResponse]
+            .map { response => response.status match {
+                case StatusCodes.OK =>
+                    // TODO: Try to read resource from (ugly) CKAN response, not from db
+                    val updatedResource = CkanGodInterface.getResource(resource.id)
+                    originalSender ! HttpResponse(status = StatusCodes.OK,
+                                                  entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
+                                                                         updatedResource.map { _.toJson.prettyPrint}.getOrElse {""}))
+                case _ => originalSender ! HttpResponse(response.status, "Error updating resource!")}
+            }
+        }
 
         case response: HttpResponse =>
             println(s"Sending the response back to the requester $response")

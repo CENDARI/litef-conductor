@@ -25,10 +25,13 @@ import akka.pattern.ask
 import spray.can.Http
 import spray.http._
 import spray.httpx.RequestBuilding._
+import spray.httpx.SprayJsonSupport._
 import spray.json._
 import DefaultJsonProtocol._
 import MediaTypes._
 import HttpCharsets._
+import HttpMethods._
+import HttpHeaders._
 
 import common.Config.{ Ckan => CkanConfig }
 
@@ -36,10 +39,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import spray.http.HttpResponse
 import java.sql.Timestamp
 import ckan.{CkanGodInterface, DataspaceTable}
+import spray.httpx.SprayJsonSupport._
 import ckan.DataspaceJsonProtocol._
+import ckan.ResourceJsonProtocol._
+import CkanJsonProtocol._
 import scala.slick.lifted.{Column, Query}
 import spray.http.HttpHeaders.Location
 import ckan.CkanGodInterface.IteratorData
+import java.util.UUID
 
 object DataspaceActor {
     /// Gets the list of resources modified in the specified time range
@@ -61,6 +68,19 @@ object DataspaceActor {
     case class GetDataspaceMetadata(
             val authorizationKey: String,
             val id: String)
+
+    case class CreateDataspace(
+            val authorizationKey: String,
+            val dataspace: DataspaceCreateWithId
+          )
+
+    case class UpdateDataspace(
+            val authorizationKey: String,
+            val dataspace: DataspaceUpdateWithId)
+
+    case class CreatePackageInDataspace(
+            val authorizationKey: String,
+            val p: PackageCreateWithId)
 }
 
 class DataspaceActor
@@ -133,6 +153,49 @@ class DataspaceActor
                 )
             }
 
+        case CreateDataspace(authorizationKey, dataspace) => {
+            val originalSender = sender
+
+            (IO(Http) ? (Post(CkanConfig.namespace + "action/organization_create", dataspace)~>addHeader("Authorization", authorizationKey)))
+            .mapTo[HttpResponse]
+            .map { response => response.status match {
+                    case StatusCodes.OK =>
+                        // TODO: Try to read dataspace from (ugly) CKAN response, not from db
+                        val createdDataspace = CkanGodInterface.getDataspace(authorizationKey, dataspace.id)
+                        originalSender ! HttpResponse(status = StatusCodes.Created,
+                                                     entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
+                                                                         createdDataspace.map { _.toJson.prettyPrint}.getOrElse {""}),
+                                                     headers = List(Location(s"${common.Config.namespace}dataspaces/${dataspace.id}")))
+                    case StatusCodes.BadRequest => originalSender ! HttpResponse(status = response.status, entity = response.entity)
+                    case _ => originalSender ! HttpResponse(response.status, "Error creating dataspace!")
+                }
+            }
+        }
+
+        case UpdateDataspace(authorizationKey, dataspace) => {
+            val originalSender = sender
+
+            (IO(Http) ? (Post(CkanConfig.namespace + "action/organization_update", dataspace)~>addHeader("Authorization", authorizationKey)))
+            .mapTo[HttpResponse]
+            .map { response => response.status match {
+                    case StatusCodes.OK =>
+                        // TODO: Try to read dataspace from (ugly) CKAN response, not from db
+                        val updatedDataspace = CkanGodInterface.getDataspace(authorizationKey, dataspace.id)
+                        originalSender ! HttpResponse(status = StatusCodes.OK,
+                                                     entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
+                                                                         updatedDataspace.map { _.toJson.prettyPrint}.getOrElse {""}))
+                    case StatusCodes.BadRequest => originalSender ! HttpResponse(status = response.status, entity = response.entity)
+                    case _ => originalSender ! HttpResponse(response.status, "Error updating dataspace!")
+                }
+            }
+        }
+
+        case CreatePackageInDataspace(authorizationKey, p) => {
+            val originalSender = sender
+            (IO(Http) ? (Post(CkanConfig.namespace + "action/package_create", p)~>addHeader("Authorization", authorizationKey)))
+            .mapTo[HttpResponse]
+            .map { response => originalSender ! response}
+        }
 
         case response: HttpResponse =>
             println(s"Sending the response back to the requester $response")

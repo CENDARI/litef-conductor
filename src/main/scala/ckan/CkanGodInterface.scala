@@ -71,7 +71,13 @@ object CkanGodInterface {
         )
     }
 
-
+    def getResourceUrl(id: String): Option[String] = database withSession {implicit session: Session =>
+        ResourceTable.query
+            .where(_.id === id)
+            .map(_.url)
+            .list
+            .headOption
+    }
     def listDataspacesQuery(authorizationKey: String,
                             _since: Option[Timestamp], _until: Option[Timestamp],
                             start: Int, _count: Int
@@ -137,6 +143,13 @@ object CkanGodInterface {
         )
     }
 
+    def isPackageInDataspace(dataspaceId: String, packageId: String): Boolean = database withSession { implicit session: Session =>
+        PackageTable.query
+        .where(p => p.id === packageId && p.state === "active" && p.ownerOrg === dataspaceId)
+        .take(1)
+        .list
+        .size > 0
+    }
 
     def isDataspaceAccessibleToUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
         UserDataspaceRoleTable.query
@@ -147,6 +160,16 @@ object CkanGodInterface {
             .size > 0
     }
 
+    def isDataspaceModifiableByUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
+        UserDataspaceRoleTable.query
+            .where(ds =>
+                ds.dataspaceId === id &&
+                ds.userApiKey === authorizationKey &&
+                (ds.dataspaceRole === "editor" || ds.dataspaceRole === "admin"))
+            .take(1)
+            .list
+            .size > 0
+    }
 
     def isResourceAccessibleToUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
         DataspaceResourceTable.query

@@ -2,7 +2,7 @@ name := """conductor"""
 
 version := "1.0"
 
-scalaVersion := "2.10.2"
+scalaVersion := "2.10.3"
 
 resolvers += "spray repo" at "http://repo.spray.io"
 
@@ -10,8 +10,8 @@ resolvers += "spray nightlies" at "http://nightlies.spray.io"
 
 libraryDependencies ++= {
     object V {
-        val spray = "1.2-20130712"
-        val akka  = "2.2.0"
+        val spray = "1.2.1"
+        val akka  = "2.2.4"
     }
     Seq(
         "com.typesafe.akka"  %% "akka-actor"       % V.akka          withSources,
@@ -22,6 +22,8 @@ libraryDependencies ++= {
         "io.spray"            % "spray-routing"    % V.spray         withSources,
         "io.spray"            % "spray-testkit"    % V.spray         % "test",
         "io.spray"           %% "spray-json"       % "1.2.3"         withSources,
+        "io.spray"            % "spray-client"     % V.spray         withSources,
+        "io.spray"            % "spray-http"       % "1.2.0"         withSources,
         "org.specs2"         %% "specs2"           % "1.14"          % "test",
         "com.novocode"        % "junit-interface"  % "0.7"           % "test->default",
         "com.typesafe.slick" %% "slick"            % "2.0.0"         withSources,

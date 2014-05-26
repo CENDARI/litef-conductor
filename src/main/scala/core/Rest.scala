@@ -22,6 +22,7 @@ import akka.actor.Props
 import dataapi.{RoutedHttpService, ResourceService, DataspaceService}
 import spray.can.Http
 import spray.routing._
+import spray.http.HttpHeaders.RawHeader
 
 object Rest extends App
             with RouteConcatenation
@@ -31,9 +32,11 @@ object Rest extends App
 
     // Defining the routes for the service
     val routes =
-        pathPrefix("v1") {
-            new ResourceService().route ~
-            new DataspaceService().route
+        respondWithHeader(RawHeader("Access-Control-Allow-Origin", "*")) {
+            pathPrefix("v1") {
+                new ResourceService().route ~
+                new DataspaceService().route
+            }
         }
 
     // Creating the service
