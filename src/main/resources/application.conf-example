@@ -1,0 +1,48 @@
+logger.scala.slick.session=DEBUG
+
+litef {
+    namespace = "http://134.76.21.222:8081/v1/"
+}
+
+litef.ckan {
+    namespace    = "http://134.76.21.222/ckan/api/3/"
+    httpUsername = ""
+    httpPassword = ""
+    apiKey       = ""
+
+    urlStoragePrefix   = "http://134.76.21.222/ckan/storage/f/"
+    localStoragePrefix = "/var/lib/ckan/dafault/data/"
+
+    postgres {
+        url      = "jdbc:postgresql://localhost:5432/ckantest"
+        driver   = "org.postgresql.Driver"
+        username = ""
+        password = ""
+    }
+}
+
+litef.conductor {
+    fileSizeLimit = 10000
+
+    plugins = "conductor.plugins.DocumentIndexerPlugin,conductor.plugins.NamedEntityRecognitionPlugin"
+}
+
+akka {
+    log-dead-letters = 10
+    log-dead-letters-during-shutdown = on
+    loglevel = "INFO"
+}
+
+spray {
+  can.server {
+    request-timeout = 10s
+  }
+
+  routing {
+    file-chunking-threshold-size = 10k
+    file-chunking-chunk-size = 5k
+  }
+}
+
+logger.scala.slick=ERROR
+logger.scala.slick.session=ERROR
