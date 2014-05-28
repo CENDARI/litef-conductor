@@ -28,7 +28,7 @@ case class DataspaceUpdate (name: Option[String], title: Option[String], descrip
 case class DataspaceUpdateWithId (id: String, name: Option[String], title: Option[String], description: Option[String])
 case class ResourceMetadataCreateWithId (id: String, name: Option[String], description: Option[String], format: Option[String], package_id: String, url: String )
 case class ResourceMetadataUpdateWithId(id: String, name: Option[String], description: Option[String], format: Option[String], url: String)
-case class PackageCreateWithId(name: String, owner_org: String, title: String = "API Dataset")
+case class PackageCreateWithId(name: String, owner_org: String, title: String = "API Dataset", `private`: Boolean = true)
 
 object CkanJsonProtocol extends DefaultJsonProtocol {
     implicit val dataspaceCreateFormat = jsonFormat3(DataspaceCreate)
@@ -37,5 +37,5 @@ object CkanJsonProtocol extends DefaultJsonProtocol {
     implicit val dataspaceUpdateWithIdFormat = jsonFormat4(DataspaceUpdateWithId)
     implicit val resourceMetadataCreateWithIdFormat = jsonFormat6(ResourceMetadataCreateWithId)
     implicit val resourceMetadataUpdateWithIdFormat = jsonFormat5(ResourceMetadataUpdateWithId)
-    implicit val packageCreateWithIdFormat = jsonFormat3(PackageCreateWithId)
+    implicit val packageCreateWithIdFormat = jsonFormat4(PackageCreateWithId)
 }

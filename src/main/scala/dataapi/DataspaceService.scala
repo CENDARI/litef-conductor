@@ -200,7 +200,7 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
               /*
                * Adding new resource to dataspace
                */
-              (path(Segment / "resources" /) & entity(as[MultipartFormData])
+              (path(Segment / "resources") & entity(as[MultipartFormData])
                     & formFields('file.as[FormFile])
                     & formFields('format.as[Option[String]])
                     & formFields('name.as[Option[String]])
