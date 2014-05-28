@@ -39,7 +39,8 @@ case class Resource(
     size          : Option[Long]      = None,
     modified      : Option[Timestamp] = None,
     created       : Option[Timestamp] = None,
-    cacheUrl      : Option[String]    = None
+    cacheUrl      : Option[String]    = None,
+    packageId     : Option[String]    = None
 ) {
     lazy val isLocal = url.startsWith(Config.Ckan.urlStoragePrefix)
     lazy val localPath = url.replaceFirst(Config.Ckan.urlStoragePrefix, Config.Ckan.localStoragePrefix)
@@ -81,6 +82,7 @@ class ResourceTable(tag: Tag)
     val modified      = column[ Option[Timestamp] ]  ("modified") // greatest(last_modified, created), better than just coalesce
     val created       = column[ Option[Timestamp] ]  ("created")
     val cacheUrl      = column[ Option[String]    ]  ("cache_url")
+    val packageId     = column[ Option[String]    ]  ("package_id")
 
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
@@ -101,7 +103,8 @@ class ResourceTable(tag: Tag)
         size           ,
         modified       ,
         created        ,
-        cacheUrl
+        cacheUrl       ,
+        packageId
     ) <> (Resource.tupled, Resource.unapply)
 }
 
@@ -126,7 +129,8 @@ object ResourceJsonProtocol extends DefaultJsonProtocol {
                 "size"           -> JsNumber(rs.size     getOrElse 0L),
 
                 "created"        -> JsNumber(rs.created.map  { _.getTime } getOrElse 0L),
-                "modified"       -> JsNumber(rs.modified.map { _.getTime } getOrElse 0L)
+                "modified"       -> JsNumber(rs.modified.map { _.getTime } getOrElse 0L),
+                "set_id"         -> JsString(rs.packageId getOrElse "")
             )
 
         def read(value: JsValue) = {

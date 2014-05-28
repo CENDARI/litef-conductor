@@ -40,7 +40,8 @@ case class DataspaceResource(
     size          : Option[Long]      = None,
     modified      : Option[Timestamp] = None,
     created       : Option[Timestamp] = None,
-    cacheUrl      : Option[String]    = None
+    cacheUrl      : Option[String]    = None,
+    packageId     : Option[String]    = None
 )
 
 case class DataspaceResourcePair(
@@ -70,6 +71,7 @@ class DataspaceResourceTable(tag: Tag)
     val modified      = column[ Option[Timestamp] ]  ("modified") // greatest(last_modified, created), better than just coalesce
     val created       = column[ Option[Timestamp] ]  ("created")
     val cacheUrl      = column[ Option[String]    ]  ("cache_url")
+    val packageId     = column[ Option[String]    ]  ("package_id")
 
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
@@ -91,7 +93,8 @@ class DataspaceResourceTable(tag: Tag)
         size           ,
         modified       ,
         created        ,
-        cacheUrl
+        cacheUrl       ,
+        packageId
     ) <> (DataspaceResource.tupled, DataspaceResource.unapply)
 
     def justIds = (
@@ -120,7 +123,8 @@ object DataspaceResourceJsonProtocol extends DefaultJsonProtocol {
                 "size"           -> JsNumber(rs.size     getOrElse 0L),
 
                 "created"        -> JsNumber(rs.created map  { _.getTime } getOrElse 0L),
-                "modified"       -> JsNumber(rs.modified map { _.getTime } getOrElse 0L)
+                "modified"       -> JsNumber(rs.modified map { _.getTime } getOrElse 0L),
+                "set_id"         -> JsString(rs.packageId getOrElse "")
             )
 
         def read(value: JsValue) = {
