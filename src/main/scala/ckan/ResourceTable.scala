@@ -20,6 +20,7 @@ import slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp
 import spray.json._
 import common.Config
+import org.foment.utils.Filesystem._
 
 case class Resource(
     id            : String,
@@ -43,7 +44,11 @@ case class Resource(
     packageId     : Option[String]    = None
 ) {
     lazy val isLocal = url.startsWith(Config.Ckan.urlStoragePrefix)
+
     lazy val localPath = url.replaceFirst(Config.Ckan.urlStoragePrefix, Config.Ckan.localStoragePrefix)
+    lazy val localFile = new java.io.File(localPath)
+    lazy val localMimetype = mimetype getOrElse (new java.io.File(localPath).mimetype)
+
     lazy val isBelowSizeThreshold = {
         val fileSize = (new java.io.File(localPath)).length
         fileSize <= Config.Conductor.fileSizeLimit

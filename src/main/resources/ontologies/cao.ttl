@@ -1,0 +1,482 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix : <http://www.w3.org/2002/07/owl#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix iso639-1: <http://id.loc.gov/ontologies/iso639-1_Languages> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix cendarieag: <http://cendari.eu/ontologies/cendari/eag/> .
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+
+<http://cendari.eu/ontologies/cendari/eag>
+    a :Ontology ;
+    :imports <http://id.loc.gov/ontologies/iso639-1_Languages>, <http://www.w3.org/2004/02/skos/core>, <http://www.w3.org/2006/vcard/ns>, <http://www.w3.org/ns/org#>, <http://www.w3.org/ns/prov#>, <http://xmlns.com/foaf/0.1/> .
+
+cendarieag:Audience
+    a :Class .
+
+cendarieag:AudienceScheme
+    a :Class ;
+    rdfs:subClassOf skos:ConceptScheme .
+
+cendarieag:CendariRepositoryTypeScheme
+    a :Class ;
+    rdfs:subClassOf skos:ConceptScheme .
+
+cendarieag:CendariTopicScheme
+    a :Class ;
+    rdfs:subClassOf skos:ConceptScheme .
+
+cendarieag:ConditionalRepositoryAccess
+    a :Class ;
+    rdfs:subClassOf cendarieag:RepositoryAccess .
+
+cendarieag:Contact
+    a :Class .
+
+cendarieag:Contributor
+    a :Class ;
+    :equivalentClass [
+        a :Class ;
+        :unionOf (cendarieag:Person
+            <http://www.w3.org/ns/org#FormalOrganization>
+        )
+    ] .
+
+cendarieag:ConventionOrStandard
+    a :Class ;
+    rdfs:subClassOf skos:Concept .
+
+cendarieag:ConventionOrStandardScheme
+    a :Class ;
+    rdfs:subClassOf skos:ConceptScheme .
+
+cendarieag:Delete
+    a :Class ;
+    rdfs:subClassOf <http://www.w3.org/ns/prov#Replace> .
+
+cendarieag:FreeRepositoryAccess
+    a :Class ;
+    rdfs:subClassOf cendarieag:RepositoryAccess .
+
+cendarieag:HoldingsInformation
+    a :Class .
+
+cendarieag:ISO3166-1
+    a :Class .
+
+cendarieag:Institution
+    a :Class ;
+    rdfs:comment "Archive, Library, Museum etc. described with EAG", """TODO: RepositoryHoldings and descritions as a Type with sources
+Also check if necessary to add sources at top level of EAG """ ;
+    rdfs:subClassOf <http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing>, skos:Concept, <http://www.w3.org/ns/org#Organization> .
+
+cendarieag:InstitutionIdentity
+    a :Class .
+
+cendarieag:InternetAccessService
+    a :Class ;
+    rdfs:subClassOf cendarieag:RepositoryServices .
+
+cendarieag:LanguageDeclaration
+    a :Class .
+
+cendarieag:LibraryService
+    a :Class ;
+    rdfs:subClassOf cendarieag:RepositoryServices .
+
+cendarieag:MaintenanceAgency
+    a :Class ;
+    rdfs:subClassOf <http://www.w3.org/ns/org#Organization> .
+
+cendarieag:MaintenanceEvent
+    a :Class ;
+    rdfs:subClassOf <http://www.w3.org/ns/prov#Activity> ;
+    :equivalentClass [
+        a :Class ;
+        :unionOf (cendarieag:Delete
+            <http://www.w3.org/ns/prov#Create>
+            <http://www.w3.org/ns/prov#Modify>
+        )
+    ] .
+
+cendarieag:MaintenanceHistory
+    a :Class ;
+    rdfs:subClassOf <http://www.w3.org/ns/prov#Bundle> .
+
+cendarieag:MaintenanceStatus
+    a :Class .
+
+cendarieag:Note
+    a :DatatypeProperty ;
+    rdfs:range rdfs:Literal .
+
+cendarieag:Person
+    a :Class ;
+    rdfs:subClassOf skos:Concept ;
+    :equivalentClass <http://www.w3.org/ns/prov#Person>, foaf:Person .
+
+cendarieag:RecreationalService
+    a :Class ;
+    rdfs:subClassOf cendarieag:RepositoryServices .
+
+cendarieag:Repository
+    a :Class ;
+    rdfs:subClassOf <http://www.w3.org/ns/org#Site> .
+
+cendarieag:RepositoryAccess
+    a :Class ;
+    rdfs:subClassOf skos:Concept .
+
+cendarieag:RepositoryAddress
+    a :Class .
+
+cendarieag:RepositoryServices
+    a :Class ;
+    rdfs:subClassOf skos:Concept .
+
+cendarieag:RepositoryType
+    a :Class ;
+    rdfs:subClassOf skos:Concept .
+
+cendarieag:SearchRoomService
+    a :Class ;
+    rdfs:subClassOf cendarieag:RepositoryServices .
+
+cendarieag:SourceInformation
+    a :Class .
+
+cendarieag:TechnicalService
+    a :Class ;
+    rdfs:subClassOf cendarieag:RepositoryServices .
+
+cendarieag:Topic
+    a :Class ;
+    rdfs:subClassOf skos:Concept .
+
+cendarieag:URI
+    a :DatatypeProperty ;
+    rdfs:domain cendarieag:SourceInformation ;
+    rdfs:range xsd:anyURI .
+
+cendarieag:addressType
+    a :DatatypeProperty ;
+    rdfs:domain cendarieag:RepositoryAddress ;
+    rdfs:subPropertyOf vcard:note .
+
+cendarieag:authForm
+    a :AnnotationProperty ;
+    rdfs:domain cendarieag:InstitutionIdentity ;
+    rdfs:subPropertyOf skos:prefLabel .
+
+cendarieag:cndr_u6qoRw1R
+    a cendarieag:Institution, :NamedIndividual .
+
+cendarieag:familyName
+    a :DatatypeProperty ;
+    rdfs:domain cendarieag:Person ;
+    rdfs:subPropertyOf foaf:familyName .
+
+cendarieag:givenName
+    a :DatatypeProperty ;
+    rdfs:domain cendarieag:Person ;
+    rdfs:subPropertyOf foaf:givenname .
+
+cendarieag:hasAccessNotes
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Repository ;
+    rdfs:range [
+        a :Class ;
+        :unionOf (cendarieag:ConditionalRepositoryAccess
+            cendarieag:FreeRepositoryAccess
+        )
+    ] ;
+    rdfs:subPropertyOf vcard:hasRelated .
+
+cendarieag:hasAffiliation
+    a :ObjectProperty ;
+    rdfs:domain [
+        a :Class ;
+        :intersectionOf (cendarieag:Contributor
+            cendarieag:Person
+        )
+    ] ;
+    rdfs:range <http://www.w3.org/ns/org#FormalOrganization> .
+
+cendarieag:hasAgencyCode
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:MaintenanceAgency ;
+    rdfs:subPropertyOf vcard:hasUID .
+
+cendarieag:hasAgencyName
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:MaintenanceAgency ;
+    rdfs:subPropertyOf vcard:hasName .
+
+cendarieag:hasAgent
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:MaintenanceEvent ;
+    rdfs:range [
+        a :Class ;
+        :unionOf (cendarieag:Contributor
+            <http://www.w3.org/ns/org#FormalOrganization>
+        )
+    ] ;
+    rdfs:subPropertyOf <http://www.w3.org/ns/prov#agent> .
+
+cendarieag:hasAudience
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Institution ;
+    rdfs:range cendarieag:Audience ;
+    rdfs:subPropertyOf skos:related .
+
+cendarieag:hasAudiences
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:AudienceScheme ;
+    rdfs:range cendarieag:Audience ;
+    rdfs:subPropertyOf skos:hasTopConcept .
+
+cendarieag:hasContact
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:RepositoryServices ;
+    rdfs:range cendarieag:Contact .
+
+cendarieag:hasConventions
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:ConventionOrStandardScheme ;
+    rdfs:range cendarieag:ConventionOrStandard ;
+    rdfs:subPropertyOf skos:hasTopConcept .
+
+cendarieag:hasCountryCode
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:InstitutionIdentity ;
+    rdfs:range cendarieag:ISO3166-1 .
+
+cendarieag:hasFax
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:RepositoryAddress ;
+    rdfs:subPropertyOf vcard:hasTelephone .
+
+cendarieag:hasHoldingsInTopic
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Institution ;
+    rdfs:range cendarieag:Topic ;
+    rdfs:subPropertyOf skos:related .
+
+cendarieag:hasIdentity
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Institution ;
+    rdfs:range cendarieag:InstitutionIdentity ;
+    :propertyDisjointWith cendarieag:hasNonPreferredName, cendarieag:hasParallelName .
+
+cendarieag:hasLanguage
+    a :DatatypeProperty, :ObjectProperty ;
+    rdfs:domain cendarieag:LanguageDeclaration ;
+    rdfs:range <http://id.loc.gov/vocabulary/iso639-1/iso639-1_Language> .
+
+cendarieag:hasLanguageDeclaration
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Institution ;
+    rdfs:range cendarieag:LanguageDeclaration .
+
+cendarieag:hasMaintenanceAgency
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Institution ;
+    rdfs:range cendarieag:MaintenanceAgency .
+
+cendarieag:hasMaintenanceEvent
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:MaintenanceHistory ;
+    rdfs:range cendarieag:MaintenanceEvent ;
+    rdfs:subPropertyOf <http://www.w3.org/ns/prov#activity> .
+
+cendarieag:hasMaintenanceHistory
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Institution ;
+    rdfs:range cendarieag:MaintenanceHistory .
+
+cendarieag:hasMaintenanceStatus
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Institution ;
+    rdfs:range cendarieag:MaintenanceStatus .
+
+cendarieag:hasNonPreferredName
+    a :ObjectProperty ;
+    rdfs:subPropertyOf cendarieag:hasIdentity ;
+    :propertyDisjointWith cendarieag:hasParallelName .
+
+cendarieag:hasParallelName
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Institution ;
+    rdfs:subPropertyOf cendarieag:hasIdentity .
+
+cendarieag:hasPhone
+    a :ObjectProperty ;
+    rdfs:domain [
+        a :Class ;
+        :unionOf (cendarieag:Contact
+            cendarieag:RepositoryAddress
+        )
+    ] ;
+    rdfs:subPropertyOf vcard:hasTelephone .
+
+cendarieag:hasRecordId
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Institution ;
+    rdfs:subPropertyOf vcard:hasUID .
+
+cendarieag:hasRepository
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Institution ;
+    rdfs:range cendarieag:Repository ;
+    rdfs:subPropertyOf <http://www.w3.org/ns/org#hasSite> .
+
+cendarieag:hasRepositoryAddress
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Repository ;
+    rdfs:range cendarieag:RepositoryAddress ;
+    rdfs:subPropertyOf <http://www.w3.org/ns/org#siteAddress> .
+
+cendarieag:hasRepositoryTypes
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:CendariRepositoryTypeScheme ;
+    rdfs:range cendarieag:RepositoryType ;
+    rdfs:subPropertyOf skos:hasTopConcept .
+
+cendarieag:hasScript
+    a :DatatypeProperty ;
+    rdfs:comment "TODO: make it an object property from ISO 15924 List (create concept scheme for scripts in  ISO 15924 )" ;
+    rdfs:domain cendarieag:LanguageDeclaration ;
+    rdfs:range rdfs:Literal .
+
+cendarieag:hasService
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Repository ;
+    rdfs:range cendarieag:RepositoryServices .
+
+cendarieag:hasSources
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Institution ;
+    rdfs:range cendarieag:SourceInformation .
+
+cendarieag:hasTopics
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:CendariTopicScheme ;
+    rdfs:range cendarieag:Topic ;
+    rdfs:subPropertyOf skos:hasTopConcept .
+
+cendarieag:holdingsNote
+    a :DatatypeProperty ;
+    rdfs:domain cendarieag:SourceInformation ;
+    rdfs:subPropertyOf cendarieag:Note ;
+    :propertyDisjointWith cendarieag:repositoryHistoryNote, cendarieag:sourceNote .
+
+cendarieag:isPerson
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Contact ;
+    rdfs:range cendarieag:Person ;
+    rdfs:subPropertyOf vcard:hasRelated .
+
+cendarieag:isRepositoryOfType
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Repository ;
+    rdfs:range cendarieag:RepositoryType ;
+    rdfs:subPropertyOf skos:related .
+
+cendarieag:name
+    a :DatatypeProperty ;
+    rdfs:domain cendarieag:InstitutionIdentity ;
+    rdfs:subPropertyOf vcard:organization-name .
+
+cendarieag:notAfter
+    a :DatatypeProperty ;
+    rdfs:domain cendarieag:InstitutionIdentity ;
+    rdfs:range xsd:dateTime .
+
+cendarieag:notBefore
+    a :DatatypeProperty ;
+    rdfs:domain cendarieag:InstitutionIdentity ;
+    rdfs:range xsd:dateTime .
+
+cendarieag:occupation
+    a :DatatypeProperty ;
+    rdfs:domain cendarieag:Contact ;
+    rdfs:range xsd:string ;
+    rdfs:subPropertyOf vcard:role .
+
+cendarieag:parForm
+    a :AnnotationProperty ;
+    rdfs:domain cendarieag:InstitutionIdentity ;
+    rdfs:subPropertyOf skos:altLabel .
+
+cendarieag:repositoryHistoryNote
+    a :DatatypeProperty ;
+    rdfs:domain cendarieag:SourceInformation ;
+    rdfs:range rdfs:Literal ;
+    rdfs:subPropertyOf cendarieag:Note ;
+    :propertyDisjointWith cendarieag:sourceNote .
+
+cendarieag:repositoryId
+    a :DatatypeProperty ;
+    rdfs:domain cendarieag:InstitutionIdentity ;
+    rdfs:subPropertyOf <http://www.w3.org/ns/org#identifier> .
+
+cendarieag:restAccess
+    a :DatatypeProperty ;
+    rdfs:domain cendarieag:ConditionalRepositoryAccess ;
+    rdfs:subPropertyOf cendarieag:Note .
+
+cendarieag:sourceNote
+    a :DatatypeProperty ;
+    rdfs:domain cendarieag:SourceInformation ;
+    rdfs:range rdfs:Literal ;
+    rdfs:subPropertyOf cendarieag:Note .
+
+cendarieag:termsOfUseNote
+    a :DatatypeProperty ;
+    rdfs:domain cendarieag:RepositoryAccess ;
+    rdfs:subPropertyOf cendarieag:Note .
+
+cendarieag:termsOfUseURI
+    a :DatatypeProperty ;
+    rdfs:domain cendarieag:RepositoryAccess ;
+    rdfs:range xsd:anyURI .
+
+cendarieag:usesConventionsOrStandards
+    a :ObjectProperty ;
+    rdfs:domain cendarieag:Institution ;
+    rdfs:range cendarieag:ConventionOrStandard ;
+    rdfs:subPropertyOf skos:related .
+
+vcard:hasEmail
+    rdfs:domain [
+        a :Class ;
+        :unionOf (cendarieag:Contact
+            cendarieag:RepositoryAddress
+        )
+    ] .
+
+vcard:hasGeo
+    rdfs:domain cendarieag:RepositoryAddress .
+
+vcard:hasLogo
+    rdfs:domain [
+        a :Class ;
+        :unionOf (cendarieag:Institution
+            cendarieag:Repository
+        )
+    ] .
+
+vcard:hasPhoto
+    rdfs:domain cendarieag:Repository .
+
+vcard:hasURL
+    rdfs:domain cendarieag:RepositoryAddress .
+
+<http://www.w3.org/ns/org#memberOf>
+    rdfs:domain cendarieag:Person .
+
+<http://www.w3.org/ns/prov#generatedAtTime>
+    rdfs:domain cendarieag:MaintenanceEvent .
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Ivan Cukic <ivan at mi.sanu.ac.rs>
+ * Copyright (C) 2013 Ivan Cukic <ivan at mi.sanu.ac.rs>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -15,21 +15,20 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package conductor.plugins
+package indexer
 
-import conductor.AbstractPluginActor
-import concurrent.Future
-import concurrent.ExecutionContext.Implicits.global
+import com.hp.hpl.jena.rdf.model.Model
+import com.hp.hpl.jena.rdf.model.Resource
 
-class DocumentIndexerPlugin extends AbstractPluginActor("Litef Indexer")
-{
-
+final
+class PDFIndexer extends AbstractIndexer {
     override
-    def process(resource: ckan.Resource): Future[Unit] = Future {
-        // log.info(s"Pretending to process the resource $resource")
-        // Thread.sleep(1000)
-        indexer.IndexingManager index resource
+    def indexFile(
+        file: java.io.File,
+        mimetype: String,
+        rootResource: => Resource
+    ): Option[Double] = None
 
-    }
+    // if (mimetype != "text/x-plain") None
+    // else Some(IndexingResult(.5, null))
 }
-

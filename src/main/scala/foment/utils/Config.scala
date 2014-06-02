@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Ivan Cukic <ivan at mi.sanu.ac.rs>
+ * Copyright (C) 2013 Ivan Cukic <ivan at mi.sanu.ac.rs>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -15,21 +15,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package conductor.plugins
+package org.foment.utils
 
-import conductor.AbstractPluginActor
-import concurrent.Future
-import concurrent.ExecutionContext.Implicits.global
+import java.io.{ File, FileInputStream }
 
-class DocumentIndexerPlugin extends AbstractPluginActor("Litef Indexer")
-{
+class Config(file: File) {
 
-    override
-    def process(resource: ckan.Resource): Future[Unit] = Future {
-        // log.info(s"Pretending to process the resource $resource")
-        // Thread.sleep(1000)
-        indexer.IndexingManager index resource
+    private
+    val properties = new java.util.Properties
 
-    }
+    properties.load(new FileInputStream(file))
+
+    def getString(key: String): String =
+        properties.get(key).asInstanceOf[String]
+
 }
-

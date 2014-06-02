@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Ivan Cukic <ivan at mi.sanu.ac.rs>
+ * Copyright (C) 2013 Ivan Cukic <ivan at mi.sanu.ac.rs>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -15,21 +15,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package conductor.plugins
+package org.foment.javelin.store
 
-import conductor.AbstractPluginActor
-import concurrent.Future
-import concurrent.ExecutionContext.Implicits.global
+import com.hp.hpl.jena.rdf.model.Model
 
-class DocumentIndexerPlugin extends AbstractPluginActor("Litef Indexer")
-{
-
-    override
-    def process(resource: ckan.Resource): Future[Unit] = Future {
-        // log.info(s"Pretending to process the resource $resource")
-        // Thread.sleep(1000)
-        indexer.IndexingManager index resource
-
-    }
-}
-
+case class Ontology(
+    label: String,
+    comment: String,
+    namespace: String,
+    abbreviation: String,
+    model: Model
+)
