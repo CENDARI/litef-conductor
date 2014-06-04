@@ -16,11 +16,11 @@
 # Ontology
 ontology.label        = Cendari Archival Ontology
 ontology.comment      = Ontology for mapping EAG files
-ontology.namespace    = http://cendari.eu/ontologies/cendari/eag/
-ontology.abbreviation = cendarieag
+ontology.namespace    = http://cendari.eu/ontologies/cendari/cao/
+ontology.abbreviation = cao
 
 # Source
-source.filename = cendarieag.ttl
+source.filename = cao.ttl
 source.format   = TURTLE
 
 # Code

@@ -2,481 +2,774 @@
 @prefix : <http://www.w3.org/2002/07/owl#> .
 @prefix dc: <http://purl.org/dc/elements/1.1/> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix cao: <http://cendari.eu/ontologies/cendari/cao/> .
 @prefix iso639-1: <http://id.loc.gov/ontologies/iso639-1_Languages> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
-@prefix cendarieag: <http://cendari.eu/ontologies/cendari/eag/> .
 @prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
 
-<http://cendari.eu/ontologies/cendari/eag>
+<http://cendari.eu/ontologies/cendari/cao>
     a :Ontology ;
     :imports <http://id.loc.gov/ontologies/iso639-1_Languages>, <http://www.w3.org/2004/02/skos/core>, <http://www.w3.org/2006/vcard/ns>, <http://www.w3.org/ns/org#>, <http://www.w3.org/ns/prov#>, <http://xmlns.com/foaf/0.1/> .
 
-cendarieag:Audience
-    a :Class .
-
-cendarieag:AudienceScheme
+cao:Audience
     a :Class ;
-    rdfs:subClassOf skos:ConceptScheme .
+    rdfs:comment """This is a class which contains possiible values for the types of usage of the archival  description. 
+.
+For archival institution descriptions, originally, allowed are \"internal\" or \"external\" as individuals, to point to the internal/external use of the Institutional description.
+By default \"external\" should be used.
 
-cendarieag:CendariRepositoryTypeScheme
+Maps to eag@audience attribute of the top level eag element from Cendari@EAG profile""" ;
+    rdfs:label "Audience" .
+
+cao:CendariRepositoryTypeScheme
     a :Class ;
-    rdfs:subClassOf skos:ConceptScheme .
+    rdfs:comment """Initial concepts here are same in both Cendari@eag and EAG APEX 2012:
 
-cendarieag:CendariTopicScheme
+-National archives
+-Regional archives
+-County/local authority archives
+-Municipal archives
+-Specialised governmental archives
+-Private persons and family archives
+-Church and religious archives
+-Business archives
+-University and research archives
+-Media archives
+-Archives of political parties, of popular/labour movement and other non-governmental organisations, associations, agencies and foundations
+-Specialised non-governmental archives and archives of other cultural (heritage) institutions.
+
+
+Corresponds to the element archguide/identity/repositoryType.
+CAO relates it as a property of the Repository and not as a property of the top level Institution described by EAG document.
+
+""" ;
+    rdfs:label "Repository Types" ;
+    rdfs:subClassOf skos:ConceptScheme ;
+    prov:editorialNote "Develop Repository Types Scheme" .
+
+cao:CendariTopicScheme
     a :Class ;
-    rdfs:subClassOf skos:ConceptScheme .
+    rdfs:comment """Cendari@EAG recommends only WW1 or Medieval. 
+By further development of the SKOS scheme however, topics can be further specialized.""" ;
+    rdfs:label "Topics" ;
+    rdfs:subClassOf skos:ConceptScheme ;
+    prov:editorialNote "TODO: develop Topic concept scheme" .
 
-cendarieag:ConditionalRepositoryAccess
+cao:ConditionalRepositoryAccess
     a :Class ;
-    rdfs:subClassOf cendarieag:RepositoryAccess .
+    rdfs:comment "There are restrictive conditions for use and access to the repository material." ;
+    rdfs:label "Conditional access" ;
+    rdfs:subClassOf cao:RepositoryAccess .
 
-cendarieag:Contact
-    a :Class .
-
-cendarieag:Contributor
+cao:Contact
     a :Class ;
-    :equivalentClass [
-        a :Class ;
-        :unionOf (cendarieag:Person
-            <http://www.w3.org/ns/org#FormalOrganization>
-        )
-    ] .
+    rdfs:comment """Contact information for a repository service of an archival institution.
 
-cendarieag:ConventionOrStandard
+Some services have  partial contact information such as email. phone. ocuppation. Some services additionally expose real persons behind. Thus a contact may have related a Person (with its own properties).
+See also cao:isPerson property.
+
+Corresponds to /services/searchroom/contact element of CENDARI@EAG profile. Added to all services (not only search room)
+""" ;
+    rdfs:label "Contact" ;
+    prov:editorialNote """NB: I think here we should also have an address, but that is obviously somewhere else in the institution description.
+Additional proposal here is to have one Contact class with all necessary infos... TBD:..""" .
+
+cao:Contributor
     a :Class ;
+    rdfs:comment """Cendari contributor may be either a org:FormalOrganization or a foaf:Person.
+In case of a foaf:Person, there is a posisbility to specify the affiliation (via cao:hasAffiliation org:FormalOrganization )""" ;
+    rdfs:label "Contributor" ;
+    :disjointUnionOf (<http://www.w3.org/ns/org#FormalOrganization>
+        foaf:Person
+    ) .
+
+cao:ConventionOrStandard
+    a :Class ;
+    rdfs:comment """Convention declaration. Represents a concept, a convention used in description of the institution. 
+
+Corresponds to /control/conventionDeclaration
+
+in CAO it is used as a concept belonging to the Concept schema of conventions (see cao:ConventionOrStandardScheme ) """ ;
+    rdfs:label "Convention" ;
     rdfs:subClassOf skos:Concept .
 
-cendarieag:ConventionOrStandardScheme
+cao:ConventionOrStandardScheme
     a :Class ;
+    rdfs:comment """Conventions and Standards concept scheme.
+
+Used in cao:hasConventions to list all conventions and standards used within the EAG Document""" ;
+    rdfs:label "Conventions" ;
     rdfs:subClassOf skos:ConceptScheme .
 
-cendarieag:Delete
+cao:Delete
     a :Class ;
-    rdfs:subClassOf <http://www.w3.org/ns/prov#Replace> .
+    rdfs:comment """Type of activity which expresses \"soft\" deletion of an entity to which it is associated. In CENDARI case, it is part of the institution maintenance history, thus expresses deletion of the institutional description.
 
-cendarieag:FreeRepositoryAccess
+In real terms, this would mean the institutional description record is withdrawn from usage and not physically deleted. """ ;
+    rdfs:label "Delete" ;
+    rdfs:subClassOf prov:Replace .
+
+cao:External
+    a cao:Audience, :NamedIndividual .
+
+cao:FreeRepositoryAccess
     a :Class ;
-    rdfs:subClassOf cendarieag:RepositoryAccess .
+    rdfs:comment "Access and use of the repository material is free, and there are no restrictive conditions." ;
+    rdfs:label "Free" ;
+    rdfs:subClassOf cao:RepositoryAccess .
 
-cendarieag:HoldingsInformation
-    a :Class .
-
-cendarieag:ISO3166-1
-    a :Class .
-
-cendarieag:Institution
+cao:ISO3166-1
     a :Class ;
-    rdfs:comment "Archive, Library, Museum etc. described with EAG", """TODO: RepositoryHoldings and descritions as a Type with sources
-Also check if necessary to add sources at top level of EAG """ ;
+    rdfs:comment """Individuals of this class are country codes corresponding to ISO 3166-1-alpha-2 code. 
+""" ;
+    rdfs:label "Country code" ;
+    prov:editorialNote """NB
+
+Class needs addition of properties country name, country code and eventually some  geo information. 
+
+Need manual generation of individuals, as there is no officially published RDF vocabulary.""" .
+
+cao:Institution
+    a :Class ;
+    rdfs:comment "", "Archive, Library, Museum etc. described with EAG" ;
+    rdfs:label "Institution" ;
     rdfs:subClassOf <http://www.w3.org/2003/01/geo/wgs84_pos#SpatialThing>, skos:Concept, <http://www.w3.org/ns/org#Organization> .
 
-cendarieag:InstitutionIdentity
-    a :Class .
-
-cendarieag:InternetAccessService
+cao:InstitutionIdentity
     a :Class ;
-    rdfs:subClassOf cendarieag:RepositoryServices .
+    rdfs:comment """Identyfing information about an institution holds properties such as identifier, country code, former names of the institution etc.. 
 
-cendarieag:LanguageDeclaration
-    a :Class .
+Corresponds to archgude/identity element of the CENDARI@EAG profile.
 
-cendarieag:LibraryService
+""" ;
+    rdfs:label "Identity" ;
+    prov:editorialNote """EAG understands several things under repository and this is where the confusion starts. 
+
+While /eag/archguide/Identity provides some metadata imho the institution, it also provides an attribute named \"repositorId\" which according the EAG describes the \"repository\" -> but imho this should be the id of the institution - it is a confusing name. 
+CAO does not change the name, but must clearly understand the difference. 
+
+
+""" .
+
+cao:Internal
+    a cao:Audience, :NamedIndividual .
+
+cao:InternetAccessService
     a :Class ;
-    rdfs:subClassOf cendarieag:RepositoryServices .
+    rdfs:label "Internet Access" ;
+    rdfs:subClassOf cao:RepositoryServices .
 
-cendarieag:MaintenanceAgency
+cao:LanguageDeclaration
     a :Class ;
+    rdfs:comment """
+Contains information about the Languages and scripts used in the description of an archival institution.
+
+Corresponds to /control/languagedeclarations/languagedeclaration element of CENDARI@EAG profile.""" ;
+    rdfs:label "Language Declaration" ;
+    prov:editorialNote """Languages already reference existing ISO vocabulary. Same should be done for Scripts (i.e. create a vocabulary).
+For start  Latin, Cyrilic to be defined as individuals.""" .
+
+cao:LibraryService
+    a :Class ;
+    rdfs:label "Library" ;
+    rdfs:subClassOf cao:RepositoryServices .
+
+cao:MaintenanceAgency
+    a :Class ;
+    rdfs:comment """Maintenance agency responsible for the maintenance of the EAG Document.
+In case of data maintained by Cendari, default agency is Cendari and agencyCode is EU-Cendari.
+
+Alternatively, APEX may be a maintenance agency.
+
+corresponds to /control/maintenanceAgency part of Cendari@EAG and APEX EAG 2012""" ;
+    rdfs:label "Maintenance Agency" ;
     rdfs:subClassOf <http://www.w3.org/ns/org#Organization> .
 
-cendarieag:MaintenanceEvent
+cao:MaintenanceHistory
     a :Class ;
-    rdfs:subClassOf <http://www.w3.org/ns/prov#Activity> ;
-    :equivalentClass [
+    rdfs:comment """Records maintenance information about the Institutional description such as who created the description, when it was modified, when it was published or deleted.
+
+Normally, should be taken as part of the repository internal information.
+
+Corresponds to /control/maintenanceHistory in Cendari@EAG and APEX EAG 2012 """ ;
+    rdfs:label "Maintenance History" ;
+    rdfs:subClassOf prov:Bundle .
+
+cao:Note
+    a :DatatypeProperty ;
+    rdfs:comment "Data property representing various notes associated to the institution and repository descriptions e.g. cao:holdingsNote, cao:repositoryHistoryNote, cao:sourceNote etc." ;
+    rdfs:label "Note" ;
+    rdfs:range rdfs:Literal .
+
+cao:RecreationalService
+    a :Class ;
+    rdfs:label "Recreation" ;
+    rdfs:subClassOf cao:RepositoryServices .
+
+cao:Repository
+    a :Class ;
+    rdfs:comment """A Repository of an archival institution
+An institution may have more than one repositories which offer data services. An example for an institution is the NKP, and the repositories within are different archives represented  by Manuscriptorium. 
+
+""" ;
+    rdfs:label "Repository" ;
+    rdfs:subClassOf <http://www.w3.org/ns/org#Site> ;
+    prov:editorialNote """RepositoryType 
+both Cendari@EAG and APEX EAG2012 relate the repository type information on repository institution level.  This may be due to the XML-based structure.
+
+Within CAO Repository type is added as a property of the repository itself - and one can associate more values for a repository. Thus the information about the types of repository of the institution is available by querying for institution, but as well additional level of granularity is provided. 
+
+APEX EAG2012
+Cendari repository information is not as detailed as APEX EAG 2012 information about the repository. 
+If needed, that can be extended.""" .
+
+cao:RepositoryAccess
+    a :Class ;
+    rdfs:comment """Type of access to the material/data in the repository. 
+
+EAG@CENDARI thus CAO allows for two types (modelled as subclasses) of repository access:
+
+ConditionalRepositoryAccess
+FreeRepositoryAccess
+
+Its properties allow to additionally describe the terms of use or  potentially provide URI to the document containing the terms of use.
+
+hasAccess notes property of the Repository defines which kind of repository access a repository offers.
+
+This class practically corresponds to the element /repository/access of the Cendari@EAG and APEX EAG 2012""" ;
+    rdfs:label "Access Type" ;
+    rdfs:subClassOf skos:Concept ;
+    prov:editorialNote """NB:
+The type of access is at the moment provided at a repository level. Potentially, repository access can be actually become a property of  repository holdings.""", "RepositoryAccess is " .
+
+cao:RepositoryAddress
+    a :Class ;
+    rdfs:comment """Repository address of a repository of an archival institution.
+This is subclass of vcard:Address, but it additionally includes some more properties which are not in vcard:Address definition. """ ;
+    rdfs:label "Address" ;
+    rdfs:subClassOf vcard:Address ;
+    prov:editorialNote """Corresponds to 
+/archguide/desc/repositories/repository/location elemnt in CENDARI@EAG profile""" .
+
+cao:RepositoryServices
+    a :Class ;
+    rdfs:comment """Types of services a repository offers. There can be different types of services, each with own contact information. They are modelled as subclasses of cao:RepositoryServices.
+
+Corresponds to /repository/services/<servicetype> elements of APEX EAG 2012
+
+
+""" ;
+    rdfs:label "Repository Services" ;
+    rdfs:subClassOf skos:Concept ;
+    prov:editorialNote """NB: 
+
+Cendari@eag assumes only the SearchRoomService, while APEX EAG 2012 offers a list of more services. The latter is considered for  CAO ontology.""" .
+
+cao:RepositoryType
+    a :Class ;
+    rdfs:comment """The type of repository. CAO models it as a skos:Concept, taken from the cao:CendariRepositoryTypesScheme concept scheme.
+
+Enumerated list is as follows (same in both Cendari@eag and EAG APEX 2012):
+
+-National archives
+-Regional archives
+-County/local authority archives
+-Municipal archives
+-Specialised governmental archives
+-Private persons and family archives
+-Church and religious archives
+-Business archives
+-University and research archives
+-Media archives
+-Archives of political parties, of popular/labour movement and other non-governmental organisations, associations, agencies and foundations
+-Specialised non-governmental archives and archives of other cultural (heritage) institutions.
+
+Corresponds to the element archguide/identity/repositoryType, but is related as a property of the Repository and not as a property of the top level Institution described by EAG document.""" ;
+    rdfs:label "Repository Type" ;
+    rdfs:subClassOf skos:Concept ;
+    prov:editorialNote """ToBeDiscussed: 
+There is a small confusion imho with the  EAG (at both Cendari&APEX) .
+On the InstitutionIdentity, there is a claim it is describes the repository identity and even has a repositorId number. In fact, this repositorId number is an identifier for the Institution.
+
+identity/repositoryType thus in EAG imho models the type of the institution and not the type of the repository. 
+
+Further, in /archguide/desc a user can describe several repositories by same institution, but does not precise the repositoryType at more granular level.
+
+CAO models this situation in a slightly different manner:
+repositoryType is property of cao:Repository and not of cao:Institution. Each cao:Repository may be related to several instances of cao:RepositoryType via \"cao:isRepositoryOfType\". 
+""" .
+
+cao:SearchRoomService
+    a :Class ;
+    rdfs:comment """Provides a description of the search room and facilities available.
+
+""" ;
+    rdfs:label "Search room" ;
+    rdfs:subClassOf cao:RepositoryServices .
+
+cao:SourceInformation
+    a :Class ;
+    rdfs:comment """Represents the sources from where archival institution description is provided. 
+
+EAG and EAG@CENDARI assume that information about the archival institution may be created without source information. 
+This ontology makes it more restrictire, thus a source information must always exist.
+
+For a particular source, users may then create repository history notes (repositorhist) or holdings descriptions.""" ;
+    rdfs:label "Source" ;
+    prov:editorialNote """NB:
+Corresponds to several elements in EAG profile:
+a) /control/sources from CENDARI@EAG profile
+b)/archguide/desc/repositorhist
+c)/archguide/desc/holdings
+
+""" .
+
+cao:TechnicalService
+    a :Class ;
+    rdfs:label "Technical" ;
+    rdfs:subClassOf cao:RepositoryServices .
+
+cao:Topic
+    a :Class ;
+    rdfs:comment """Topics covered by the Institution. It is a concept organized within  cao:CendariTopicScheme.
+
+Cendari@EAG recommends only WW1 or Medieval. 
+By further development of the SKOS scheme however, topics can be further specialized.""" ;
+    rdfs:label "Topic" ;
+    rdfs:subClassOf skos:Concept ;
+    prov:editorialNote "TODO: develop Topics concept scheme" .
+
+cao:URI
+    a :DatatypeProperty ;
+    rdfs:comment """A URI to the resource from where repository history or holdings descriptions are created.
+
+Corresponds to /control/sources/source@href and /control/sources/source@id
+
+
+In case there is not online representation of the resource, URI has to be provided as well and manually defined by the user. 
+
+For example,  in this case it may be of a format such as :
+
+<scheme>:<some identifying string>
+
+where the scheme is practically a (cendari internal) URI scheme such as:
+
+caoid  (Cendari Archival Ontology Identifiers)
+
+
+
+
+
+""" ;
+    rdfs:domain cao:SourceInformation ;
+    rdfs:label "URI" ;
+    rdfs:range xsd:anyURI .
+
+cao:addressType
+    a :DatatypeProperty ;
+    rdfs:comment """Type of address recorded as a repository address. Permits to specify what type of address is recorded (postal, visitors, etc.). 
+
+Corresponds to /desc/repositories/repository/location@type attribute 
+""" ;
+    rdfs:domain cao:RepositoryAddress ;
+    rdfs:label "address type" ;
+    rdfs:range rdfs:Literal ;
+    rdfs:subPropertyOf vcard:note .
+
+cao:authForm
+    a :AnnotationProperty ;
+    rdfs:domain cao:InstitutionIdentity ;
+    rdfs:subPropertyOf skos:prefLabel .
+
+cao:hasAccessNotes
+    a :ObjectProperty ;
+    rdfs:domain cao:Repository ;
+    rdfs:label "access notes" ;
+    rdfs:range cao:RepositoryAccess ;
+    rdfs:subPropertyOf vcard:hasRelated .
+
+cao:hasAffiliation
+    a :ObjectProperty ;
+    rdfs:domain [
         a :Class ;
-        :unionOf (cendarieag:Delete
-            <http://www.w3.org/ns/prov#Create>
-            <http://www.w3.org/ns/prov#Modify>
+        :intersectionOf (cao:Contributor
+            foaf:Person
+        )
+    ] ;
+    rdfs:label "affiliation" ;
+    rdfs:range <http://www.w3.org/ns/org#FormalOrganization> .
+
+cao:hasAgencyCode
+    a :ObjectProperty ;
+    rdfs:domain cao:MaintenanceAgency ;
+    rdfs:label "agency code" ;
+    rdfs:subPropertyOf vcard:hasUID .
+
+cao:hasAgencyName
+    a :ObjectProperty ;
+    rdfs:domain cao:MaintenanceAgency ;
+    rdfs:label "name" ;
+    rdfs:subPropertyOf vcard:hasName .
+
+cao:hasAgent
+    a :ObjectProperty ;
+    rdfs:domain prov:Activity ;
+    rdfs:label "agent" ;
+    rdfs:range cao:Contributor ;
+    rdfs:subPropertyOf prov:agent .
+
+cao:hasAudience
+    a :ObjectProperty ;
+    rdfs:domain cao:Institution ;
+    rdfs:label "audience" ;
+    rdfs:range cao:Audience ;
+    rdfs:subPropertyOf skos:related .
+
+cao:hasContact
+    a :ObjectProperty ;
+    rdfs:domain cao:RepositoryServices ;
+    rdfs:label "contact" ;
+    rdfs:range cao:Contact .
+
+cao:hasConventions
+    a :ObjectProperty ;
+    rdfs:domain cao:ConventionOrStandardScheme ;
+    rdfs:label "convention" ;
+    rdfs:range cao:ConventionOrStandard ;
+    rdfs:subPropertyOf skos:hasTopConcept .
+
+cao:hasCountryCode
+    a :ObjectProperty ;
+    rdfs:domain cao:InstitutionIdentity ;
+    rdfs:label "code" ;
+    rdfs:range cao:ISO3166-1 .
+
+cao:hasFax
+    a :ObjectProperty ;
+    rdfs:domain cao:RepositoryAddress ;
+    rdfs:subPropertyOf vcard:hasTelephone .
+
+cao:hasHoldingsInTopic
+    a :ObjectProperty ;
+    rdfs:domain [
+        a :Class ;
+        :unionOf (cao:Institution
+            cao:Repository
+        )
+    ] ;
+    rdfs:label "holdings" ;
+    rdfs:range cao:Topic ;
+    rdfs:subPropertyOf skos:related .
+
+cao:hasIdentity
+    a :ObjectProperty ;
+    rdfs:comment "see cao:InstitutionIdentity" ;
+    rdfs:domain cao:Institution ;
+    rdfs:label "identity" ;
+    rdfs:range cao:InstitutionIdentity ;
+    :propertyDisjointWith cao:hasNonPreferredName, cao:hasParallelName .
+
+cao:hasLanguage
+    a :ObjectProperty ;
+    rdfs:comment "Ranges to values from ISO-639-1 language vocabulaty." ;
+    rdfs:domain cao:LanguageDeclaration ;
+    rdfs:label "language" ;
+    rdfs:range <http://id.loc.gov/vocabulary/iso639-1/iso639-1_Language> .
+
+cao:hasLanguageDeclaration
+    a :ObjectProperty ;
+    rdfs:domain cao:Institution ;
+    rdfs:label "declaration" ;
+    rdfs:range cao:LanguageDeclaration .
+
+cao:hasMaintenanceAgency
+    a :ObjectProperty ;
+    rdfs:domain cao:Institution ;
+    rdfs:label "agency" ;
+    rdfs:range cao:MaintenanceAgency .
+
+cao:hasMaintenanceEvent
+    a :ObjectProperty ;
+    rdfs:comment """property relating the maintenance history of the institution with the maintenance activity (prov:Activity)
+""" ;
+    rdfs:domain cao:MaintenanceHistory ;
+    rdfs:label "event" ;
+    rdfs:range prov:Activity ;
+    rdfs:subPropertyOf prov:activity .
+
+cao:hasMaintenanceHistory
+    a :ObjectProperty ;
+    rdfs:domain cao:Institution ;
+    rdfs:label "history" ;
+    rdfs:range cao:MaintenanceHistory .
+
+cao:hasMaintenanceStatus
+    a :DatatypeProperty ;
+    rdfs:comment """corresponds to /eag/control/maintenancestatus
+
+Maintenance status of the institutional description. Possible values:
+new, cancelled, deleted, deletedReplaced, deletedMerged, deletedSplit, derived or revised""" ;
+    rdfs:domain cao:Institution ;
+    rdfs:label "Status" ;
+    rdfs:range rdfs:Literal, [
+        a rdfs:Datatype ;
+        :oneOf ("cancelled"
+            "deleted"
+            "deletedMerged"
+            "deletedReplaced"
+            "deletedSplit"
+            "derived"
+            "new"
+            "revised"
         )
     ] .
 
-cendarieag:MaintenanceHistory
-    a :Class ;
-    rdfs:subClassOf <http://www.w3.org/ns/prov#Bundle> .
-
-cendarieag:MaintenanceStatus
-    a :Class .
-
-cendarieag:Note
-    a :DatatypeProperty ;
-    rdfs:range rdfs:Literal .
-
-cendarieag:Person
-    a :Class ;
-    rdfs:subClassOf skos:Concept ;
-    :equivalentClass <http://www.w3.org/ns/prov#Person>, foaf:Person .
-
-cendarieag:RecreationalService
-    a :Class ;
-    rdfs:subClassOf cendarieag:RepositoryServices .
-
-cendarieag:Repository
-    a :Class ;
-    rdfs:subClassOf <http://www.w3.org/ns/org#Site> .
-
-cendarieag:RepositoryAccess
-    a :Class ;
-    rdfs:subClassOf skos:Concept .
-
-cendarieag:RepositoryAddress
-    a :Class .
-
-cendarieag:RepositoryServices
-    a :Class ;
-    rdfs:subClassOf skos:Concept .
-
-cendarieag:RepositoryType
-    a :Class ;
-    rdfs:subClassOf skos:Concept .
-
-cendarieag:SearchRoomService
-    a :Class ;
-    rdfs:subClassOf cendarieag:RepositoryServices .
-
-cendarieag:SourceInformation
-    a :Class .
-
-cendarieag:TechnicalService
-    a :Class ;
-    rdfs:subClassOf cendarieag:RepositoryServices .
-
-cendarieag:Topic
-    a :Class ;
-    rdfs:subClassOf skos:Concept .
-
-cendarieag:URI
-    a :DatatypeProperty ;
-    rdfs:domain cendarieag:SourceInformation ;
-    rdfs:range xsd:anyURI .
-
-cendarieag:addressType
-    a :DatatypeProperty ;
-    rdfs:domain cendarieag:RepositoryAddress ;
-    rdfs:subPropertyOf vcard:note .
-
-cendarieag:authForm
-    a :AnnotationProperty ;
-    rdfs:domain cendarieag:InstitutionIdentity ;
-    rdfs:subPropertyOf skos:prefLabel .
-
-cendarieag:cndr_u6qoRw1R
-    a cendarieag:Institution, :NamedIndividual .
-
-cendarieag:familyName
-    a :DatatypeProperty ;
-    rdfs:domain cendarieag:Person ;
-    rdfs:subPropertyOf foaf:familyName .
-
-cendarieag:givenName
-    a :DatatypeProperty ;
-    rdfs:domain cendarieag:Person ;
-    rdfs:subPropertyOf foaf:givenname .
-
-cendarieag:hasAccessNotes
+cao:hasNonPreferredName
     a :ObjectProperty ;
-    rdfs:domain cendarieag:Repository ;
-    rdfs:range [
-        a :Class ;
-        :unionOf (cendarieag:ConditionalRepositoryAccess
-            cendarieag:FreeRepositoryAccess
-        )
-    ] ;
-    rdfs:subPropertyOf vcard:hasRelated .
+    rdfs:comment "see cao:InstitutionIdentity" ;
+    rdfs:domain cao:Institution ;
+    rdfs:label "non preferred name" ;
+    rdfs:range cao:InstitutionIdentity ;
+    rdfs:subPropertyOf cao:hasIdentity ;
+    :propertyDisjointWith cao:hasParallelName .
 
-cendarieag:hasAffiliation
+cao:hasParallelName
+    a :ObjectProperty ;
+    rdfs:comment "see cao:InstitutionIdentity" ;
+    rdfs:domain cao:Institution ;
+    rdfs:label "parallel name" ;
+    rdfs:range cao:InstitutionIdentity ;
+    rdfs:subPropertyOf cao:hasIdentity .
+
+cao:hasPhone
     a :ObjectProperty ;
     rdfs:domain [
         a :Class ;
-        :intersectionOf (cendarieag:Contributor
-            cendarieag:Person
-        )
-    ] ;
-    rdfs:range <http://www.w3.org/ns/org#FormalOrganization> .
-
-cendarieag:hasAgencyCode
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:MaintenanceAgency ;
-    rdfs:subPropertyOf vcard:hasUID .
-
-cendarieag:hasAgencyName
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:MaintenanceAgency ;
-    rdfs:subPropertyOf vcard:hasName .
-
-cendarieag:hasAgent
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:MaintenanceEvent ;
-    rdfs:range [
-        a :Class ;
-        :unionOf (cendarieag:Contributor
-            <http://www.w3.org/ns/org#FormalOrganization>
-        )
-    ] ;
-    rdfs:subPropertyOf <http://www.w3.org/ns/prov#agent> .
-
-cendarieag:hasAudience
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:Institution ;
-    rdfs:range cendarieag:Audience ;
-    rdfs:subPropertyOf skos:related .
-
-cendarieag:hasAudiences
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:AudienceScheme ;
-    rdfs:range cendarieag:Audience ;
-    rdfs:subPropertyOf skos:hasTopConcept .
-
-cendarieag:hasContact
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:RepositoryServices ;
-    rdfs:range cendarieag:Contact .
-
-cendarieag:hasConventions
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:ConventionOrStandardScheme ;
-    rdfs:range cendarieag:ConventionOrStandard ;
-    rdfs:subPropertyOf skos:hasTopConcept .
-
-cendarieag:hasCountryCode
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:InstitutionIdentity ;
-    rdfs:range cendarieag:ISO3166-1 .
-
-cendarieag:hasFax
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:RepositoryAddress ;
-    rdfs:subPropertyOf vcard:hasTelephone .
-
-cendarieag:hasHoldingsInTopic
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:Institution ;
-    rdfs:range cendarieag:Topic ;
-    rdfs:subPropertyOf skos:related .
-
-cendarieag:hasIdentity
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:Institution ;
-    rdfs:range cendarieag:InstitutionIdentity ;
-    :propertyDisjointWith cendarieag:hasNonPreferredName, cendarieag:hasParallelName .
-
-cendarieag:hasLanguage
-    a :DatatypeProperty, :ObjectProperty ;
-    rdfs:domain cendarieag:LanguageDeclaration ;
-    rdfs:range <http://id.loc.gov/vocabulary/iso639-1/iso639-1_Language> .
-
-cendarieag:hasLanguageDeclaration
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:Institution ;
-    rdfs:range cendarieag:LanguageDeclaration .
-
-cendarieag:hasMaintenanceAgency
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:Institution ;
-    rdfs:range cendarieag:MaintenanceAgency .
-
-cendarieag:hasMaintenanceEvent
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:MaintenanceHistory ;
-    rdfs:range cendarieag:MaintenanceEvent ;
-    rdfs:subPropertyOf <http://www.w3.org/ns/prov#activity> .
-
-cendarieag:hasMaintenanceHistory
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:Institution ;
-    rdfs:range cendarieag:MaintenanceHistory .
-
-cendarieag:hasMaintenanceStatus
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:Institution ;
-    rdfs:range cendarieag:MaintenanceStatus .
-
-cendarieag:hasNonPreferredName
-    a :ObjectProperty ;
-    rdfs:subPropertyOf cendarieag:hasIdentity ;
-    :propertyDisjointWith cendarieag:hasParallelName .
-
-cendarieag:hasParallelName
-    a :ObjectProperty ;
-    rdfs:domain cendarieag:Institution ;
-    rdfs:subPropertyOf cendarieag:hasIdentity .
-
-cendarieag:hasPhone
-    a :ObjectProperty ;
-    rdfs:domain [
-        a :Class ;
-        :unionOf (cendarieag:Contact
-            cendarieag:RepositoryAddress
+        :unionOf (cao:Contact
+            cao:RepositoryAddress
         )
     ] ;
     rdfs:subPropertyOf vcard:hasTelephone .
 
-cendarieag:hasRecordId
+cao:hasRecordId
     a :ObjectProperty ;
-    rdfs:domain cendarieag:Institution ;
+    rdfs:domain cao:Institution ;
+    rdfs:label "id" ;
     rdfs:subPropertyOf vcard:hasUID .
 
-cendarieag:hasRepository
+cao:hasRepository
     a :ObjectProperty ;
-    rdfs:domain cendarieag:Institution ;
-    rdfs:range cendarieag:Repository ;
+    rdfs:domain cao:Institution ;
+    rdfs:label "repository" ;
+    rdfs:range cao:Repository ;
     rdfs:subPropertyOf <http://www.w3.org/ns/org#hasSite> .
 
-cendarieag:hasRepositoryAddress
+cao:hasRepositoryAddress
     a :ObjectProperty ;
-    rdfs:domain cendarieag:Repository ;
-    rdfs:range cendarieag:RepositoryAddress ;
+    rdfs:domain cao:Repository ;
+    rdfs:label "address" ;
+    rdfs:range cao:RepositoryAddress ;
     rdfs:subPropertyOf <http://www.w3.org/ns/org#siteAddress> .
 
-cendarieag:hasRepositoryTypes
+cao:hasRepositoryTypes
     a :ObjectProperty ;
-    rdfs:domain cendarieag:CendariRepositoryTypeScheme ;
-    rdfs:range cendarieag:RepositoryType ;
+    rdfs:domain cao:CendariRepositoryTypeScheme ;
+    rdfs:label "types" ;
+    rdfs:range cao:RepositoryType ;
     rdfs:subPropertyOf skos:hasTopConcept .
 
-cendarieag:hasScript
+cao:hasScript
     a :DatatypeProperty ;
-    rdfs:comment "TODO: make it an object property from ISO 15924 List (create concept scheme for scripts in  ISO 15924 )" ;
-    rdfs:domain cendarieag:LanguageDeclaration ;
-    rdfs:range rdfs:Literal .
+    rdfs:comment """Scripts in Use
+TODO: make separate class and generate vocabulary  from ISO 15924 List (create concept scheme for scripts in  ISO 15924 )""" ;
+    rdfs:domain cao:LanguageDeclaration ;
+    rdfs:label "Script" ;
+    rdfs:range rdfs:Literal, [
+        a rdfs:Datatype ;
+        :oneOf ("Cyrilic"
+            "Latin"
+        )
+    ] .
 
-cendarieag:hasService
+cao:hasService
     a :ObjectProperty ;
-    rdfs:domain cendarieag:Repository ;
-    rdfs:range cendarieag:RepositoryServices .
+    rdfs:domain cao:Repository ;
+    rdfs:label "service" ;
+    rdfs:range cao:RepositoryServices .
 
-cendarieag:hasSources
+cao:hasSources
     a :ObjectProperty ;
-    rdfs:domain cendarieag:Institution ;
-    rdfs:range cendarieag:SourceInformation .
+    rdfs:domain cao:Institution ;
+    rdfs:label "sources" ;
+    rdfs:range cao:SourceInformation .
 
-cendarieag:hasTopics
+cao:hasTopics
     a :ObjectProperty ;
-    rdfs:domain cendarieag:CendariTopicScheme ;
-    rdfs:range cendarieag:Topic ;
+    rdfs:domain cao:CendariTopicScheme ;
+    rdfs:label "topics" ;
+    rdfs:range cao:Topic ;
     rdfs:subPropertyOf skos:hasTopConcept .
 
-cendarieag:holdingsNote
+cao:holdingsNote
     a :DatatypeProperty ;
-    rdfs:domain cendarieag:SourceInformation ;
-    rdfs:subPropertyOf cendarieag:Note ;
-    :propertyDisjointWith cendarieag:repositoryHistoryNote, cendarieag:sourceNote .
+    rdfs:comment """Based on specified source (with URL, SourceNote) 
+corresponding to /holdings/descriptiveNote element in CENDARI@EAG""" ;
+    rdfs:domain cao:SourceInformation ;
+    rdfs:label "Holdings" ;
+    rdfs:range rdfs:Literal ;
+    rdfs:subPropertyOf cao:Note ;
+    :propertyDisjointWith cao:repositoryHistoryNote, cao:sourceNote .
 
-cendarieag:isPerson
+cao:isPerson
     a :ObjectProperty ;
-    rdfs:domain cendarieag:Contact ;
-    rdfs:range cendarieag:Person ;
+    rdfs:domain cao:Contact ;
+    rdfs:label "isPerson" ;
+    rdfs:range foaf:Person ;
     rdfs:subPropertyOf vcard:hasRelated .
 
-cendarieag:isRepositoryOfType
+cao:isRepositoryOfType
     a :ObjectProperty ;
-    rdfs:domain cendarieag:Repository ;
-    rdfs:range cendarieag:RepositoryType ;
+    rdfs:domain cao:Repository ;
+    rdfs:label "type" ;
+    rdfs:range cao:RepositoryType ;
     rdfs:subPropertyOf skos:related .
 
-cendarieag:name
+cao:name
     a :DatatypeProperty ;
-    rdfs:domain cendarieag:InstitutionIdentity ;
+    rdfs:domain cao:InstitutionIdentity ;
+    rdfs:range rdfs:Literal ;
     rdfs:subPropertyOf vcard:organization-name .
 
-cendarieag:notAfter
+cao:notAfter
     a :DatatypeProperty ;
-    rdfs:domain cendarieag:InstitutionIdentity ;
+    rdfs:comment """Can be defined as an latest  \"known\" date of the content contained in some information.
+
+Initial use is for cao:InstitutionIdentity, describing latest date when the institution is represented with this identity information.""" ;
+    rdfs:domain cao:InstitutionIdentity ;
+    rdfs:label "Latest" ;
     rdfs:range xsd:dateTime .
 
-cendarieag:notBefore
+cao:notBefore
     a :DatatypeProperty ;
-    rdfs:domain cendarieag:InstitutionIdentity ;
+    rdfs:comment """Can be defined as an earliest \"known\" date of the content contained in some information.
+
+Initial use is for cao:InstitutionIdentity, describing earliest date when the institution is known represented with this identity information.""" ;
+    rdfs:domain cao:InstitutionIdentity ;
+    rdfs:label "Earliest" ;
     rdfs:range xsd:dateTime .
 
-cendarieag:occupation
+cao:occupation
     a :DatatypeProperty ;
-    rdfs:domain cendarieag:Contact ;
-    rdfs:range xsd:string ;
+    rdfs:domain cao:Contact ;
+    rdfs:range rdfs:Literal ;
     rdfs:subPropertyOf vcard:role .
 
-cendarieag:parForm
+cao:parForm
     a :AnnotationProperty ;
-    rdfs:domain cendarieag:InstitutionIdentity ;
+    rdfs:domain cao:InstitutionIdentity ;
     rdfs:subPropertyOf skos:altLabel .
 
-cendarieag:repositoryHistoryNote
+cao:repositoryHistoryNote
     a :DatatypeProperty ;
-    rdfs:domain cendarieag:SourceInformation ;
-    rdfs:range rdfs:Literal ;
-    rdfs:subPropertyOf cendarieag:Note ;
-    :propertyDisjointWith cendarieag:sourceNote .
+    rdfs:comment """corresponds to /desc/repositorhist/descriptiveNote of CENDARI@EAG 
 
-cendarieag:repositoryId
+A note on repository history, based on referenced source""" ;
+    rdfs:domain cao:SourceInformation ;
+    rdfs:label "History" ;
+    rdfs:range rdfs:Literal ;
+    rdfs:subPropertyOf cao:Note ;
+    :propertyDisjointWith cao:sourceNote .
+
+cao:repositoryId
     a :DatatypeProperty ;
-    rdfs:domain cendarieag:InstitutionIdentity ;
+    rdfs:domain cao:InstitutionIdentity ;
+    rdfs:range rdfs:Literal ;
     rdfs:subPropertyOf <http://www.w3.org/ns/org#identifier> .
 
-cendarieag:restAccess
+cao:restAccess
     a :DatatypeProperty ;
-    rdfs:domain cendarieag:ConditionalRepositoryAccess ;
-    rdfs:subPropertyOf cendarieag:Note .
+    rdfs:comment """Note about the conditions of Acess to the repository
 
-cendarieag:sourceNote
-    a :DatatypeProperty ;
-    rdfs:domain cendarieag:SourceInformation ;
+Can be added and provides detailed information about the “access policies, including any restrictions and/or regulations for the use of materials and facilities. Information about registration, appointments, readers’ tickets, letters of introduction, admission fees, etc. [can be recorded here]. Where appropriate, make reference to the relevant legislation.” (ISDIAH 5.4.2)""" ;
+    rdfs:domain cao:RepositoryAccess ;
+    rdfs:label "Access" ;
     rdfs:range rdfs:Literal ;
-    rdfs:subPropertyOf cendarieag:Note .
+    rdfs:subPropertyOf cao:Note .
 
-cendarieag:termsOfUseNote
+cao:sourceNote
     a :DatatypeProperty ;
-    rdfs:domain cendarieag:RepositoryAccess ;
-    rdfs:subPropertyOf cendarieag:Note .
+    rdfs:comment """Descriptive information about the source from where descriptions of the repository history or holdings are coming e.g. \"the web site of the archive\" (free text)
 
-cendarieag:termsOfUseURI
+Corresponds to /control/sources/sourceEntry element""" ;
+    rdfs:domain cao:SourceInformation ;
+    rdfs:label "Source" ;
+    rdfs:range rdfs:Literal ;
+    rdfs:subPropertyOf cao:Note .
+
+cao:termsOfUseNote
     a :DatatypeProperty ;
-    rdfs:domain cendarieag:RepositoryAccess ;
+    rdfs:comment """Incorporates embodied textual information (and links) to the terms of use, archival law or fee structure.
+
+Can be used as complement or solely to the cao:termsOfUseURI""" ;
+    rdfs:domain cao:RepositoryAccess ;
+    rdfs:label "termsOfUse" ;
+    rdfs:range rdfs:Literal ;
+    rdfs:subPropertyOf cao:Note .
+
+cao:termsOfUseURI
+    a :DatatypeProperty ;
+    rdfs:comment """Alternatively, external  (to be more accurate) URI to the document containing termsOfUse information.
+
+Can be used solely or as a complement to cao:termsOfUseNote""" ;
+    rdfs:domain cao:RepositoryAccess ;
+    rdfs:label "TermsOfUseURI" ;
     rdfs:range xsd:anyURI .
 
-cendarieag:usesConventionsOrStandards
+cao:usesConventionsOrStandards
     a :ObjectProperty ;
-    rdfs:domain cendarieag:Institution ;
-    rdfs:range cendarieag:ConventionOrStandard ;
+    rdfs:domain cao:Institution ;
+    rdfs:label "conventions" ;
+    rdfs:range cao:ConventionOrStandard ;
     rdfs:subPropertyOf skos:related .
 
 vcard:hasEmail
     rdfs:domain [
         a :Class ;
-        :unionOf (cendarieag:Contact
-            cendarieag:RepositoryAddress
+        :unionOf (cao:Contact
+            cao:RepositoryAddress
         )
     ] .
 
 vcard:hasGeo
-    rdfs:domain cendarieag:RepositoryAddress .
+    rdfs:domain cao:RepositoryAddress .
 
 vcard:hasLogo
     rdfs:domain [
         a :Class ;
-        :unionOf (cendarieag:Institution
-            cendarieag:Repository
+        :unionOf (cao:Institution
+            cao:Repository
         )
     ] .
 
 vcard:hasPhoto
-    rdfs:domain cendarieag:Repository .
+    rdfs:domain cao:Repository .
 
 vcard:hasURL
-    rdfs:domain cendarieag:RepositoryAddress .
+    rdfs:domain cao:RepositoryAddress .
 
-<http://www.w3.org/ns/org#memberOf>
-    rdfs:domain cendarieag:Person .
+prov:Activity
+    rdfs:comment """Records every change made in the description of the institution, the date, the person responsible for the changes and the type of event. There are as many maintenance events as required.
 
-<http://www.w3.org/ns/prov#generatedAtTime>
-    rdfs:domain cendarieag:MaintenanceEvent .
+hasAgent property relates it to corresponding Contributor (which may be a foaf:Person or org:FormalOrganization) within Cendari. 
+""" ;
+    prov:editorialNote """corresponds to /control/MaintenanceHistory/MaintenanceEvent  from Cendari@EAG and APEX EAG2012
+
+Is equivalent to prov:Activity included within MaintenanceHistory (which is modelled as a prov:Bundle).
+
+Types of maintenance Events are modelled as prov:Activity subclasses. 
+
+CENDARI EAG specializes prov:Replace type of activity, as cao:Delete - to express deletion of an institutional description (soft deletion).""" .
 

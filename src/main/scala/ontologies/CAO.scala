@@ -12,315 +12,43 @@ import javelin.ontology.Implicits._
   * Ontology for mapping EAG files
   */
 object CAO {
-    lazy val NS = "http://cendari.eu/ontologies/cendari/eag/"
+    lazy val NS = "http://cendari.eu/ontologies/cendari/cao/"
 
     /**
-     *  (property)
+     * contact (property)
      *
      */
-    lazy val `sourceNote` = NS #> "sourceNote"
+    lazy val `hasContact` = NS #> "hasContact"
 
     /**
-     *  (property)
-     *
-     */
-    lazy val `hasConventions` = NS #> "hasConventions"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `FreeRepositoryAccess` = NS ## "FreeRepositoryAccess"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `authForm` = NS #> "authForm"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `Note` = NS #> "Note"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `Person` = NS ## "Person"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `isRepositoryOfType` = NS #> "isRepositoryOfType"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `CendariRepositoryTypeScheme` = NS ## "CendariRepositoryTypeScheme"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `restAccess` = NS #> "restAccess"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `hasTopics` = NS #> "hasTopics"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `occupation` = NS #> "occupation"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `hasMaintenanceAgency` = NS #> "hasMaintenanceAgency"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `RepositoryAccess` = NS ## "RepositoryAccess"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `hasAudience` = NS #> "hasAudience"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `hasMaintenanceStatus` = NS #> "hasMaintenanceStatus"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `hasPhone` = NS #> "hasPhone"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `hasRepository` = NS #> "hasRepository"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `hasAgent` = NS #> "hasAgent"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `URI` = NS #> "URI"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `hasRepositoryAddress` = NS #> "hasRepositoryAddress"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `MaintenanceHistory` = NS ## "MaintenanceHistory"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `addressType` = NS #> "addressType"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `hasParallelName` = NS #> "hasParallelName"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `name` = NS #> "name"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `parForm` = NS #> "parForm"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `RepositoryAddress` = NS ## "RepositoryAddress"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `CendariTopicScheme` = NS ## "CendariTopicScheme"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `hasFax` = NS #> "hasFax"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `ConventionOrStandardScheme` = NS ## "ConventionOrStandardScheme"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `repositoryId` = NS #> "repositoryId"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `MaintenanceAgency` = NS ## "MaintenanceAgency"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `Topic` = NS ## "Topic"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `ISO3166-1` = NS ## "ISO3166-1"
-
-    /**
-     *  (property)
-     * TODO: make it an object property from ISO 15924 List (create concept scheme for scripts in  ISO 15924 )
-     */
-    lazy val `hasScript` = NS #> "hasScript"
-
-    /**
-     *  (class)
-     * TODO: RepositoryHoldings and descritions as a Type with sources
-     * Also check if necessary to add sources at top level of EAG
-     * Archive, Library, Museum etc. described with EAG
-     */
-    lazy val `Institution` = NS ## "Institution"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `givenName` = NS #> "givenName"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `Repository` = NS ## "Repository"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `MaintenanceEvent` = NS ## "MaintenanceEvent"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `ConventionOrStandard` = NS ## "ConventionOrStandard"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `hasLanguage` = NS #> "hasLanguage"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `InstitutionIdentity` = NS ## "InstitutionIdentity"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `Contributor` = NS ## "Contributor"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `SearchRoomService` = NS ## "SearchRoomService"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `hasRecordId` = NS #> "hasRecordId"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `RepositoryType` = NS ## "RepositoryType"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `usesConventionsOrStandards` = NS #> "usesConventionsOrStandards"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `hasHoldingsInTopic` = NS #> "hasHoldingsInTopic"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `hasAffiliation` = NS #> "hasAffiliation"
-
-    /**
-     *  (property)
-     *
-     */
-    lazy val `hasAudiences` = NS #> "hasAudiences"
-
-    /**
-     *  (property)
+     * access notes (property)
      *
      */
     lazy val `hasAccessNotes` = NS #> "hasAccessNotes"
 
     /**
-     *  (class)
+     * holdings (property)
      *
      */
-    lazy val `HoldingsInformation` = NS ## "HoldingsInformation"
+    lazy val `hasHoldingsInTopic` = NS #> "hasHoldingsInTopic"
+
+    /**
+     * types (property)
+     *
+     */
+    lazy val `hasRepositoryTypes` = NS #> "hasRepositoryTypes"
+
+    /**
+     * audience (property)
+     *
+     */
+    lazy val `hasAudience` = NS #> "hasAudience"
+
+    /**
+     * convention (property)
+     *
+     */
+    lazy val `hasConventions` = NS #> "hasConventions"
 
     /**
      * Cendari Archival Ontology^^http://www.w3.org/2001/XMLSchema#string (class)
@@ -329,67 +57,88 @@ object CAO {
     lazy val `metadata` = NS ## "metadata"
 
     /**
-     *  (property)
+     * address type (property)
+     * Type of address recorded as a repository address. Permits to specify what type of address is recorded (postal, visitors, etc.).
+     *
+     * Corresponds to /desc/repositories/repository/location@type attribute
      *
      */
-    lazy val `hasIdentity` = NS #> "hasIdentity"
+    lazy val `addressType` = NS #> "addressType"
 
     /**
-     *  (property)
-     *
+     * non preferred name (property)
+     * see cao:InstitutionIdentity
      */
     lazy val `hasNonPreferredName` = NS #> "hasNonPreferredName"
 
     /**
-     *  (property)
+     * Maintenance History (class)
+     * Records maintenance information about the Institutional description such as who created the description, when it was modified, when it was published or deleted.
      *
+     * Normally, should be taken as part of the repository internal information.
+     *
+     * Corresponds to /control/maintenanceHistory in Cendari@EAG and APEX EAG 2012
      */
-    lazy val `hasRepositoryTypes` = NS #> "hasRepositoryTypes"
+    lazy val `MaintenanceHistory` = NS ## "MaintenanceHistory"
 
     /**
-     *  (class)
+     * agency code (property)
      *
      */
-    lazy val `ConditionalRepositoryAccess` = NS ## "ConditionalRepositoryAccess"
+    lazy val `hasAgencyCode` = NS #> "hasAgencyCode"
 
     /**
-     *  (class)
+     * service (property)
      *
      */
-    lazy val `MaintenanceStatus` = NS ## "MaintenanceStatus"
+    lazy val `hasService` = NS #> "hasService"
 
     /**
-     *  (property)
+     * Conventions (class)
+     * Conventions and Standards concept scheme.
      *
+     * Used in cao:hasConventions to list all conventions and standards used within the EAG Document
      */
-    lazy val `holdingsNote` = NS #> "holdingsNote"
+    lazy val `ConventionOrStandardScheme` = NS ## "ConventionOrStandardScheme"
 
     /**
-     *  (property)
+     * Repository Type (class)
+     * The type of repository. CAO models it as a skos:Concept, taken from the cao:CendariRepositoryTypesScheme concept scheme.
      *
-     */
-    lazy val `termsOfUseURI` = NS #> "termsOfUseURI"
-
-    /**
-     *  (property)
+     * Enumerated list is as follows (same in both Cendari@eag and EAG APEX 2012):
      *
-     */
-    lazy val `termsOfUseNote` = NS #> "termsOfUseNote"
-
-    /**
-     *  (property)
+     * -National archives
+     * -Regional archives
+     * -County/local authority archives
+     * -Municipal archives
+     * -Specialised governmental archives
+     * -Private persons and family archives
+     * -Church and religious archives
+     * -Business archives
+     * -University and research archives
+     * -Media archives
+     * -Archives of political parties, of popular/labour movement and other non-governmental organisations, associations, agencies and foundations
+     * -Specialised non-governmental archives and archives of other cultural (heritage) institutions.
      *
+     * Corresponds to the element archguide/identity/repositoryType, but is related as a property of the Repository and not as a property of the top level Institution described by EAG document.
      */
-    lazy val `hasMaintenanceHistory` = NS #> "hasMaintenanceHistory"
+    lazy val `RepositoryType` = NS ## "RepositoryType"
 
     /**
-     *  (property)
-     *
+     * Free (class)
+     * Access and use of the repository material is free, and there are no restrictive conditions.
      */
-    lazy val `hasSources` = NS #> "hasSources"
+    lazy val `FreeRepositoryAccess` = NS ## "FreeRepositoryAccess"
 
     /**
-     *  (property)
+     * Script (property)
+     * Scripts in Use
+     * TODO: make separate class and generate vocabulary  from ISO 15924 List (create concept scheme for scripts in  ISO 15924 )
+     */
+    lazy val `hasScript` = NS #> "hasScript"
+
+    /**
+     * name (property)
      *
      */
     lazy val `hasAgencyName` = NS #> "hasAgencyName"
@@ -398,77 +147,322 @@ object CAO {
      *  (class)
      *
      */
-    lazy val `cndr_u6qoRw1R` = NS ## "cndr_u6qoRw1R"
+    lazy val `Internal` = NS ## "Internal"
 
     /**
-     *  (class)
+     * type (property)
      *
      */
-    lazy val `LanguageDeclaration` = NS ## "LanguageDeclaration"
+    lazy val `isRepositoryOfType` = NS #> "isRepositoryOfType"
 
     /**
-     *  (class)
+     * URI (property)
+     * A URI to the resource from where repository history or holdings descriptions are created.
+     *
+     * Corresponds to /control/sources/source@href and /control/sources/source@id
+     *
+     *
+     * In case there is not online representation of the resource, URI has to be provided as well and manually defined by the user.
+     *
+     * For example,  in this case it may be of a format such as :
+     *
+     * <scheme>:<some identifying string>
+     *
+     * where the scheme is practically a (cendari internal) URI scheme such as:
+     *
+     * caoid  (Cendari Archival Ontology Identifiers)
+     *
+     *
+     *
+     *
+     *
      *
      */
-    lazy val `TechnicalService` = NS ## "TechnicalService"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `RepositoryServices` = NS ## "RepositoryServices"
+    lazy val `URI` = NS #> "URI"
 
     /**
      *  (property)
      *
      */
-    lazy val `notBefore` = NS #> "notBefore"
+    lazy val `repositoryId` = NS #> "repositoryId"
 
     /**
-     *  (property)
+     * TermsOfUseURI (property)
+     * Alternatively, external  (to be more accurate) URI to the document containing termsOfUse information.
+     *
+     * Can be used solely or as a complement to cao:termsOfUseNote
+     */
+    lazy val `termsOfUseURI` = NS #> "termsOfUseURI"
+
+    /**
+     * event (property)
+     * property relating the maintenance history of the institution with the maintenance activity (prov:Activity)
+     *
+     */
+    lazy val `hasMaintenanceEvent` = NS #> "hasMaintenanceEvent"
+
+    /**
+     * Maintenance Agency (class)
+     * Maintenance agency responsible for the maintenance of the EAG Document.
+     * In case of data maintained by Cendari, default agency is Cendari and agencyCode is EU-Cendari.
+     *
+     * Alternatively, APEX may be a maintenance agency.
+     *
+     * corresponds to /control/maintenanceAgency part of Cendari@EAG and APEX EAG 2012
+     */
+    lazy val `MaintenanceAgency` = NS ## "MaintenanceAgency"
+
+    /**
+     * Note (property)
+     * Data property representing various notes associated to the institution and repository descriptions e.g. cao:holdingsNote, cao:repositoryHistoryNote, cao:sourceNote etc.
+     */
+    lazy val `Note` = NS #> "Note"
+
+    /**
+     * Address (class)
+     * Repository address of a repository of an archival institution.
+     * This is subclass of vcard:Address, but it additionally includes some more properties which are not in vcard:Address definition.
+     */
+    lazy val `RepositoryAddress` = NS ## "RepositoryAddress"
+
+    /**
+     * language (property)
+     * Ranges to values from ISO-639-1 language vocabulaty.
+     */
+    lazy val `hasLanguage` = NS #> "hasLanguage"
+
+    /**
+     * Contributor (class)
+     * Cendari contributor may be either a org:FormalOrganization or a foaf:Person.
+     * In case of a foaf:Person, there is a posisbility to specify the affiliation (via cao:hasAffiliation org:FormalOrganization )
+     */
+    lazy val `Contributor` = NS ## "Contributor"
+
+    /**
+     * code (property)
      *
      */
     lazy val `hasCountryCode` = NS #> "hasCountryCode"
 
     /**
+     * Repository (class)
+     * A Repository of an archival institution
+     * An institution may have more than one repositories which offer data services. An example for an institution is the NKP, and the repositories within are different archives represented  by Manuscriptorium.
+     *
+     *
+     */
+    lazy val `Repository` = NS ## "Repository"
+
+    /**
      *  (property)
      *
      */
-    lazy val `isPerson` = NS #> "isPerson"
+    lazy val `name` = NS #> "name"
+
+    /**
+     * address (property)
+     *
+     */
+    lazy val `hasRepositoryAddress` = NS #> "hasRepositoryAddress"
+
+    /**
+     *  (property)
+     *
+     */
+    lazy val `hasFax` = NS #> "hasFax"
+
+    /**
+     * repository (property)
+     *
+     */
+    lazy val `hasRepository` = NS #> "hasRepository"
+
+    /**
+     * Convention (class)
+     * Convention declaration. Represents a concept, a convention used in description of the institution.
+     *
+     * Corresponds to /control/conventionDeclaration
+     *
+     * in CAO it is used as a concept belonging to the Concept schema of conventions (see cao:ConventionOrStandardScheme )
+     */
+    lazy val `ConventionOrStandard` = NS ## "ConventionOrStandard"
+
+    /**
+     * Access (property)
+     * Note about the conditions of Acess to the repository
+     *
+     * Can be added and provides detailed information about the “access policies, including any restrictions and/or regulations for the use of materials and facilities. Information about registration, appointments, readers’ tickets, letters of introduction, admission fees, etc. [can be recorded here]. Where appropriate, make reference to the relevant legislation.” (ISDIAH 5.4.2)
+     */
+    lazy val `restAccess` = NS #> "restAccess"
+
+    /**
+     * agency (property)
+     *
+     */
+    lazy val `hasMaintenanceAgency` = NS #> "hasMaintenanceAgency"
+
+    /**
+     *  (property)
+     *
+     */
+    lazy val `authForm` = NS #> "authForm"
 
     /**
      *  (class)
      *
      */
-    lazy val `RecreationalService` = NS ## "RecreationalService"
+    lazy val `External` = NS ## "External"
 
     /**
-     *  (class)
+     * Language Declaration (class)
      *
+     * Contains information about the Languages and scripts used in the description of an archival institution.
+     *
+     * Corresponds to /control/languagedeclarations/languagedeclaration element of CENDARI@EAG profile.
      */
-    lazy val `SourceInformation` = NS ## "SourceInformation"
+    lazy val `LanguageDeclaration` = NS ## "LanguageDeclaration"
 
     /**
-     *  (class)
+     * Topics (class)
+     * Cendari@EAG recommends only WW1 or Medieval.
+     * By further development of the SKOS scheme however, topics can be further specialized.
+     */
+    lazy val `CendariTopicScheme` = NS ## "CendariTopicScheme"
+
+    /**
+     * Library (class)
      *
      */
     lazy val `LibraryService` = NS ## "LibraryService"
 
     /**
-     *  (property)
+     * identity (property)
+     * see cao:InstitutionIdentity
+     */
+    lazy val `hasIdentity` = NS #> "hasIdentity"
+
+    /**
+     * Contact (class)
+     * Contact information for a repository service of an archival institution.
+     *
+     * Some services have  partial contact information such as email. phone. ocuppation. Some services additionally expose real persons behind. Thus a contact may have related a Person (with its own properties).
+     * See also cao:isPerson property.
+     *
+     * Corresponds to /services/searchroom/contact element of CENDARI@EAG profile. Added to all services (not only search room)
+     *
+     */
+    lazy val `Contact` = NS ## "Contact"
+
+    /**
+     * affiliation (property)
+     *
+     */
+    lazy val `hasAffiliation` = NS #> "hasAffiliation"
+
+    /**
+     * Source (class)
+     * Represents the sources from where archival institution description is provided.
+     *
+     * EAG and EAG@CENDARI assume that information about the archival institution may be created without source information.
+     * This ontology makes it more restrictire, thus a source information must always exist.
+     *
+     * For a particular source, users may then create repository history notes (repositorhist) or holdings descriptions.
+     */
+    lazy val `SourceInformation` = NS ## "SourceInformation"
+
+    /**
+     * declaration (property)
      *
      */
     lazy val `hasLanguageDeclaration` = NS #> "hasLanguageDeclaration"
 
     /**
-     *  (property)
+     * Audience (class)
+     * This is a class which contains possiible values for the types of usage of the archival  description.
+     * .
+     * For archival institution descriptions, originally, allowed are "internal" or "external" as individuals, to point to the internal/external use of the Institutional description.
+     * By default "external" should be used.
+     *
+     * Maps to eag@audience attribute of the top level eag element from Cendari@EAG profile
+     */
+    lazy val `Audience` = NS ## "Audience"
+
+    /**
+     * Search room (class)
+     * Provides a description of the search room and facilities available.
+     *
      *
      */
-    lazy val `hasContact` = NS #> "hasContact"
+    lazy val `SearchRoomService` = NS ## "SearchRoomService"
+
+    /**
+     * parallel name (property)
+     * see cao:InstitutionIdentity
+     */
+    lazy val `hasParallelName` = NS #> "hasParallelName"
+
+    /**
+     * Holdings (property)
+     * Based on specified source (with URL, SourceNote)
+     * corresponding to /holdings/descriptiveNote element in CENDARI@EAG
+     */
+    lazy val `holdingsNote` = NS #> "holdingsNote"
+
+    /**
+     * Institution (class)
+     * Archive, Library, Museum etc. described with EAG
+     *
+     */
+    lazy val `Institution` = NS ## "Institution"
 
     /**
      *  (property)
      *
+     */
+    lazy val `parForm` = NS #> "parForm"
+
+    /**
+     * Technical (class)
+     *
+     */
+    lazy val `TechnicalService` = NS ## "TechnicalService"
+
+    /**
+     * conventions (property)
+     *
+     */
+    lazy val `usesConventionsOrStandards` = NS #> "usesConventionsOrStandards"
+
+    /**
+     * history (property)
+     *
+     */
+    lazy val `hasMaintenanceHistory` = NS #> "hasMaintenanceHistory"
+
+    /**
+     * Country code (class)
+     * Individuals of this class are country codes corresponding to ISO 3166-1-alpha-2 code.
+     *
+     */
+    lazy val `ISO3166-1` = NS ## "ISO3166-1"
+
+    /**
+     * sources (property)
+     *
+     */
+    lazy val `hasSources` = NS #> "hasSources"
+
+    /**
+     *  (property)
+     *
+     */
+    lazy val `hasPhone` = NS #> "hasPhone"
+
+    /**
+     * Latest (property)
+     * Can be defined as an latest  "known" date of the content contained in some information.
+     *
+     * Initial use is for cao:InstitutionIdentity, describing latest date when the institution is represented with this identity information.
      */
     lazy val `notAfter` = NS #> "notAfter"
 
@@ -476,61 +470,170 @@ object CAO {
      *  (property)
      *
      */
+    lazy val `occupation` = NS #> "occupation"
+
+    /**
+     * Source (property)
+     * Descriptive information about the source from where descriptions of the repository history or holdings are coming e.g. "the web site of the archive" (free text)
+     *
+     * Corresponds to /control/sources/sourceEntry element
+     */
+    lazy val `sourceNote` = NS #> "sourceNote"
+
+    /**
+     * Earliest (property)
+     * Can be defined as an earliest "known" date of the content contained in some information.
+     *
+     * Initial use is for cao:InstitutionIdentity, describing earliest date when the institution is known represented with this identity information.
+     */
+    lazy val `notBefore` = NS #> "notBefore"
+
+    /**
+     * History (property)
+     * corresponds to /desc/repositorhist/descriptiveNote of CENDARI@EAG
+     *
+     * A note on repository history, based on referenced source
+     */
     lazy val `repositoryHistoryNote` = NS #> "repositoryHistoryNote"
 
     /**
-     *  (property)
+     * Identity (class)
+     * Identyfing information about an institution holds properties such as identifier, country code, former names of the institution etc..
+     *
+     * Corresponds to archgude/identity element of the CENDARI@EAG profile.
+     *
      *
      */
-    lazy val `hasMaintenanceEvent` = NS #> "hasMaintenanceEvent"
+    lazy val `InstitutionIdentity` = NS ## "InstitutionIdentity"
 
     /**
-     *  (class)
+     * Recreation (class)
      *
      */
-    lazy val `Delete` = NS ## "Delete"
+    lazy val `RecreationalService` = NS ## "RecreationalService"
 
     /**
-     *  (class)
+     * Conditional access (class)
+     * There are restrictive conditions for use and access to the repository material.
+     */
+    lazy val `ConditionalRepositoryAccess` = NS ## "ConditionalRepositoryAccess"
+
+    /**
+     * termsOfUse (property)
+     * Incorporates embodied textual information (and links) to the terms of use, archival law or fee structure.
+     *
+     * Can be used as complement or solely to the cao:termsOfUseURI
+     */
+    lazy val `termsOfUseNote` = NS #> "termsOfUseNote"
+
+    /**
+     * topics (property)
      *
      */
-    lazy val `Contact` = NS ## "Contact"
+    lazy val `hasTopics` = NS #> "hasTopics"
 
     /**
-     *  (property)
+     * Status (property)
+     * corresponds to /eag/control/maintenancestatus
+     *
+     * Maintenance status of the institutional description. Possible values:
+     * new, cancelled, deleted, deletedReplaced, deletedMerged, deletedSplit, derived or revised
+     */
+    lazy val `hasMaintenanceStatus` = NS #> "hasMaintenanceStatus"
+
+    /**
+     * Repository Services (class)
+     * Types of services a repository offers. There can be different types of services, each with own contact information. They are modelled as subclasses of cao:RepositoryServices.
+     *
+     * Corresponds to /repository/services/<servicetype> elements of APEX EAG 2012
+     *
+     *
      *
      */
-    lazy val `familyName` = NS #> "familyName"
+    lazy val `RepositoryServices` = NS ## "RepositoryServices"
 
     /**
-     *  (property)
-     *
-     */
-    lazy val `hasService` = NS #> "hasService"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `Audience` = NS ## "Audience"
-
-    /**
-     *  (class)
-     *
-     */
-    lazy val `AudienceScheme` = NS ## "AudienceScheme"
-
-    /**
-     *  (class)
+     * Internet Access (class)
      *
      */
     lazy val `InternetAccessService` = NS ## "InternetAccessService"
 
     /**
-     *  (property)
+     * Access Type (class)
+     * Type of access to the material/data in the repository.
+     *
+     * EAG@CENDARI thus CAO allows for two types (modelled as subclasses) of repository access:
+     *
+     * ConditionalRepositoryAccess
+     * FreeRepositoryAccess
+     *
+     * Its properties allow to additionally describe the terms of use or  potentially provide URI to the document containing the terms of use.
+     *
+     * hasAccess notes property of the Repository defines which kind of repository access a repository offers.
+     *
+     * This class practically corresponds to the element /repository/access of the Cendari@EAG and APEX EAG 2012
+     */
+    lazy val `RepositoryAccess` = NS ## "RepositoryAccess"
+
+    /**
+     * isPerson (property)
      *
      */
-    lazy val `hasAgencyCode` = NS #> "hasAgencyCode"
+    lazy val `isPerson` = NS #> "isPerson"
+
+    /**
+     * Topic (class)
+     * Topics covered by the Institution. It is a concept organized within  cao:CendariTopicScheme.
+     *
+     * Cendari@EAG recommends only WW1 or Medieval.
+     * By further development of the SKOS scheme however, topics can be further specialized.
+     */
+    lazy val `Topic` = NS ## "Topic"
+
+    /**
+     * agent (property)
+     *
+     */
+    lazy val `hasAgent` = NS #> "hasAgent"
+
+    /**
+     * Repository Types (class)
+     * Initial concepts here are same in both Cendari@eag and EAG APEX 2012:
+     *
+     * -National archives
+     * -Regional archives
+     * -County/local authority archives
+     * -Municipal archives
+     * -Specialised governmental archives
+     * -Private persons and family archives
+     * -Church and religious archives
+     * -Business archives
+     * -University and research archives
+     * -Media archives
+     * -Archives of political parties, of popular/labour movement and other non-governmental organisations, associations, agencies and foundations
+     * -Specialised non-governmental archives and archives of other cultural (heritage) institutions.
+     *
+     *
+     * Corresponds to the element archguide/identity/repositoryType.
+     * CAO relates it as a property of the Repository and not as a property of the top level Institution described by EAG document.
+     *
+     *
+     */
+    lazy val `CendariRepositoryTypeScheme` = NS ## "CendariRepositoryTypeScheme"
+
+    /**
+     * Delete (class)
+     * Type of activity which expresses "soft" deletion of an entity to which it is associated. In CENDARI case, it is part of the institution maintenance history, thus expresses deletion of the institutional description.
+     *
+     * In real terms, this would mean the institutional description record is withdrawn from usage and not physically deleted.
+     */
+    lazy val `Delete` = NS ## "Delete"
+
+    /**
+     * id (property)
+     *
+     */
+    lazy val `hasRecordId` = NS #> "hasRecordId"
 
 
 }
