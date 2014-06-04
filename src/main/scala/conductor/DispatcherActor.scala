@@ -48,19 +48,32 @@ import akka.event.Logging._
 import akka.event.Logging
 
 object DispatcherActor {
-
+    /// Request for processing
     abstract class ProcessRequest(val resource: ckan.Resource)
+
+    /// Request for the specified resource to be processed
     case class ProcessResource(override val resource: ckan.Resource) extends ProcessRequest(resource)
 
+    /// Used by us to tell the caller that we have finished processing
     case class ResourceProcessingFinished(resource: ckan.Resource)
+
+    /// Used by us to tell the caller that we failed to process the resource
     case class ResourceProcessingFailed(ex: RuntimeException)
 
+    /// We have been asked to process another resource, but we haven't finished processing the current one
     case class AlreadyRunningException() extends RuntimeException
+
+    /// A generic resource processing exception (a plugin failed)
     case class ResourceProcessingException(resource: ckan.Resource) extends RuntimeException
+
+    /// We don't know how to access the resource
     case class ResourceNotProcessableException(resource: ckan.Resource) extends RuntimeException
 
 }
 
+/**
+ * Handles processing of a single resource
+ */
 class DispatcherActor
     extends Actor
     with dataapi.DefaultValues
@@ -70,6 +83,7 @@ class DispatcherActor
 
     val log = Logging(context.system, this)
 
+    // List of plugins we need to run on every resource
     lazy val plugins: Seq[ActorRef] = ConductorConfig.plugins
         .map(name =>
                 system.actorOf(
@@ -77,16 +91,24 @@ class DispatcherActor
                     "plugins-actor-" + name)
         )
 
+    // The current resource processing request
     var currentRequest: Option[ProcessRequest] = None
+    // Plugins that still haven't finished processing the current resource
     var leftPlugins: Seq[ActorRef] = null
 
 
+    /**
+     * Starts processing the resource, calls the first plugin
+     */
     def startProcessing() {
         log.info("Starting processing")
         leftPlugins = plugins
         startNextPlugin()
     }
 
+    /**
+     * Continues processing the resource, calls one of the remaining plugins
+     */
     def startNextPlugin() {
         if (leftPlugins.size == 0) {
             log.info("No more plugins, sending the signal to the collector")

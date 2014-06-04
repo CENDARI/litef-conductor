@@ -19,6 +19,9 @@ package common
 
 import com.typesafe.config.ConfigFactory
 
+/**
+ * Typed configuration class
+ */
 object Config {
     lazy val config = ConfigFactory.load getConfig "litef"
 

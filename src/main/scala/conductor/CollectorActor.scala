@@ -47,18 +47,16 @@ import akka.event.Logging
 
 object CollectorActor {
 
+    /// Starts the service
     case class Start()
 
     /// Starts the processing of the next resource
     case class ProcessNext()
-
-    // /// Requests the update to the queue
-    // case class UpdateQueue()
-    //
-    // /// The queue has been updated
-    // case class QueueUpdateFinished()
 }
 
+/**
+ * Manages the queue of resources that need to be processed
+ */
 class CollectorActor
     extends Actor
     with dataapi.DefaultValues
@@ -70,6 +68,7 @@ class CollectorActor
 
     override
     def preStart(): Unit = database withSession { implicit session: Session =>
+        // Enable it the database needs to be initialized
         // ProcessedResourceTable.query.ddl.create
         // ResourceAttachmentTable.query.ddl.create
 
@@ -78,9 +77,16 @@ class CollectorActor
 
     lazy val dispatcherActor = system.actorOf(Props[conductor.DispatcherActor], "dispatcher-actor")
 
+    /**
+     * Starts the processing of the specified resource.
+     * @param resource resource
+     * @return nothing important
+     */
     def processResource(resource: ckan.Resource) = Future {
         log.info(s"Lets find the resource we want ${resource.id} / ${resource.url}")
 
+        // If the resource is a valid candidate for processing, passing it to the dispatcher,
+        // otherwise write a note to self that we have failed.
         if (resource.isProcessable) {
             log.info("Sending the request to the dispatcher")
             dispatcherActor ! DispatcherActor.ProcessResource(resource)
@@ -90,10 +96,17 @@ class CollectorActor
         }
     }
 
+    /**
+     * Find the next resource, and start processing it
+     * @return
+     */
     def processNext() = database withSession { implicit session: Session =>
 
         log.info("Processing the next resource:")
 
+        // Searching for the resource that needs to be processed.
+        // It needs to be locally available and to have a modification timestamp
+        // after the last time we processed a resource with this id
         val nextQuery =
             ckan.ResourceTable.query
                 .filter(_.modified.isNotNull)
@@ -122,6 +135,11 @@ class CollectorActor
         }
     }
 
+    /**
+     * Sets the specified resource's last processed timestamp
+     * @param resource
+     * @return
+     */
     def markResourceAsProcessed(resource: ckan.Resource) = database withSession { implicit session: Session =>
         ProcessedResourceTable.query
             .filter(r => r.id === resource.id)
@@ -130,18 +148,22 @@ class CollectorActor
     }
 
     def receive: Receive = {
+        // When the actor is started, start processing the next resource
         case Start() =>
             receive(ProcessNext())
 
+        // Processing the next resource
         case ProcessNext() =>
             log.info("Got the request to process the next resource")
             processNext
 
+        // We got the notice that a resource processing was finished
         case DispatcherActor.ResourceProcessingFinished(resource) =>
             log.info(s"The dispatcher said it has finished processing $resource")
             markResourceAsProcessed(resource)
             processNext
 
+        // Failed to process the resource, ignore and continue
         case DispatcherActor.ResourceProcessingFailed(ex) =>
             ex match {
                 case DispatcherActor.ResourceProcessingException(resource) =>
@@ -153,7 +175,7 @@ class CollectorActor
 
             processNext
 
-        // Messages meant for the dispatcher:
+        // Passing messages meant for the dispatcher:
         case msg =>
             log.info("Passing to the dispatcherActor " + msg.toString)
             dispatcherActor ! msg

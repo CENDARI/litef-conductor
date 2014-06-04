@@ -80,16 +80,19 @@ object ResourceActor {
             val dataspaceId: String,
             val iterator: String
         )
+
     case class UploadFile(
             val authorizationKey: String,
             val data: MultipartFormData,
             val key: String
         )
+
     case class CreateResourceMetadata(
             val authorizationKey: String,
             val dataspaceId: String,
             val resource: ResourceMetadataCreateWithId
         )
+
     case class UpdateResourceMetadata(
             val authorizationKey: String,
             val resourceId: String,
@@ -97,6 +100,7 @@ object ResourceActor {
             val name: Option[String],
             val description: Option[String]
         )
+
     case class UpdateResourceMetadataAndUrl(
             val authorizationKey: String,
             val resource: ResourceMetadataUpdateWithId

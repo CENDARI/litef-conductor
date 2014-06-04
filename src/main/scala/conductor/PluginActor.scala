@@ -48,6 +48,7 @@ import akka.event.Logging._
 import akka.event.Logging
 
 object PluginActor {
+    // Signals to report the processing result
     case class ProcessingFinished()
     case class ProcessingFailed()
 }

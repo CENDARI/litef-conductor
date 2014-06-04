@@ -21,6 +21,10 @@ import scala.concurrent.ExecutionContext
 import spray.routing._
 import java.sql.Timestamp
 
+/**
+ * Convinience directives for creating path extractors
+ * @param executionContext
+ */
 class CommonDirectives(implicit executionContext: ExecutionContext)
     extends Directives
     with DefaultFormats

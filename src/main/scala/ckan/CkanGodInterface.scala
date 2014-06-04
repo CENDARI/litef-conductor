@@ -40,18 +40,42 @@ object CkanGodInterface {
     )
 
 
+    /**
+     * @param id UUID of the desired resource
+     * @return query object that will return the specified resource
+     */
     def getResourceQuery(id: String) = database withSession { implicit session: Session =>
         ResourceTable.query.where(_.id === id)
     }
 
-
+    /**
+     * @param id UUID of the desired resource
+     * @return returns the information for the resource specified by UUID, if it exists
+     */
     def getResource(id: String): Option[Resource] = {
         database withSession { implicit session: Session =>
             getResourceQuery(id).list.headOption
         }
     }
 
+    /**
+     * @param id UUID of the desired resource
+     * @return the URL for the specified resource
+     */
+    def getResourceUrl(id: String): Option[String] = database withSession { implicit session: Session =>
+        getResourceQuery(id)
+            .map(_.url)
+            .list
+            .headOption
+    }
 
+    /**
+     * @param _since gets only the resources newer than the specified timestamp
+     * @param _until gets only the resources older than the specified timestamp
+     * @param start (aka offset) skips first 'start' results
+     * @param _count defines how many results to return
+     * @return the query object against the collection of resources
+     */
     def listResourcesQuery(_since: Option[Timestamp], _until: Option[Timestamp],
                            start: Int, _count: Int) = database withSession { implicit session: Session =>
 
@@ -71,13 +95,14 @@ object CkanGodInterface {
         )
     }
 
-    def getResourceUrl(id: String): Option[String] = database withSession {implicit session: Session =>
-        ResourceTable.query
-            .where(_.id === id)
-            .map(_.url)
-            .list
-            .headOption
-    }
+    /**
+     * @param authorizationKey CKAN authorization key of the user that requests the dataspaces
+     * @param _since gets only the dataspaces newer than the specified timestamp
+     * @param _until gets only the dataspaces older than the specified timestamp
+     * @param start (aka offset) skips first 'start' results
+     * @param _count defines how many results to return
+     * @return the query object against the collection of dataspaces
+     */
     def listDataspacesQuery(authorizationKey: String,
                             _since: Option[Timestamp], _until: Option[Timestamp],
                             start: Int, _count: Int
@@ -102,7 +127,11 @@ object CkanGodInterface {
     }
 
 
-
+    /**
+     * @param authorizationKey CKAN authorization key of the user that requests the dataspaces
+     * @param id UUID of the desired resource
+     * @return query object that will return the specified dataspace
+     */
     def getDataspaceQuery(authorizationKey: String, id: String) = database withSession { implicit session: Session =>
         DataspaceTable.query
             .where(_.id === id)
@@ -112,6 +141,11 @@ object CkanGodInterface {
             )
     }
 
+    /**
+     * @param authorizationKey CKAN authorization key of the user that requests the dataspaces
+     * @param id UUID of the desired resource
+     * @return information for the specified dataspace
+     */
     def getDataspace(authorizationKey: String, id: String) = {
         database withSession { implicit session: Session =>
             getDataspaceQuery(authorizationKey, id).list.headOption
@@ -119,6 +153,14 @@ object CkanGodInterface {
     }
 
 
+    /**
+     * @param dataspaceId UUID of the requested dataspace
+     * @param _since gets only the resources newer than the specified timestamp
+     * @param _until gets only the resources older than the specified timestamp
+     * @param start (aka offset) skips first 'start' results
+     * @param _count defines how many results to return
+     * @return query object for resources belonging to the specified dataspace
+     */
     def listDataspaceResourcesQuery(
                             // already authorized // authorizationKey: String,
                             dataspaceId: String,
@@ -143,14 +185,24 @@ object CkanGodInterface {
         )
     }
 
+    /**
+     * @param dataspaceId dataspace UUID
+     * @param packageId package UUID
+     * @return whether the package belongs to the dataspace
+     */
     def isPackageInDataspace(dataspaceId: String, packageId: String): Boolean = database withSession { implicit session: Session =>
         PackageTable.query
-        .where(p => p.id === packageId && p.state === "active" && p.ownerOrg === dataspaceId)
-        .take(1)
-        .list
-        .size > 0
+            .where(p => p.id === packageId && p.state === "active" && p.ownerOrg === dataspaceId)
+            .take(1)
+            .list
+            .size > 0
     }
 
+    /**
+     * @param id dataspace UUID
+     * @param authorizationKey CKAN user authorization id
+     * @return whether the dataspace is accessible to the user
+     */
     def isDataspaceAccessibleToUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
         UserDataspaceRoleTable.query
             .where(_.dataspaceId === id)
@@ -160,6 +212,11 @@ object CkanGodInterface {
             .size > 0
     }
 
+    /**
+     * @param id dataspace UUID
+     * @param authorizationKey CKAN user authorization id
+     * @return whether the dataspace is modifiable to the user
+     */
     def isDataspaceModifiableByUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
         UserDataspaceRoleTable.query
             .where(ds =>
@@ -171,6 +228,11 @@ object CkanGodInterface {
             .size > 0
     }
 
+    /**
+     * @param id resource UUID
+     * @param authorizationKey CKAN user authorization id
+     * @return whether the resource is accessible to the user
+     */
     def isResourceAccessibleToUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
         DataspaceResourceTable.query
             .map(_.justIds)
@@ -184,6 +246,14 @@ object CkanGodInterface {
     }
 
 
+    /**
+     * A convenience class to manage the chunked responses without explicitely
+     * exposing the start/offset mechanism
+     * @param since
+     * @param until
+     * @param start
+     * @param count
+     */
     case class IteratorData(val since: Timestamp, val until: Timestamp, val start: Int, val count: Int) {
         def generateId: String = {
             val since = this.since.getTime
