@@ -6,6 +6,7 @@ litef {
 
 litef.ckan {
     namespace    = "http://134.76.21.222/ckan/api/3/"
+    storage      = "http://134.76.21.222/ckan/storage/"
     httpUsername = ""
     httpPassword = ""
     apiKey       = ""
@@ -35,7 +36,14 @@ akka {
 
 spray {
   can.server {
-    request-timeout = 10s
+    request-timeout = 240s
+    idle-timeout = 300s
+
+  }
+  can.client {
+    request-timeout = 240s
+    idle-timeout = 300s
+
   }
 
   routing {
