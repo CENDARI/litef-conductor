@@ -84,15 +84,15 @@ class CollectorActor
      * @return nothing important
      */
     def processResource(resource: ckan.Resource) = Future {
-        log.info(s"Lets find the resource we want ${resource.id} / ${resource.url}")
+        // log.info(s"Lets find the resource we want ${resource.id} / ${resource.url}")
 
         // If the resource is a valid candidate for processing, passing it to the dispatcher,
         // otherwise write a note to self that we have failed.
         if (resource.isProcessable) {
-            log.info("Sending the request to the dispatcher")
+            // log.info("Sending the request to the dispatcher")
             dispatcherActor ! DispatcherActor.ProcessResource(resource)
         } else {
-            log.info("An error occured - unable to process the resource")
+            // log.info("An error occured - unable to process the resource")
             self ! DispatcherActor.ResourceProcessingFailed(DispatcherActor.ResourceNotProcessableException(resource))
         }
     }
@@ -103,7 +103,7 @@ class CollectorActor
      */
     def processNext() = database withSession { implicit session: Session =>
 
-        log.info("Processing the next resource:")
+        // log.info("Processing the next resource:")
 
         // Searching for the resource that needs to be processed.
         // It needs to be locally available and to have a modification timestamp
@@ -125,13 +125,13 @@ class CollectorActor
 
         if (next.isEmpty) {
             // If not, update the queue
-            log.info("The queue is empty, waiting for 60 seconds...")
+            // log.info("The queue is empty, waiting for 60 seconds...")
             system.scheduler.scheduleOnce(60 seconds, self, Start())
 
         } else {
             // If yes, process it
             val resource = next.get
-            log.info(s"Processing resource: ${resource.id} / ${resource.url}")
+            // log.info(s"Processing resource: ${resource.id} / ${resource.url}")
             processResource(resource)
         }
     }
@@ -160,12 +160,12 @@ class CollectorActor
 
         // Processing the next resource
         case ProcessNext() =>
-            log.info("Got the request to process the next resource")
+            // log.info("Got the request to process the next resource")
             processNext
 
         // We got the notice that a resource processing was finished
         case DispatcherActor.ResourceProcessingFinished(resource) =>
-            log.info(s"The dispatcher said it has finished processing $resource")
+            // log.info(s"The dispatcher said it has finished processing $resource")
             markResourceAsProcessed(resource)
             processNext
 
@@ -173,7 +173,7 @@ class CollectorActor
         case DispatcherActor.ResourceProcessingFailed(ex) =>
             ex match {
                 case DispatcherActor.ResourceProcessingException(resource) =>
-                    log.info(s"The dispatcher said it has failed to process $ex")
+                    // log.info(s"The dispatcher said it has failed to process $ex")
                     markResourceAsProcessed(resource)
                 case _ =>
                     // nothing
@@ -183,7 +183,7 @@ class CollectorActor
 
         // Passing messages meant for the dispatcher:
         case msg =>
-            log.info("Passing to the dispatcherActor " + msg.toString)
+            // log.info("Passing to the dispatcherActor " + msg.toString)
             dispatcherActor ! msg
     }
 

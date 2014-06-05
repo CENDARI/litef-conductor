@@ -101,7 +101,7 @@ class DispatcherActor
      * Starts processing the resource, calls the first plugin
      */
     def startProcessing() {
-        log.info("Starting processing")
+        // log.info("Starting processing")
         leftPlugins = plugins
         startNextPlugin()
     }
@@ -111,12 +111,12 @@ class DispatcherActor
      */
     def startNextPlugin() {
         if (leftPlugins.size == 0) {
-            log.info("No more plugins, sending the signal to the collector")
+            // log.info("No more plugins, sending the signal to the collector")
             Core.collectorActor ! ResourceProcessingFinished(currentRequest.get.resource)
             currentRequest = None
 
         } else {
-            log.info("Starting the next plugin")
+            // log.info("Starting the next plugin")
             leftPlugins.head ! currentRequest.get
             leftPlugins = leftPlugins.tail
 
@@ -125,13 +125,13 @@ class DispatcherActor
 
     def receive: Receive = {
         case request @ ProcessResource(resource) =>
-            log.info(s"Got the request to process $resource")
+            // log.info(s"Got the request to process $resource")
 
             if (currentRequest.isEmpty) {
                 currentRequest = Some(request)
                 startProcessing()
             } else {
-                log.warning("We are already processing something!")
+                // log.warning("We are already processing something!")
 
                 sender ! AlreadyRunningException
             }

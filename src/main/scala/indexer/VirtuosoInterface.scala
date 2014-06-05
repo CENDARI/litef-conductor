@@ -25,12 +25,12 @@ import common.Config.{ Virtuoso => VirtuosoConfig }
 
 object VirtuosoInterface {
 
-    lazy val logger = org.slf4j.LoggerFactory getLogger getClass
+    lazy val log = org.slf4j.LoggerFactory getLogger getClass
 
     lazy val defaultGraph = new VirtGraph(VirtuosoConfig.url, VirtuosoConfig.user, VirtuosoConfig.password)
 
     def namedGraph(name: String) = {
-        logger.info("Creating graph for " + name)
+        // logger.info("Creating graph for " + name)
         new VirtGraph(name, VirtuosoConfig.url, VirtuosoConfig.user, VirtuosoConfig.password)
     }
 

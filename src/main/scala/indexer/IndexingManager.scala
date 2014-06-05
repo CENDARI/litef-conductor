@@ -52,7 +52,7 @@ object IndexingManager {
         try {
 
             val now = new java.sql.Timestamp(System.currentTimeMillis())
-            println(s"Saving ${resource.id}'s RDF data in ${format} format")
+            // println(s"Saving ${resource.id}'s RDF data in ${format} format")
 
             val stream = new java.io.ByteArrayOutputStream()
             model.write(stream, format)
@@ -90,9 +90,9 @@ object IndexingManager {
         // Adding indexing results
         results foreach { namedModel add _.model }
 
-        println("This is what we have generated: ###########################")
-        namedModel.write(System.out, "N3")
-        println("###########################################################")
+        // println("This is what we have generated: ###########################")
+        // namedModel.write(System.out, "N3")
+        // println("###########################################################")
 
 
         // We need to save the new RDF serializations back to the database
