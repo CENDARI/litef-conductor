@@ -52,6 +52,13 @@ class ResourceService()(implicit executionContext: ExecutionContext)
             }
         }
 
+    def getResourceMetadataRdf(id: String, format: String)(implicit authorizationKey: String) =
+        authorize(ckan.CkanGodInterface.isResourceAccessibleToUser(id.split('.').head, authorizationKey)) {
+            complete {
+                (Core.resourceActor ? GetResourceMetadataRDF(id, format)).mapTo[HttpResponse]
+            }
+        }
+
     def getResourceData(id: String)(implicit authorizationKey: String) =
         authorize(ckan.CkanGodInterface.isResourceAccessibleToUser(id, authorizationKey)) {
             complete {
@@ -81,6 +88,8 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                  * Getting the specific result item
                  */
                 path(Segment)                       { getResourceMetadata } ~
+                path(Segment / "rdf" / Segment)     { getResourceMetadataRdf } ~
+                path(Segment / "rdf")               { getResourceMetadataRdf(_, "n3") } ~
                 path(Segment / "data")              { getResourceData }
                 // path(Segment / "$metadata" / Segment) { getResourceMetadataItem }
             } ~

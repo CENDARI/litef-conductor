@@ -66,6 +66,9 @@ object ResourceActor {
     /// Gets the meta data for the the specified resource
     case class GetResourceMetadata(id: String)
 
+    /// Gets the meta data for the the specified resource
+    case class GetResourceMetadataRDF(id: String, format: String)
+
     /// Gets the resources for the specified dataset
     case class ListDataspaceResources(
             val dataspaceId: String,
@@ -178,6 +181,37 @@ class ResourceActor
                         }
                     )
                 )
+            }
+
+        case GetResourceMetadataRDF(request, format) =>
+            CkanGodInterface.database withSession { implicit session: Session =>
+
+                val mimetype = if (format == "xml") "application/rdf+xml" else "text/n3"
+
+                println(s"################### searching for $request in $format as $mimetype")
+
+                val content = conductor.ResourceAttachmentTable.query
+                    .filter(_.resourceId === request)
+                    .filter(_.format === mimetype)
+                    .map(_.content)
+                    .list.headOption
+
+                val result = content.map { content =>
+                    HttpResponse(
+                        status  = StatusCodes.OK,
+                        entity = HttpEntity(
+                            ContentType(MediaType.custom(mimetype), `UTF-8`),
+                            content.map(_.toString) getOrElse ""
+                        )
+                    )
+                } getOrElse {
+                    HttpResponse(
+                        status  = StatusCodes.NotFound,
+                        entity  = HttpEntity.Empty
+                    )
+                }
+
+                sender ! result
             }
 
         /// Gets the data of the specified resource
