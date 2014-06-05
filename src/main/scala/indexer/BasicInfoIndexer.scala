@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Ivan Cukic <ivan at mi.sanu.ac.rs>
+ * Copyright (C) 2014 Ivan Cukic <ivan at mi.sanu.ac.rs>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -15,14 +15,32 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.foment.javelin.store
+package indexer
 
 import com.hp.hpl.jena.rdf.model.Model
+import com.hp.hpl.jena.rdf.model.Resource
+import javelin.ontology.Javelin
+import org.foment.utils.Exceptions._
+import javelin.ontology.Implicits._
 
-case class Ontology(
-    label: String,
-    comment: String,
-    namespace: String,
-    abbreviation: String,
-    model: Model
-)
+final
+class BasicInfoIndexer extends AbstractIndexer {
+    override
+    def indexFile(
+        file: java.io.File,
+        mimetype: String,
+        root: => Resource
+    ): Option[Double] = exceptionless (
+        getBasicInfo(file, root),
+        "We can not fail"
+    )
+
+    def getBasicInfo(file: java.io.File, root: => Resource) = {
+        root ++= Seq(
+            Javelin.fileName % file.getName(),
+            Javelin.modified % file.lastModified()
+        )
+
+        Some(1.0)
+    }
+}

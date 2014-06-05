@@ -46,6 +46,12 @@ object Config {
         }
     }
 
+    object Virtuoso {
+        lazy val url      : String = config getString "virtuoso.url"
+        lazy val user     : String = config getString "virtuoso.username"
+        lazy val password : String = config getString "virtuoso.password"
+    }
+
     object Conductor {
         lazy val fileSizeLimit = config getLong "conductor.fileSizeLimit"
         lazy val plugins       = config getString "conductor.plugins" split ','

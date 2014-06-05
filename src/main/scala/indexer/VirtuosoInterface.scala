@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Ivan Cukic <ivan at mi.sanu.ac.rs>
+ * Copyright (C) 2014 Ivan Cukic <ivan at mi.sanu.ac.rs>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -15,33 +15,30 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.foment.utils
+package indexer
 
-import scala.language.reflectiveCalls
+import java.io.File
+import org.foment.utils.Filesystem._
+import org.foment.utils.Class._
+import virtuoso.jena.driver.{VirtGraph, VirtModel}
+import common.Config.{ Virtuoso => VirtuosoConfig }
 
-/**
- * Defines some sugar-syntax for managing code that throws exceptions
- */
-object Timing {
+object VirtuosoInterface {
 
     lazy val logger = org.slf4j.LoggerFactory getLogger getClass
 
-    /**
-     * Measures the speed of execution of the passed block.
-     * It returns a pair - the calculation result along with the
-     * time it took in miliseconds.
-     * {{{
-     *     (result, time) = benchmark {
-     *         do some calculations
-     *     }
-     * }}}
-     */
-    def benchmark[T](method: => T): (T, Long) = {
-        val startTime = System.currentTimeMillis
-        val result = method
-        val endTime = System.currentTimeMillis
+    lazy val defaultGraph = new VirtGraph(VirtuosoConfig.url, VirtuosoConfig.user, VirtuosoConfig.password)
 
-        (result, endTime - startTime)
+    def namedGraph(name: String) = {
+        logger.info("Creating graph for " + name)
+        new VirtGraph(name, VirtuosoConfig.url, VirtuosoConfig.user, VirtuosoConfig.password)
+    }
+
+    implicit
+    class GraphToModel(graph: VirtGraph) {
+        lazy val model = new VirtModel(graph)
+
     }
 
 }
+

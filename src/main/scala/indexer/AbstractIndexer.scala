@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Ivan Cukic <ivan at mi.sanu.ac.rs>
+ * Copyright (C) 2013, 2014 Ivan Cukic <ivan at mi.sanu.ac.rs>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -43,6 +43,7 @@ trait AbstractIndexer {
      */
     final
     def index(
+        resourceUri: String,
         file: java.io.File,
         mimetype: String
     ): Option[Result] = {
@@ -51,7 +52,7 @@ trait AbstractIndexer {
         model = ModelFactory.createDefaultModel
 
         // Indexing the file
-        val result = indexFile(file, mimetype, /*lazy*/ ?:(file))
+        val result = indexFile(file, mimetype, /*lazy*/ ?:(resourceUri))
 
         if (result.isEmpty) None
         else {

@@ -45,7 +45,7 @@ case class Resource(
 ) {
     lazy val isLocal = url.startsWith(Config.Ckan.urlStoragePrefix)
 
-    lazy val localPath = url.replaceFirst(Config.Ckan.urlStoragePrefix, Config.Ckan.localStoragePrefix)
+    lazy val localPath = java.net.URLDecoder.decode(url, "UTF-8").replaceFirst(Config.Ckan.urlStoragePrefix, Config.Ckan.localStoragePrefix)
     lazy val localFile = new java.io.File(localPath)
     lazy val localMimetype = mimetype getOrElse (new java.io.File(localPath).mimetype)
 

@@ -44,6 +44,7 @@ import ckan.CkanGodInterface.database
 import scala.concurrent.duration._
 import akka.event.Logging._
 import akka.event.Logging
+import org.foment.utils.Exceptions._
 
 object CollectorActor {
 
@@ -141,10 +142,15 @@ class CollectorActor
      * @return
      */
     def markResourceAsProcessed(resource: ckan.Resource) = database withSession { implicit session: Session =>
-        ProcessedResourceTable.query
-            .filter(r => r.id === resource.id)
-            .delete
-        ProcessedResourceTable.query += ProcessedResource(resource.id, resource.modified)
+
+        exceptionless {
+            ProcessedResourceTable.query += ProcessedResource(resource.id, resource.modified)
+            None
+        }
+
+        ProcessedResourceTable.query.filter(_.id === resource.id)
+            .map(_.lastProcessed)
+            .update(resource.modified)
     }
 
     def receive: Receive = {

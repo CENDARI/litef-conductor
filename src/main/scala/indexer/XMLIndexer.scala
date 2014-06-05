@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Ivan Cukic <ivan at mi.sanu.ac.rs>
+ * Copyright (C) 2013, 2014 Ivan Cukic <ivan at mi.sanu.ac.rs>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -34,7 +34,8 @@ class XMLIndexer extends AbstractIndexer {
         mimetype: String,
         rootResource: => Resource
     ): Option[Double] = exceptionless (
-        if (mimetype != "application/xml") {
+        if (mimetype != "application/xml" &&
+            mimetype != "text/xml") {
             logger info s"mimetype is not xml: ${mimetype}"
             None
 

@@ -14,6 +14,7 @@ object Indexer {
         // "indexer.PDFIndexer",
         // "indexer.PlainTextIndexer",
         // "indexer.ApacheTikaIndexer",
+        "indexer.BasicInfoIndexer",
         "indexer.xml.EAGIndexer"
     )
 }

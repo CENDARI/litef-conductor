@@ -32,9 +32,9 @@ libraryDependencies ++= {
         // "org.slf4j"           % "slf4j-nop"          % "1.6.4"         withSources,
         "postgresql"          % "postgresql"         % "9.1-901.jdbc4" withSources,
         "org.scalatest"       % "scalatest_2.10"     % "2.0",
-        "ivan"               %% "javelin-ontologies" % "1.1",
-        "ivan"               %% "javelin"            % "1.1",
-        "ivan"               %% "scala-utils"        % "1.1"
+        "ivan"               %% "javelin-ontologies" % "1.2",
+        "ivan"               %% "javelin"            % "1.2",
+        "ivan"               %% "scala-utils"        % "1.2"
     )
 }
 

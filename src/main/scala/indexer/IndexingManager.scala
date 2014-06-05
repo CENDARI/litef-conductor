@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Ivan Cukic <ivan at mi.sanu.ac.rs>
+ * Copyright (C) 2013, 2014 Ivan Cukic <ivan at mi.sanu.ac.rs>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -21,6 +21,7 @@ import java.io.File
 import com.hp.hpl.jena.rdf.model.Model
 import org.foment.utils.Filesystem._
 import org.foment.utils.Class._
+import VirtuosoInterface._
 
 object IndexingManager {
     lazy val logger = org.slf4j.LoggerFactory getLogger getClass
@@ -42,19 +43,29 @@ object IndexingManager {
     val scoreTreshold = 0.9
 
     def index(resource: ckan.Resource) {
+        val resourceUri = "litef://resource/" + resource.id
         val file = resource.localFile
         val mimetype = resource.localMimetype
+        val namedModel = VirtuosoInterface.namedGraph(
+                 "litef://resource/" + resource.id
+            ).model
 
-        indexers flatMap { indexer =>
-            indexer.index(file, mimetype)
+        val results = indexers flatMap { indexer =>
+            indexer.index(resourceUri, file, mimetype)
                 .filter(_.score > .75)
                 .map(result => Result(file, result.model))
         }
+
+        // Removing previously generated data
+        namedModel.removeAll
+
+        results foreach { namedModel add _.model }
+
     }
 
     def printResults(file: String, mimetype: String) {
         indexers flatMap { indexer =>
-            indexer.index(new java.io.File(file), mimetype)
+            indexer.index("litef://dump/", new java.io.File(file), mimetype)
                 .filter(_.score > .75)
                 .map{_.model.write(System.out, "N3")}
         }

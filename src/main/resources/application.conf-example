@@ -22,6 +22,12 @@ litef.ckan {
     }
 }
 
+litef.virtuoso {
+    url = "jdbc:virtuoso://localhost:1111"
+    username = ""
+    password = ""
+}
+
 litef.conductor {
     fileSizeLimit = 10000
 
