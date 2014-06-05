@@ -54,7 +54,7 @@ case class Resource(
         fileSize <= Config.Conductor.fileSizeLimit
     }
 
-    lazy val isProcessable = isLocal && isBelowSizeThreshold
+    lazy val isProcessable = isLocal // && isBelowSizeThreshold
     lazy val content = io.Source.fromFile(localPath).mkString
 
     override

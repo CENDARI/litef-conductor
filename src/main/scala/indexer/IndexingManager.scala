@@ -22,6 +22,10 @@ import com.hp.hpl.jena.rdf.model.Model
 import org.foment.utils.Filesystem._
 import org.foment.utils.Class._
 import VirtuosoInterface._
+import conductor._
+import ckan.CkanGodInterface.database
+import slick.driver.PostgresDriver.simple._
+
 
 object IndexingManager {
     lazy val logger = org.slf4j.LoggerFactory getLogger getClass
@@ -42,6 +46,30 @@ object IndexingManager {
      */
     val scoreTreshold = 0.9
 
+    def saveToDatabase(resource: ckan.Resource, model: Model,
+            format: String, mimetype: String) = database.withSession { implicit session: Session =>
+
+        try {
+
+            val now = new java.sql.Timestamp(System.currentTimeMillis())
+            println(s"Saving ${resource.id}'s RDF data in ${format} format")
+
+            val stream = new java.io.ByteArrayOutputStream()
+            model.write(stream, format)
+            ResourceAttachmentTable.query += ResourceAttachment(
+                resource.id,
+                mimetype,
+                resource.created  getOrElse now,
+                resource.modified getOrElse now,
+                Some(stream.toString("UTF-8"))
+            )
+
+        } catch {
+            case e: org.postgresql.util.PSQLException =>
+                println(e.toString())
+        }
+    }
+
     def index(resource: ckan.Resource) {
         val resourceUri = "litef://resource/" + resource.id
         val file = resource.localFile
@@ -59,7 +87,17 @@ object IndexingManager {
         // Removing previously generated data
         namedModel.removeAll
 
+        // Adding indexing results
         results foreach { namedModel add _.model }
+
+        println("This is what we have generated: ###########################")
+        namedModel.write(System.out, "N3")
+        println("###########################################################")
+
+
+        // We need to save the new RDF serializations back to the database
+        saveToDatabase(resource, namedModel, "N3", "text/n3")
+        saveToDatabase(resource, namedModel, "RDF/XML", "application/rdf+xml")
 
     }
 

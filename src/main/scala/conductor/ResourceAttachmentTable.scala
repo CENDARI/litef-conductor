@@ -38,7 +38,7 @@ class ResourceAttachmentTable(tag: Tag)
     val format         = column [ String         ] ("format",      O.NotNull)
     val created        = column [ Timestamp      ] ("created",     O.NotNull)
     val modified       = column [ Timestamp      ] ("modified",    O.NotNull)
-    val content        = column [ Option[String] ] ("content")
+    val content        = column [ Option[String] ] ("content",     O.DBType("text"))
 
     val pk             = primaryKey("litef_resource_attachment_pk", (resourceId, format))
 

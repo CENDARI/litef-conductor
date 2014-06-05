@@ -26,10 +26,7 @@ class DocumentIndexerPlugin extends AbstractPluginActor("Litef Indexer")
 
     override
     def process(resource: ckan.Resource): Future[Unit] = Future {
-        // log.info(s"Pretending to process the resource $resource")
-        // Thread.sleep(1000)
         indexer.IndexingManager index resource
-
     }
 }
 
