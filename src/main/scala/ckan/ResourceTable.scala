@@ -143,9 +143,9 @@ object ResourceJsonProtocol extends DefaultJsonProtocol {
         }
     }
 
-    implicit object ResourceSeqJsonFormat extends RootJsonFormat[List[Resource]] {
-        def write(ds: List[Resource]) =
-            JsArray(ds.map{ _.toJson })
+    implicit object ResourceSeqJsonFormat extends RootJsonFormat[Vector[Resource]] {
+        def write(ds: Vector[Resource]) =
+            JsArray(ds.map{ _.toJson }.toVector)
 
         def read(value: JsValue) =
             throw new DeserializationException("Resource can not be read from JSON")

@@ -110,7 +110,7 @@ class CollectorActor
         // after the last time we processed a resource with this id
         val nextQuery =
             ckan.ResourceTable.query
-                .filter(_.modified.isNotNull)
+                .filter(_.modified.isDefined)
                 .filter(_.url startsWith CkanConfig.urlStoragePrefix)
                 .filterNot(resource =>
                     resource.id in ProcessedResourceTable.query
