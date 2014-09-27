@@ -45,7 +45,7 @@ object CkanGodInterface {
      * @return query object that will return the specified resource
      */
     def getResourceQuery(id: String) = database withSession { implicit session: Session =>
-        ResourceTable.query.filter(_.id === id)
+        ResourceTable.query.where(_.id === id)
     }
 
     /**
@@ -85,7 +85,7 @@ object CkanGodInterface {
 
         (
             ResourceTable.query
-                .filter(_.modified.between(since, until))
+                .where(_.modified.between(since, until))
                 .sortBy(_.modified asc)
                 .drop(start)
                 .take(count)
@@ -114,9 +114,9 @@ object CkanGodInterface {
 
         (
             DataspaceTable.query
-                .filter(_.isOrganization)
-                .filter(_.id in UserDataspaceRoleTable.query
-                    .filter { _.userApiKey === authorizationKey }
+                .where(_.isOrganization)
+                .where(_.id in UserDataspaceRoleTable.query
+                    .where { _.userApiKey === authorizationKey }
                     .map   { _.dataspaceId }
                 )
                 .sortBy(_.title asc)
@@ -134,9 +134,9 @@ object CkanGodInterface {
      */
     def getDataspaceQuery(authorizationKey: String, id: String) = database withSession { implicit session: Session =>
         DataspaceTable.query
-            .filter(_.id === id)
-            .filter(_.id in UserDataspaceRoleTable.query
-                .filter { _.userApiKey === authorizationKey }
+            .where(_.id === id)
+            .where(_.id in UserDataspaceRoleTable.query
+                .where { _.userApiKey === authorizationKey }
                 .map   { _.dataspaceId }
             )
     }
@@ -174,8 +174,8 @@ object CkanGodInterface {
 
         (
             DataspaceResourceTable.query
-                .filter(_.dataspaceId === dataspaceId)
-                .filter(_.modified.between(since, until))
+                .where(_.dataspaceId === dataspaceId)
+                .where(_.modified.between(since, until))
                 .sortBy(_.modified asc)
                 .drop(start)
                 .take(count)
@@ -192,7 +192,7 @@ object CkanGodInterface {
      */
     def isPackageInDataspace(dataspaceId: String, packageId: String): Boolean = database withSession { implicit session: Session =>
         PackageTable.query
-            .filter(p => p.id === packageId && p.state === "active" && p.ownerOrg === dataspaceId)
+            .where(p => p.id === packageId && p.state === "active" && p.ownerOrg === dataspaceId)
             .take(1)
             .list
             .size > 0
@@ -205,8 +205,8 @@ object CkanGodInterface {
      */
     def isDataspaceAccessibleToUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
         UserDataspaceRoleTable.query
-            .filter(_.dataspaceId === id)
-            .filter(_.userApiKey === authorizationKey)
+            .where(_.dataspaceId === id)
+            .where(_.userApiKey === authorizationKey)
             .take(1)
             .list
             .size > 0
@@ -219,7 +219,7 @@ object CkanGodInterface {
      */
     def isDataspaceModifiableByUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
         UserDataspaceRoleTable.query
-            .filter(ds =>
+            .where(ds =>
                 ds.dataspaceId === id &&
                 ds.userApiKey === authorizationKey &&
                 (ds.dataspaceRole === "editor" || ds.dataspaceRole === "admin"))
@@ -236,9 +236,9 @@ object CkanGodInterface {
     def isResourceAccessibleToUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
         DataspaceResourceTable.query
             .map(_.justIds)
-            .filter(_._2 === id)
-            .filter(_._1 in UserDataspaceRoleTable.query
-                               .filter(_.userApiKey === authorizationKey)
+            .where(_._2 === id)
+            .where(_._1 in UserDataspaceRoleTable.query
+                               .where(_.userApiKey === authorizationKey)
                                .map(_.dataspaceId))
             .take(1)
             .list

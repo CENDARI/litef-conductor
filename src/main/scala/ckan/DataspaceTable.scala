@@ -96,7 +96,7 @@ object DataspaceJsonProtocol extends DefaultJsonProtocol {
 
     implicit object DataspaceSeqJsonFormat extends RootJsonFormat[List[Dataspace]] {
         def write(ds: List[Dataspace]) =
-            JsArray(ds.map{ _.toJson }.toVector)
+            JsArray(ds.map{ _.toJson })
 
         def read(value: JsValue) =
             throw new DeserializationException("Dataspace can not be read from JSON")

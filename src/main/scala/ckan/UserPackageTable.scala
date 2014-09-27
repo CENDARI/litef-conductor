@@ -121,7 +121,7 @@ object UserResourceJsonProtocol extends DefaultJsonProtocol {
 
     implicit object UserResourceSeqJsonFormat extends RootJsonFormat[List[UserPackage]] {
         def write(ds: List[UserPackage]) =
-            JsArray(ds.map{ _.toJson }.toVector)
+            JsArray(ds.map{ _.toJson })
 
         def read(value: JsValue) =
             throw new DeserializationException("UserResource can not be read from JSON")
