@@ -19,33 +19,74 @@ package ckan
 import slick.driver.PostgresDriver.simple._
 import java.sql.Timestamp
 import spray.json._
+import common.Config.{ Ckan => CkanConfig }
 
 // UserDataspaceRole
 case class UserDataspaceRole(
+    id            : String,
     userId        : String,
     userApiKey    : String,
     dataspaceRole : String,
-    dataspaceId   : String
+    dataspaceId   : String,
+    state         : String
 )
 
 class UserDataspaceRoleTable(tag: Tag)
     extends Table[UserDataspaceRole](tag, "litef_ckan_user_group_role_view")
 {
-    val userId        = column[ String ] ("user_id"     , O.NotNull)
-    val userApiKey    = column[ String ] ("user_apikey" , O.NotNull)
-    val dataspaceRole = column[ String ] ("group_role"  , O.NotNull)
-    val dataspaceId   = column[ String ] ("group_id"    , O.NotNull)
+    val id              = column[ String ] ("id"          , O.NotNull)
+    val userId          = column[ String ] ("user_id"     , O.NotNull)
+    val userApiKey      = column[ String ] ("user_apikey" , O.NotNull)
+    val dataspaceRole   = column[ String ] ("group_role"  , O.NotNull)
+    val dataspaceId     = column[ String ] ("group_id"    , O.NotNull)
+    val state           = column[ String ] ("state"    , O.NotNull)
 
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
-        userId        ,
-        userApiKey    ,
-        dataspaceRole ,
-        dataspaceId
+        id              ,
+        userId          ,
+        userApiKey      ,
+        dataspaceRole   ,
+        dataspaceId     ,
+        state
     ) <> (UserDataspaceRole.tupled, UserDataspaceRole.unapply)
 }
 
 object UserDataspaceRoleTable {
     val query = TableQuery[UserDataspaceRoleTable]
+}
+
+object UserDataspaceRoleJsonProtocol extends DefaultJsonProtocol {
+    implicit object UserDataspaceRoleJsonFormat extends RootJsonFormat[UserDataspaceRole] {
+        def write(r: UserDataspaceRole) =
+            JsObject(
+                "id"            -> JsString(r.id),
+                "url"           -> JsString(s"${common.Config.namespace}dataspaceRoles/${r.id}"),
+                "userId"        -> JsString(r.userId),
+                "userUrl"       -> JsString(s"${common.Config.namespace}users/${r.userId}"),
+                "dataspaceId"   -> JsString(r.dataspaceId),
+                "dataspaceUrl"  -> JsString(s"${common.Config.namespace}dataspaces/${r.dataspaceId}"),
+                "role"          -> JsString(r.dataspaceRole)
+            )
+
+        def read(value: JsValue) = {
+            value.asJsObject.getFields("userId", "dataspaceId", "role") match {
+                case Seq(JsString(userId), JsString(dataspaceId), JsString(role)) =>
+                    role.toLowerCase match {
+                        case "admin"|"editor"|"member" => new UserDataspaceRole("", userId, "", role.toLowerCase, dataspaceId, "")
+                        case _ => throw new DeserializationException("""Invalid value for role. Valid values are "admin", "editor" and "member" """)
+                    }
+                case _ => throw new DeserializationException("Invalid JSON input for user dataspace role")
+            }
+        }
+    }
+
+    implicit object UserDataspaceRoleSeqJsonFormat extends RootJsonFormat[List[UserDataspaceRole]] {
+        def write(r: List[UserDataspaceRole]) =
+            JsArray(r.map{ _.toJson })
+
+        def read(value: JsValue) =
+            throw new DeserializationException("List of UserDataspaceRole can not be read from JSON")
+    }
 }
 

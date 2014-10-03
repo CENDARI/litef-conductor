@@ -111,7 +111,7 @@ class CollectorActor
         val nextQuery =
             ckan.ResourceTable.query
                 .filter(_.modified.isNotNull)
-                .filter(_.url startsWith CkanConfig.urlStoragePrefix)
+                .filter(_.urlType === "upload")
                 .filterNot(resource =>
                     resource.id in ProcessedResourceTable.query
                         .filter{ p => resource.id === p.id && p.lastProcessed <= resource.modified }

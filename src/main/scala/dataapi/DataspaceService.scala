@@ -30,7 +30,7 @@ import java.sql.Timestamp
 import core.Core
 import DefaultJsonProtocol._
 import CkanJsonProtocol._
-import common.Config.{ Ckan => CkanConfig }
+//import common.Config.{ Ckan => CkanConfig }
 import scala.util.{Success, Failure}
 import spray.http.HttpHeaders._
 import java.util.UUID
@@ -38,9 +38,7 @@ import MediaTypes._
 import HttpCharsets._
 import HttpMethods._
 import HttpHeaders._
-import spray.http.HttpHeaders._
 import spray.httpx.marshalling._
-import java.util.UUID
 import java.text.Normalizer
 import java.text.Normalizer.Form
 
@@ -89,90 +87,62 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
     }
 
     def updateDataspace(id: String, dataspace: DataspaceUpdate) (implicit authorizationKey: String) = complete {
-        (Core.dataspaceActor ? UpdateDataspace(authorizationKey, DataspaceUpdateWithId(id, dataspace.name, dataspace.title, dataspace.description)))
+        (Core.dataspaceActor ? UpdateDataspace(authorizationKey, DataspaceUpdateWithId(id, dataspace.title, dataspace.description)))
         .mapTo[HttpResponse]
     }
 
-    def createResourceInDataspace(id: String, data: MultipartFormData, file: FormFile, format: Option[String], name: Option[String],
+    def createResourceInDataspace(id: String, file: FormFile, format: Option[String], name: Option[String],
                                   description: Option[String], setId: Option[String]) (implicit authorizationKey: String) =
-        // Authorization is not left to CKAN because its FileStorage API returns
-        // 200 status + html page containing "not authorized" message among lots of other stuff
+        // TODO: Check if authorization can be left to CKAN API
         // TODO: All registered users should be allowed to add resources to public dataspaces (?)
         authorize(ckan.CkanGodInterface.isDataspaceModifiableByUser(id, authorizationKey)) {
-            val set = setId getOrElse ""
-            if (set != "" && !ckan.CkanGodInterface.isPackageInDataspace(id, set))
-                complete { HttpResponse(status = StatusCodes.NotFound, entity = HttpEntity(ContentType(`text/html`), s"Set with id $set not found in dataspace $id"))} // TODO: CKAN sends 404, which status should be used?
+
+            var set = setId.getOrElse("")
+            // check if set exists in the dataspace
+            if (set != "" && !ckan.CkanGodInterface.isPackageInDataspace(id, set)) {
+                complete { HttpResponse(StatusCodes.NotFound, s"""Set with id "$set" not found in dataspace "$id"!""")}
+            }
             else {
-                val key = createFileKey(file.name.getOrElse("unnamed"))
-                val fileUrl = CkanConfig.storage + "f/" + key
-                onSuccess((Core.resourceActor ? UploadFile (authorizationKey, data, key)).mapTo[HttpResponse]) {
-                    case x if x.status == StatusCodes.OK =>
-                        createResourceMetadata(authorizationKey, id, name, description, format, set, fileUrl)
-                    case x =>
-                        complete { HttpResponse(x.status, "Error uploading file!") }
+                if (set == "") {
+                    // create set
+                    set = UUID.randomUUID().toString
+
+                    // TODO: Set resource and new set name/title to file.name if name is not specified
+                    val setTitle = name.getOrElse("Unnamed API dataset")
+
+                    onSuccess((Core.dataspaceActor ? CreatePackageInDataspace(authorizationKey, PackageCreateWithId(set, id, setTitle))).mapTo[HttpResponse]) {
+                        case x if x.status != StatusCodes.OK =>
+                            complete { HttpResponse(x.status, "Error creating set for new resource!") }
+                        case _ =>
+                            complete {
+                                (Core.resourceActor ? CreateResource(authorizationKey, UUID.randomUUID().toString, file, name, format, description, set))
+                                .mapTo[HttpResponse]
+                            }
+                    }
+                }
+                else complete {
+                    (Core.resourceActor ? CreateResource(authorizationKey, UUID.randomUUID().toString, file, name, format, description, set))
+                    .mapTo[HttpResponse]
                 }
             }
         }
 
-    def createResourceMetadata(authorizationKey: String, id: String, name: Option[String], description: Option[String], format: Option[String], set: String, url: String) = {
-        if(set == ""){
-                val newSetId = UUID.randomUUID().toString
-                onSuccess((Core.dataspaceActor ? CreatePackageInDataspace(authorizationKey, PackageCreateWithId(newSetId, id))).mapTo[HttpResponse]) {
-                    case x if x.status == StatusCodes.OK =>
-                        onSuccess((Core.resourceActor ? CreateResourceMetadata(authorizationKey, id,
-                                                                               ResourceMetadataCreateWithId(UUID.randomUUID().toString, name, description, format, newSetId, url)))
-                                  .mapTo[HttpResponse]) { case y => complete { y } }
-                    case x =>  complete { HttpResponse(x.status,
-                                           entity = HttpEntity(ContentType(`text/html`, `UTF-8`),
-                                                                            s"File uploaded to $url \nError creating new set for resource!")) }
-                }
-        }
-        else {
-            onSuccess((Core.resourceActor ? CreateResourceMetadata(authorizationKey, id, ResourceMetadataCreateWithId(UUID.randomUUID().toString, name, description, format, set, url)))
-                      .mapTo[HttpResponse]) { case x => complete { x } }
-        }
-    }
+//    def normalizeText(text: String)= {
+//        Normalizer.normalize(text, Form.NFD)
+//            .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+//            .replaceAll("[^\\p{ASCII}]+","")
+//            .replaceAll(" ", "")
+//            .toLowerCase()
+//    }
 
-    def createFileKey(filename: String)= {
-        val timestampStr = new Timestamp(System.currentTimeMillis()).toString.replace(":","").replace(" ", "")
-        val formattedFilename = normalizeText(filename)
-        timestampStr + "/" + formattedFilename
-    }
-
-    def normalizeText(text: String)= {
-        Normalizer.normalize(text, Form.NFD)
-            .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
-            .replaceAll("[^\\p{ASCII}]+","")
-            .replaceAll(" ", "")
-            .toLowerCase()
-    }
-
-    def updateResourceInDataspace(id: String, resourceId: String, data: MultipartFormData, file: Option[FormFile], format: Option[String], name: Option[String],
-                                  description: Option[String]) (implicit authorizationKey: String) =
+    def updateResourceInDataspace(id: String, resourceId: String, file: FormFile, format: Option[String], name: Option[String], description: Option[String]) (implicit authorizationKey: String) =
         authorize(ckan.CkanGodInterface.isDataspaceModifiableByUser(id, authorizationKey)) {
-            file match  {
-                case None =>
-                    // Update only resource metadata
-                    complete {
-                        (Core.resourceActor ? UpdateResourceMetadata(authorizationKey, resourceId, format, name, description))
-                        .mapTo[HttpResponse]
-                    }
-                case Some(f) =>
-                    val key = createFileKey(f.name.getOrElse("unnamed"))
-                    val fileUrl = CkanConfig.storage + "f/" + key
-                    onSuccess((Core.resourceActor ? UploadFile (authorizationKey, data, key)).mapTo[HttpResponse]) {
-                        case x if x.status == StatusCodes.OK =>
-                            updateResourceMetadata(authorizationKey, resourceId, name, description, format, fileUrl)
-                        case x =>
-                            complete { HttpResponse(x.status, "Error uploading file!") }
-                    }
+            complete {
+                (Core.resourceActor ? UpdateResource(authorizationKey, resourceId, file, name, format, description))
+                .mapTo[HttpResponse]
             }
         }
 
-    def updateResourceMetadata(authorizationKey: String, resourceId: String, name: Option[String], description: Option[String], format: Option[String], url: String) = complete {
-        (Core.resourceActor ? UpdateResourceMetadataAndUrl(authorizationKey, ResourceMetadataUpdateWithId(resourceId, name, description, format, url)))
-         .mapTo[HttpResponse]
-    }
     val route = headerValueByName("Authorization") { implicit authorizationKey =>
         pathPrefix("dataspaces") {
             get {
@@ -200,23 +170,25 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
               /*
                * Adding new resource to dataspace
                */
-              (path(Segment / "resources") & entity(as[MultipartFormData])
+              (path(Segment / "resources")
                     & formFields('file.as[FormFile])
                     & formFields('format.as[Option[String]])
                     & formFields('name.as[Option[String]])
                     & formFields('description.as[Option[String]])
-                    & formFields('set_id.as[Option[String]]))  { createResourceInDataspace }
+                    & formFields('setId.as[Option[String]]))  { createResourceInDataspace }
             }~
             put {
               /*
                * Updating dataspace
+               * Currently disabled. CKAN 2.2 API removes all members from dataspace when dataspace is updated
+               * TODO: Find a workaround
                */
-              (path(Segment) & entity(as[DataspaceUpdate])) { updateDataspace } ~
+              //(path(Segment) & entity(as[DataspaceUpdate])) { updateDataspace } ~
               /*
                * Updating resource
                */
-              (path(Segment/"resources"/Segment) & entity(as[MultipartFormData])
-                    & formFields('file.as[Option[FormFile]])
+              (path(Segment/"resources"/Segment)
+                    & formFields('file.as[FormFile])
                     & formFields('format.as[Option[String]])
                     & formFields('name.as[Option[String]])
                     & formFields('description.as[Option[String]])) { updateResourceInDataspace }

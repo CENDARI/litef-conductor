@@ -5,14 +5,13 @@ litef {
 }
 
 litef.ckan {
+    home         = "http://134.76.21.222/ckan/"
     namespace    = "http://134.76.21.222/ckan/api/3/"
-    storage      = "http://134.76.21.222/ckan/storage/"
     httpUsername = ""
     httpPassword = ""
     apiKey       = ""
 
-    urlStoragePrefix   = "http://134.76.21.222/ckan/storage/f/"
-    localStoragePrefix = "/var/lib/ckan/dafault/data/"
+    localStoragePrefix = "/var/lib/ckan/default/resources"
 
     postgres {
         url      = "jdbc:postgresql://localhost:5432/ckantest"

@@ -19,7 +19,7 @@ package core
 
 import akka.io.IO
 import akka.actor.Props
-import dataapi.{RoutedHttpService, ResourceService, DataspaceService}
+import dataapi.{RoutedHttpService, ResourceService, DataspaceService, UserService, SessionService, DataspaceRoleService}
 import spray.can.Http
 import spray.routing._
 import spray.http.HttpHeaders.RawHeader
@@ -34,6 +34,9 @@ object Rest extends App
     val routes =
         respondWithHeader(RawHeader("Access-Control-Allow-Origin", "*")) {
             pathPrefix("v1") {
+                new SessionService().route ~
+                new UserService().route ~
+                new DataspaceRoleService().route ~
                 new ResourceService().route ~
                 new DataspaceService().route
             }
@@ -45,5 +48,5 @@ object Rest extends App
     Core.collectorActor
 
     // Binding the 8080 port to our server
-    IO(Http)(Core.system) ! Http.Bind(rootService, "0.0.0.0", port = 8081)
+    IO(Http)(Core.system) ! Http.Bind(rootService, "0.0.0.0", port = 42042)
 }

@@ -28,14 +28,13 @@ object Config {
     lazy val namespace = config getString "namespace"
 
     object Ckan {
-        // lazy val
+        lazy val home         = config getString "ckan.home"
         lazy val namespace    = config getString "ckan.namespace"
-        lazy val storage      = config getString "ckan.storage"
+        //lazy val storage      = config getString "ckan.storage"
         lazy val httpUsername = config getString "ckan.httpUsername"
         lazy val httpPassword = config getString "ckan.httpPassword"
         lazy val apiKey       = config getString "ckan.apiKey"
 
-        lazy val urlStoragePrefix   = config getString "ckan.urlStoragePrefix"
         lazy val localStoragePrefix = config getString "ckan.localStoragePrefix"
 
         object Database {

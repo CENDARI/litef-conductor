@@ -41,7 +41,8 @@ case class DataspaceResource(
     modified      : Option[Timestamp] = None,
     created       : Option[Timestamp] = None,
     cacheUrl      : Option[String]    = None,
-    packageId     : Option[String]    = None
+    packageId     : Option[String]    = None,
+    url_type      : Option[String]    = None
 )
 
 case class DataspaceResourcePair(
@@ -72,6 +73,7 @@ class DataspaceResourceTable(tag: Tag)
     val created       = column[ Option[Timestamp] ]  ("created")
     val cacheUrl      = column[ Option[String]    ]  ("cache_url")
     val packageId     = column[ Option[String]    ]  ("package_id")
+    val urlType       = column[ Option[String]    ]  ("url_type")
 
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
@@ -94,7 +96,8 @@ class DataspaceResourceTable(tag: Tag)
         modified       ,
         created        ,
         cacheUrl       ,
-        packageId
+        packageId      ,
+        urlType
     ) <> (DataspaceResource.tupled, DataspaceResource.unapply)
 
     def justIds = (

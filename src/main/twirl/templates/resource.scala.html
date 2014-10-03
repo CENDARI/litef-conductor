@@ -2,14 +2,14 @@
 
 <dl class="resource-definition">
   @if(resource.mimetype getOrElse "" startsWith "image/") {
-    <a href="@resource.url"><img class="resource-preview" src="@resource.url" height="128" /></a>
+    <a href="@resource.accessLink"><img class="resource-preview" src="@resource.accessLink" height="128" /></a>
   }
   <dt>Name:</dt>
     <dd>@resource.name</dd>
   <dt>Id:</dt>
     <dd>@resource.id</dd>
   <dt>URL:</dt>
-    <dd><a href="@resource.url">@resource.url</a></dd>
+    <dd><a href="@resource.accessLink">@resource.accessLink</a></dd>
   <dt>Mimetype:</dt>
     <dd>@resource.mimetype</dd>
   <dt>Size:</dt>

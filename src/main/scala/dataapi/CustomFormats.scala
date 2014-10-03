@@ -17,25 +17,35 @@ package dataapi
 import spray.json.DefaultJsonProtocol
 import ckan.DataspaceJsonProtocol._
 import java.lang.String
+import spray.json.JsonFormat
 
 case class DataspaceCreate (name: String, title: Option[String], description: Option[String]){
     require(name matches "[a-z0-9_-]+")
 }
 case class DataspaceCreateWithId (id: String, name: String, title: Option[String], description: Option[String])
-case class DataspaceUpdate (name: Option[String], title: Option[String], description: Option[String]){
-    require(name.getOrElse("") matches "[a-z0-9_-]*")
+case class DataspaceUpdate (title: Option[String], description: Option[String])
+case class DataspaceUpdateWithId (id: String, title: Option[String], description: Option[String])
+//case class Resource(id: String, name: Option[String], description: Option[String], format: Option[String], package_id: String, upload: String )
+case class PackageCreateWithId(name: String, owner_org: String, title: String, `private`: Boolean = true)
+case class CkanOrganizationMember(id: String, username: String, role: String) {
+    require(role == "admin" || role == "editor" || role == "member")
 }
-case class DataspaceUpdateWithId (id: String, name: Option[String], title: Option[String], description: Option[String])
-case class ResourceMetadataCreateWithId (id: String, name: Option[String], description: Option[String], format: Option[String], package_id: String, url: String )
-case class ResourceMetadataUpdateWithId(id: String, name: Option[String], description: Option[String], format: Option[String], url: String)
-case class PackageCreateWithId(name: String, owner_org: String, title: String = "API Dataset", `private`: Boolean = true)
+
+case class ShibData(mail: String, eppn: String, cn: String)
+case class CkanUser(name: String, email: String, password: String, id: String, fullname: String, openid: String)
+
+case class CkanErrorMsg (message: String, __type: String)
+case class CkanResponse[T](help: String, success: Boolean, result: Option[T], error: Option[CkanErrorMsg])
 
 object CkanJsonProtocol extends DefaultJsonProtocol {
     implicit val dataspaceCreateFormat = jsonFormat3(DataspaceCreate)
     implicit val dataspaceCreateWithIdFormat = jsonFormat4(DataspaceCreateWithId)
-    implicit val dataspaceUpdateFormat = jsonFormat3(DataspaceUpdate)
-    implicit val dataspaceUpdateWithIdFormat = jsonFormat4(DataspaceUpdateWithId)
-    implicit val resourceMetadataCreateWithIdFormat = jsonFormat6(ResourceMetadataCreateWithId)
-    implicit val resourceMetadataUpdateWithIdFormat = jsonFormat5(ResourceMetadataUpdateWithId)
+    implicit val dataspaceUpdateFormat = jsonFormat2(DataspaceUpdate)
+    implicit val dataspaceUpdateWithIdFormat = jsonFormat3(DataspaceUpdateWithId)
     implicit val packageCreateWithIdFormat = jsonFormat4(PackageCreateWithId)
+    implicit val shibDataFormat = jsonFormat3(ShibData)
+    implicit val ckanUserFormat = jsonFormat6(CkanUser)
+    implicit val ckanErrorMsgFormat = jsonFormat2(CkanErrorMsg)
+    implicit def ckanResponseFormat[T: JsonFormat] = lazyFormat(jsonFormat4(CkanResponse.apply[T]))
+    implicit val ckanOrganizationMember = jsonFormat3(CkanOrganizationMember)
 }

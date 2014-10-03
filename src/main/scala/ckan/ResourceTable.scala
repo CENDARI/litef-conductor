@@ -41,11 +41,20 @@ case class Resource(
     modified      : Option[Timestamp] = None,
     created       : Option[Timestamp] = None,
     cacheUrl      : Option[String]    = None,
-    packageId     : Option[String]    = None
+    packageId     : Option[String]    = None,
+    url_type      : Option[String]    = None
 ) {
-    lazy val isLocal = url.startsWith(Config.Ckan.urlStoragePrefix)
+    lazy val isLocal = url_type == Some("upload")
 
-    lazy val localPath = java.net.URLDecoder.decode(url, "UTF-8").replaceFirst(Config.Ckan.urlStoragePrefix, Config.Ckan.localStoragePrefix)
+    // NOTE: CKAN 2.2 messes up url for local resources (in some cases url is just a file name, not a url).
+    // Use accessLink instead for now
+    // TODO: urlencode path segments
+    lazy val accessLink = isLocal match {
+        case true  => Config.Ckan.home + "dataset/" + packageId.getOrElse("") + "/resource/" + id + "/download/" + url.split("/").last
+        case false => url
+    }
+
+    lazy val localPath = Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6)
     lazy val localFile = new java.io.File(localPath)
     lazy val localMimetype = mimetype getOrElse (new java.io.File(localPath).mimetype)
 
@@ -58,7 +67,7 @@ case class Resource(
     lazy val content = io.Source.fromFile(localPath).mkString
 
     override
-    def toString = s"resource://$id?$url"
+    def toString = s"resource://$id?$accessLink"
 }
 
 case class ResourceModification(
@@ -88,6 +97,7 @@ class ResourceTable(tag: Tag)
     val created       = column[ Option[Timestamp] ]  ("created")
     val cacheUrl      = column[ Option[String]    ]  ("cache_url")
     val packageId     = column[ Option[String]    ]  ("package_id")
+    val urlType       = column[ Option[String]    ]  ("url_type")
 
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
@@ -109,7 +119,8 @@ class ResourceTable(tag: Tag)
         modified       ,
         created        ,
         cacheUrl       ,
-        packageId
+        packageId      ,
+        urlType
     ) <> (Resource.tupled, Resource.unapply)
 }
 
@@ -128,14 +139,15 @@ object ResourceJsonProtocol extends DefaultJsonProtocol {
                 // "dataUrl"        -> JsString(rs.url),
                 // "cacheUrl"       -> JsString(rs.cacheUrl getOrElse ""),
 
-                "name"           -> JsString(rs.name     getOrElse ""),
-                "format"         -> JsString(rs.format   getOrElse ""),
-                "mimetype"       -> JsString(rs.mimetype getOrElse ""),
-                "size"           -> JsNumber(rs.size     getOrElse 0L),
+                "name"           -> JsString(rs.name        getOrElse ""),
+                "description"    -> JsString(rs.description getOrElse ""),
+                "format"         -> JsString(rs.format      getOrElse ""),
+                "mimetype"       -> JsString(rs.mimetype    getOrElse ""),
+                "size"           -> JsNumber(rs.size        getOrElse 0L),
 
                 "created"        -> JsNumber(rs.created.map  { _.getTime } getOrElse 0L),
                 "modified"       -> JsNumber(rs.modified.map { _.getTime } getOrElse 0L),
-                "set_id"         -> JsString(rs.packageId getOrElse "")
+                "setId"         -> JsString(rs.packageId getOrElse "")
             )
 
         def read(value: JsValue) = {

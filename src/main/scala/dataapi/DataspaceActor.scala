@@ -211,7 +211,7 @@ class DataspaceActor
             }
         }
 
-        // Creates a new package inside the dataspace
+        // Creates a new package in the dataspace
         case CreatePackageInDataspace(authorizationKey, p) => {
             val originalSender = sender
 

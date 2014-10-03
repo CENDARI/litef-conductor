@@ -1,11 +1,6 @@
 /*
  * Copyright (C) 2014 Ivan Cukic <ivan at mi.sanu.ac.rs>
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published
- * by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
@@ -34,7 +29,6 @@ import common.Config.{ Ckan => CkanConfig }
 import common.Config
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import spray.http.HttpResponse
 import java.sql.Timestamp
 import ckan.{CkanGodInterface, ResourceTable, DataspaceResourceTable}
 import ckan.ResourceJsonProtocol._
@@ -42,11 +36,11 @@ import ckan.DataspaceResourceJsonProtocol._
 import CkanJsonProtocol._
 import spray.httpx.SprayJsonSupport._
 import scala.slick.lifted.{Column, Query}
-import spray.http.HttpHeaders.Location
 import ckan.CkanGodInterface.IteratorData
-import HttpCharsets._
 import HttpMethods._
 import HttpHeaders._
+import akka.event.Logging._
+import akka.event.Logging
 
 object ResourceActor {
     /// Gets the list of resources modified in the specified time range
@@ -84,29 +78,23 @@ object ResourceActor {
             val iterator: String
         )
 
-    case class UploadFile(
+    case class CreateResource(
             val authorizationKey: String,
-            val data: MultipartFormData,
-            val key: String
-        )
-
-    case class CreateResourceMetadata(
-            val authorizationKey: String,
-            val dataspaceId: String,
-            val resource: ResourceMetadataCreateWithId
-        )
-
-    case class UpdateResourceMetadata(
-            val authorizationKey: String,
-            val resourceId: String,
-            val format: Option[String],
+            val id: String,
+            val upload: FormFile,
             val name: Option[String],
-            val description: Option[String]
+            val format: Option[String],
+            val description: Option[String],
+            val packageId: String
         )
 
-    case class UpdateResourceMetadataAndUrl(
+    case class UpdateResource(
             val authorizationKey: String,
-            val resource: ResourceMetadataUpdateWithId
+            val id: String,
+            val upload: FormFile,
+            val name: Option[String],
+            val format: Option[String],
+            val description: Option[String]
         )
 }
 
@@ -116,6 +104,8 @@ class ResourceActor
 {
     import ResourceActor._
     import context.system
+
+    val log = Logging(context.system, this)
 
     val validCredentials = BasicHttpCredentials(
         CkanConfig.httpUsername,
@@ -221,11 +211,10 @@ class ResourceActor
                 val resource = CkanGodInterface.getResource(id)
 
                 // TODO: File as response, not redirection
-
                 val result = resource map { resource =>
                     HttpResponse(
                         status  = StatusCodes.MovedPermanently,
-                        headers = Location(resource.url) :: Nil,
+                        headers = Location(resource.accessLink) :: Nil,
                         entity  = HttpEntity.Empty
                     )
                 } getOrElse {
@@ -273,70 +262,102 @@ class ResourceActor
                 iterator.count
             ))
 
-        case UploadFile (authorizationKey, data, key) => {
+        case CreateResource(authorizationKey, id, upload, name, format, description, package_id) => {
             val originalSender = sender
 
-            // TODO: Send to CKAN a form containing just file and key
-            val keyField = BodyPart(key)
-            val namedKeyField = keyField.copy(headers = `Content-Disposition`("form-data", Map("name" -> "key")) +: keyField.headers)
-            val seqWithKey = data.fields :+ namedKeyField
-            val dataWithKey = MultipartFormData(seqWithKey)
+            var fields = Seq[BodyPart]()
 
-            (IO(Http) ? (Post(CkanConfig.storage + "upload_handle", dataWithKey)~>addHeader("Authorization", authorizationKey)))
-            .mapTo[HttpResponse]
-            .map { response => originalSender ! response }
-        }
-        case CreateResourceMetadata(authorizationKey, dataspaceId, resource) => {
-            val originalSender = sender
+            val fieldId = BodyPart(id)
+            val namedFieldId = fieldId.copy(headers = `Content-Disposition`("form-data", Map("name" -> "id")) +: fieldId.headers)
+            fields = fields :+ namedFieldId
+
+            val fieldUpload = BodyPart(upload.entity)
+            val namedFieldUpload = fieldUpload.copy(headers = `Content-Disposition`("form-data", Map("filename" -> upload.name.get, "name" -> "upload")) +: fieldUpload.headers)
+            fields = fields :+ namedFieldUpload
+
+            for (n <- name) {
+                val fieldName = BodyPart(n)
+                val namedFieldName = fieldName.copy(headers = `Content-Disposition`("form-data", Map("name" -> "name")) +: fieldName.headers)
+                fields = fields :+ namedFieldName
+            }
+
+            for (f <- format) {
+                val fieldFormat = BodyPart(f)
+                val namedFieldFormat = fieldFormat.copy(headers = `Content-Disposition`("form-data", Map("name" -> "format")) +: fieldFormat.headers)
+                fields = fields :+ namedFieldFormat
+            }
+
+            for (d <- description) {
+                val fieldDescription = BodyPart(d)
+                val namedFieldDescription = fieldDescription.copy(headers = `Content-Disposition`("form-data", Map("name" -> "description")) +: fieldDescription.headers)
+                fields = fields :+ namedFieldDescription
+            }
+
+            val fieldPackageId = BodyPart(package_id)
+            val namedFieldPackageId = fieldPackageId.copy(headers = `Content-Disposition`("form-data", Map("name" -> "package_id")) +: fieldPackageId.headers)
+            fields = fields :+ namedFieldPackageId
+
+            val resource = MultipartFormData(fields)
+
             (IO(Http) ? (Post(CkanConfig.namespace + "action/resource_create", resource)~>addHeader("Authorization", authorizationKey)))
             .mapTo[HttpResponse]
             .map { response => response.status match {
                     case StatusCodes.OK =>
                         // TODO: Try to read resource from (ugly) CKAN response, not from db
-                        val createdResource = CkanGodInterface.getResource(resource.id)
+                        val createdResource = CkanGodInterface.getResource(id)
                         originalSender ! HttpResponse(status = StatusCodes.Created,
                                                       entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
                                                                              createdResource.map { _.toJson.prettyPrint}.getOrElse {""}),
-                                                         headers = List(Location(s"${common.Config.namespace}resources/${resource.id}")))
-                    case _ => originalSender ! HttpResponse(response.status,
-                                                            entity = HttpEntity(ContentType(`text/html`, `UTF-8`),
-                                                                                "File uploaded to ${resource.url} \nError creating resource metadata!"))
-                    }
-            }
-        }
-        case UpdateResourceMetadata(authorizationKey, resourceId, format, name, description) => {
-            val originalSender = sender
-            CkanGodInterface.getResourceUrl(resourceId) match {
-                case None =>
-                    originalSender ! HttpResponse(StatusCodes.NotFound)
-                case Some(url) =>
-                    val resource = ResourceMetadataUpdateWithId(resourceId, name, description, format, url)
-                    (IO(Http) ? (Post(CkanConfig.namespace + "action/resource_update", resource)~>addHeader("Authorization", authorizationKey)))
-                    .mapTo[HttpResponse]
-                    .map { response => response.status match {
-                        case StatusCodes.OK =>
-                            // TODO: Try to read resource from (ugly) CKAN response, not from db
-                            val updatedResource = CkanGodInterface.getResource(resourceId)
-                            originalSender ! HttpResponse(status = StatusCodes.OK,
-                                                          entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
-                                                                                 updatedResource.map { _.toJson.prettyPrint}.getOrElse {""}))
-                        case _ => originalSender ! HttpResponse(response.status, "Error updating resource!")}
+                                                         headers = List(Location(s"${common.Config.namespace}resources/$id")))
+                    case _ => originalSender ! HttpResponse(response.status, "Error creating resource!")
                     }
             }
         }
 
-        case UpdateResourceMetadataAndUrl(authorizationKey, resource) => {
+        case UpdateResource(authorizationKey, id, upload, name, format, description) => {
             val originalSender = sender
+
+            var fields = Seq[BodyPart]()
+
+            val fieldId = BodyPart(id)
+            val namedFieldId = fieldId.copy(headers = `Content-Disposition`("form-data", Map("name" -> "id")) +: fieldId.headers)
+            fields = fields :+ namedFieldId
+
+            val fieldUpload = BodyPart(upload.entity)
+            val namedFieldUpload = fieldUpload.copy(headers = `Content-Disposition`("form-data", Map("filename" -> upload.name.get, "name" -> "upload")) +: fieldUpload.headers)
+            fields = fields :+ namedFieldUpload
+            //fields = fields :+ BodyPart("upload", upload)
+
+            for (n <- name) {
+                val fieldName = BodyPart(n)
+                val namedFieldName = fieldName.copy(headers = `Content-Disposition`("form-data", Map("name" -> "name")) +: fieldName.headers)
+                fields = fields :+ namedFieldName
+            }
+
+            for (f <- format) {
+                val fieldFormat = BodyPart(f)
+                val namedFieldFormat = fieldFormat.copy(headers = `Content-Disposition`("form-data", Map("name" -> "format")) +: fieldFormat.headers)
+                fields = fields :+ namedFieldFormat
+            }
+
+            for (d <- description) {
+                val fieldDescription = BodyPart(d)
+                val namedFieldDescription = fieldDescription.copy(headers = `Content-Disposition`("form-data", Map("name" -> "description")) +: fieldDescription.headers)
+                fields = fields :+ namedFieldDescription
+            }
+
+            val resource = MultipartFormData(fields)
+
             (IO(Http) ? (Post(CkanConfig.namespace + "action/resource_update", resource)~>addHeader("Authorization", authorizationKey)))
             .mapTo[HttpResponse]
             .map { response => response.status match {
                 case StatusCodes.OK =>
                     // TODO: Try to read resource from (ugly) CKAN response, not from db
-                    val updatedResource = CkanGodInterface.getResource(resource.id)
+                    val updatedResource = CkanGodInterface.getResource(id)
                     originalSender ! HttpResponse(status = StatusCodes.OK,
                                                   entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
                                                                          updatedResource.map { _.toJson.prettyPrint}.getOrElse {""}))
-                case _ => originalSender ! HttpResponse(response.status, "Error updating resource!")}
+                case _ => originalSender ! HttpResponse(response.status, s"""Error updating resource "$id"!""")}
             }
         }
 

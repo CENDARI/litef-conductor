@@ -205,8 +205,9 @@ object CkanGodInterface {
      */
     def isDataspaceAccessibleToUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
         UserDataspaceRoleTable.query
-            .where(_.dataspaceId === id)
-            .where(_.userApiKey === authorizationKey)
+            .filter(_.dataspaceId === id)
+            .filter(_.userApiKey === authorizationKey)
+            .filter(_.state === "active")
             .take(1)
             .list
             .size > 0
@@ -219,10 +220,10 @@ object CkanGodInterface {
      */
     def isDataspaceModifiableByUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
         UserDataspaceRoleTable.query
-            .where(ds =>
-                ds.dataspaceId === id &&
-                ds.userApiKey === authorizationKey &&
-                (ds.dataspaceRole === "editor" || ds.dataspaceRole === "admin"))
+            .filter(_.dataspaceId === id)
+            .filter(_.userApiKey === authorizationKey)
+            .filter(_.dataspaceRole inSet List("admin", "editor"))
+            .filter(_.state === "active")
             .take(1)
             .list
             .size > 0
@@ -236,15 +237,102 @@ object CkanGodInterface {
     def isResourceAccessibleToUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
         DataspaceResourceTable.query
             .map(_.justIds)
-            .where(_._2 === id)
-            .where(_._1 in UserDataspaceRoleTable.query
-                               .where(_.userApiKey === authorizationKey)
+            .filter(_._2 === id)
+            .filter(_._1 in UserDataspaceRoleTable.query
+                               .filter(_.userApiKey === authorizationKey)
+                               .filter(_.state === "active")
                                .map(_.dataspaceId))
             .take(1)
             .list
             .size > 0
     }
 
+    /**
+     * @param authorizationKey CKAN user authorization key
+     * @return whether there is a CKAN user with specified authorization key
+     */
+    def isRegisteredUser(authorizationKey: String): Boolean = database withSession { implicit session: Session =>
+        UserTable.query.filter(_.apikey === authorizationKey).take(1).list.size > 0
+    }
+
+    /**
+     * @return list of CKAN users (sysadmins and default CKAN users omitted)
+     */
+    def listUsers() = database withSession { implicit session: Session =>
+        // TODO: Return only users with state "active"?
+        UserTable.query
+        .filterNot(_.sysadmin.isNull)
+        .filterNot( _.sysadmin)
+        .filterNot(_.username inSet List("logged_in", "visitor", "default"))
+        .list
+    }
+
+    def getUserById(id: String) = database withSession { implicit session: Session =>
+        UserTable.query
+        .filter(_.id === id)
+        .filterNot(_.sysadmin.isNull)
+        .filterNot( _.sysadmin)
+        .filterNot(_.username inSet List("logged_in", "visitor", "default"))
+        .list
+        .headOption
+    }
+
+    def getUserByOpenId(openId: String) = database withSession { implicit session: Session =>
+        UserTable.query
+        .filter(_.openid === openId)
+        .filterNot(_.sysadmin.isNull)
+        .filterNot( _.sysadmin)
+        .filterNot(_.username inSet List("logged_in", "visitor", "default"))
+        .list
+        .headOption
+    }
+
+    // TODO: (General) List can be empty for one of two reasons:
+    // 1) the requested resource does not exists
+    // 2) the user is not authorized to access the resource
+    // Distinguish these two and send appropriate responses.
+    // Currently 403 (Not authorized) is sent in both cases.
+    def isDataspaceRoleAccessibleToUser(id: String, authorizationKey: String) = database withSession { implicit session: Session =>
+        UserDataspaceRoleTable.query
+        .filter(_.id === id)
+        .filter(_.state === "active")
+        .filter(_.dataspaceId in UserDataspaceRoleTable.query
+                                .filter(_.userApiKey === authorizationKey)
+                                .filter(_.dataspaceRole === "admin")
+                                .filter(_.state === "active")
+                                .map(_.dataspaceId))
+        .take(1)
+        .list
+        .size > 0
+    }
+
+    def listDataspaceRoles(authorizationKey: String) = database withSession { implicit session: Session =>
+        UserDataspaceRoleTable.query
+        .filter(_.dataspaceId in UserDataspaceRoleTable.query
+                                .filter(_.userApiKey === authorizationKey)
+                                .filter(_.state === "active")
+                                .map(_.dataspaceId))
+        .list
+    }
+
+    def getDataspaceRoleById(id: String) = database withSession { implicit session: Session =>
+        UserDataspaceRoleTable.query
+        .filter(_.id === id)
+        .filter(_.state === "active")
+        .list
+        .headOption
+    }
+
+    def getDataspaceRoleByUserDataspaceAndRole(userId: String, dataspaceId: String, dataspaceRole: String) =
+        database withSession { implicit session: Session =>
+            UserDataspaceRoleTable.query
+            .filter(_.userId === userId)
+            .filter(_.dataspaceId === dataspaceId)
+            .filter(_.dataspaceRole === dataspaceRole)
+            .filter(_.state === "active")
+            .list
+            .headOption
+        }
 
     /**
      * A convenience class to manage the chunked responses without explicitely
