@@ -22,19 +22,49 @@ import spray.json._
 import common.Config
 import org.foment.utils.Filesystem._
 
+abstract class ResourceData {
+    def id            : String
+    def format        : Option[String]
+    def description   : Option[String]
+    def name          : Option[String]
+    def mimetype      : Option[String]
+    def size          : Option[Long]
+    def modified      : Option[Timestamp]
+    def created       : Option[Timestamp]
+    def packageId     : Option[String]
+
+    def toJson = JsObject(
+            "id"             -> JsString(id),
+
+            "url"            -> JsString(s"${Config.namespace}resources/${id}"),
+            "dataUrl"        -> JsString(s"${Config.namespace}resources/${id}/data"),
+
+            "name"           -> JsString(name        getOrElse ""),
+            "description"    -> JsString(description getOrElse ""),
+            "format"         -> JsString(format      getOrElse ""),
+            "mimetype"       -> JsString(mimetype    getOrElse ""),
+            "size"           -> JsNumber(size        getOrElse 0L),
+
+            "created"        -> JsNumber(created.map  { _.getTime } getOrElse 0L),
+            "modified"       -> JsNumber(modified.map { _.getTime } getOrElse 0L),
+            "setId"          -> JsString(packageId getOrElse "")
+        )
+}
+
+
 case class Resource(
     id            : String,
-    resourceGroup : Option[String]    = None,
+    group         : Option[String]    = None,
     url           : String,
     format        : Option[String]    = None,
     description   : Option[String]    = None,
     position      : Option[Int]       = None,
-    revision_id   : Option[String]    = None,
+    revisionId    : Option[String]    = None,
     hash          : Option[String]    = None,
     state         : Option[String]    = None,
     extras        : Option[String]    = None,
     name          : Option[String]    = None,
-    resource_type : Option[String]    = None,
+    resourceType  : Option[String]    = None,
     mimetype      : Option[String]    = None,
     mimetypeInner : Option[String]    = None,
     size          : Option[Long]      = None,
@@ -42,9 +72,10 @@ case class Resource(
     created       : Option[Timestamp] = None,
     cacheUrl      : Option[String]    = None,
     packageId     : Option[String]    = None,
-    url_type      : Option[String]    = None
-) {
-    lazy val isLocal = url_type == Some("upload")
+    urlType       : Option[String]    = None
+) extends ResourceData {
+
+    lazy val isLocal = urlType == Some("upload")
 
     // NOTE: CKAN 2.2 messes up url for local resources (in some cases url is just a file name, not a url).
     // Use accessLink instead for now
@@ -80,7 +111,7 @@ class ResourceTable(tag: Tag)
 {
     val id            = column[ String            ]  ("id", O.PrimaryKey)
     val url           = column[ String            ]  ("url", O.NotNull)
-    val resourceGroup = column[ Option[String]    ]  ("resource_group_id")
+    val group         = column[ Option[String]    ]  ("resource_group_id")
     val format        = column[ Option[String]    ]  ("format")
     val description   = column[ Option[String]    ]  ("description")
     val position      = column[ Option[Int]       ]  ("position")
@@ -102,7 +133,7 @@ class ResourceTable(tag: Tag)
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
         id             ,
-        resourceGroup  ,
+        group          ,
         url            ,
         format         ,
         description    ,
@@ -130,25 +161,7 @@ object ResourceTable {
 
 object ResourceJsonProtocol extends DefaultJsonProtocol {
     implicit object ResourceJsonFormat extends RootJsonFormat[Resource] {
-        def write(rs: Resource) =
-            JsObject(
-                "id"             -> JsString(rs.id),
-
-                "url"        -> JsString(s"${Config.namespace}resources/${rs.id}"),
-                "dataUrl"        -> JsString(s"${Config.namespace}resources/${rs.id}/data"),
-                // "dataUrl"        -> JsString(rs.url),
-                // "cacheUrl"       -> JsString(rs.cacheUrl getOrElse ""),
-
-                "name"           -> JsString(rs.name        getOrElse ""),
-                "description"    -> JsString(rs.description getOrElse ""),
-                "format"         -> JsString(rs.format      getOrElse ""),
-                "mimetype"       -> JsString(rs.mimetype    getOrElse ""),
-                "size"           -> JsNumber(rs.size        getOrElse 0L),
-
-                "created"        -> JsNumber(rs.created.map  { _.getTime } getOrElse 0L),
-                "modified"       -> JsNumber(rs.modified.map { _.getTime } getOrElse 0L),
-                "setId"         -> JsString(rs.packageId getOrElse "")
-            )
+        def write(rs: Resource) = rs.toJson
 
         def read(value: JsValue) = {
             throw new DeserializationException("Resource can not be read from JSON")

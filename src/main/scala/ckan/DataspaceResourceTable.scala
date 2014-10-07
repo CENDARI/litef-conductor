@@ -23,18 +23,18 @@ import common.Config
 
 case class DataspaceResource(
     dataspaceId   : String,
-    resourceId    : String,
-    resourceGroup : Option[String]    = None,
+    id            : String,
+    group         : Option[String]    = None,
     url           : String,
     format        : Option[String]    = None,
     description   : Option[String]    = None,
     position      : Option[Int]       = None,
-    revision_id   : Option[String]    = None,
+    revisionId    : Option[String]    = None,
     hash          : Option[String]    = None,
     state         : Option[String]    = None,
     extras        : Option[String]    = None,
     name          : Option[String]    = None,
-    resource_type : Option[String]    = None,
+    resourceType  : Option[String]    = None,
     mimetype      : Option[String]    = None,
     mimetypeInner : Option[String]    = None,
     size          : Option[Long]      = None,
@@ -42,8 +42,8 @@ case class DataspaceResource(
     created       : Option[Timestamp] = None,
     cacheUrl      : Option[String]    = None,
     packageId     : Option[String]    = None,
-    url_type      : Option[String]    = None
-)
+    urlType       : Option[String]    = None
+) extends ResourceData
 
 case class DataspaceResourcePair(
     dataspaceId   : String,
@@ -54,9 +54,9 @@ class DataspaceResourceTable(tag: Tag)
     extends Table[DataspaceResource](tag, "litef_ckan_group_resource_view")
 {
     val dataspaceId   = column[ String            ]  ("group_id", O.NotNull)
-    val resourceId    = column[ String            ]  ("id", O.NotNull)
+    val id            = column[ String            ]  ("id", O.NotNull)
     val url           = column[ String            ]  ("url", O.NotNull)
-    val resourceGroup = column[ Option[String]    ]  ("resource_group_id")
+    val group         = column[ Option[String]    ]  ("resource_group_id")
     val format        = column[ Option[String]    ]  ("format")
     val description   = column[ Option[String]    ]  ("description")
     val position      = column[ Option[Int]       ]  ("position")
@@ -78,8 +78,8 @@ class DataspaceResourceTable(tag: Tag)
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
         dataspaceId    ,
-        resourceId     ,
-        resourceGroup  ,
+        id             ,
+        group          ,
         url            ,
         format         ,
         description    ,
@@ -102,7 +102,7 @@ class DataspaceResourceTable(tag: Tag)
 
     def justIds = (
         dataspaceId,
-        resourceId
+        id
     )
 }
 
@@ -113,22 +113,7 @@ object DataspaceResourceTable {
 // TODO: This needs to be united with ResourceJsonProtocol
 object DataspaceResourceJsonProtocol extends DefaultJsonProtocol {
     implicit object DataspaceResourceJsonFormat extends RootJsonFormat[DataspaceResource] {
-        def write(rs: DataspaceResource) =
-            JsObject(
-                "id"             -> JsString(rs.resourceId),
-
-                "url"        -> JsString(s"${Config.namespace}resources/${rs.resourceId}"),
-                "dataUrl"        -> JsString(s"${Config.namespace}resources/${rs.resourceId}/data"),
-
-                "name"           -> JsString(rs.name     getOrElse ""),
-                "format"         -> JsString(rs.format   getOrElse ""),
-                "mimetype"       -> JsString(rs.mimetype getOrElse ""),
-                "size"           -> JsNumber(rs.size     getOrElse 0L),
-
-                "created"        -> JsNumber(rs.created map  { _.getTime } getOrElse 0L),
-                "modified"       -> JsNumber(rs.modified map { _.getTime } getOrElse 0L),
-                "set_id"         -> JsString(rs.packageId getOrElse "")
-            )
+        def write(rs: DataspaceResource) = rs.toJson
 
         def read(value: JsValue) = {
             throw new DeserializationException("DataspaceResource can not be read from JSON")
