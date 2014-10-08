@@ -61,7 +61,7 @@ object UserDataspaceRoleJsonProtocol extends DefaultJsonProtocol {
         def write(r: UserDataspaceRole) =
             JsObject(
                 "id"            -> JsString(r.id),
-                "url"           -> JsString(s"${common.Config.namespace}dataspaceRoles/${r.id}"),
+                "url"           -> JsString(s"${common.Config.namespace}privileges/${r.id}"),
                 "userId"        -> JsString(r.userId),
                 "userUrl"       -> JsString(s"${common.Config.namespace}users/${r.userId}"),
                 "dataspaceId"   -> JsString(r.dataspaceId),

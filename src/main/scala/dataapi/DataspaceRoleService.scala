@@ -67,7 +67,7 @@ class DataspaceRoleService()(implicit executionContext: ExecutionContext)
     }
 
     val route = headerValueByName("Authorization") { implicit authorizationKey =>
-        pathPrefix("dataspaceRoles") {
+        pathPrefix("privileges") {
                 get {
                     pathEnd         { listDataspaceRoles() } ~
                     path(Segment)   { getDataspaceRoleById }

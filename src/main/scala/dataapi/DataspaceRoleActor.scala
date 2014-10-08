@@ -94,7 +94,7 @@ class DataspaceRoleActor
                         originalSender ! HttpResponse(status = StatusCodes.Created,
                                                       entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
                                                                           createdRole.map { _.toJson.prettyPrint}.getOrElse {""}),
-                                                      headers = List(Location(s"${common.Config.namespace}dataspaceRoles/$id")))
+                                                      headers = List(Location(s"${common.Config.namespace}privileges/$id")))
                     case StatusCodes.InternalServerError|StatusCodes.Conflict  => originalSender ! HttpResponse(response.status, "Error creating dataspace role! Check if dataspace and user exist.")
                     case StatusCodes.Forbidden => originalSender ! HttpResponse(response.status, "The supplied authentication is not authorized to access this resource")
                     case _ => originalSender ! HttpResponse(response.status, "Error creating dataspace role!")
