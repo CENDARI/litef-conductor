@@ -48,12 +48,12 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
     // Dataspaces and metadata
     def listDataspaces(since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) = complete {
         (Core.dataspaceActor ? ListDataspaces(authorizationKey, since, until))
-            .mapTo[String]
+            .mapTo[HttpResponse]
     }
 
     def listDataspacesFromIterator(iteratorData: String)(implicit authorizationKey: String) = complete {
         (Core.dataspaceActor ? ListDataspacesFromIterator(authorizationKey, iteratorData))
-            .mapTo[String]
+            .mapTo[HttpResponse]
     }
 
     def getDataspaceMetadata(id: String)(implicit authorizationKey: String) = complete {
@@ -65,7 +65,7 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
         authorize(ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
             complete {
                 (Core.resourceActor ? ListDataspaceResources(id, since, until))
-                .mapTo[String]
+                .mapTo[HttpResponse]
             }
         }
 
@@ -73,7 +73,7 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
         authorize(ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
             complete {
                 (Core.resourceActor ? ListDataspaceResourcesFromIterator(id, iteratorData))
-                .mapTo[String]
+                .mapTo[HttpResponse]
             }
         }
 
@@ -166,7 +166,9 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
               /*
                * Creating new dataspace
                */
-              (pathEnd & entity(as[DataspaceCreate])) { createDataspace } ~
+              pathEnd {
+                  entity(as[DataspaceCreate]) { createDataspace }
+              } ~
               /*
                * Adding new resource to dataspace
                */

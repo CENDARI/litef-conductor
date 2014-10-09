@@ -41,7 +41,7 @@ class UserService()(implicit executionContext: ExecutionContext)
         authorize(ckan.CkanGodInterface.isRegisteredUser(authorizationKey)) {
             complete {
                 (Core.userActor ? ListUsers())
-                .mapTo[String]
+                .mapTo[HttpResponse]
             }
         }
 
@@ -55,8 +55,8 @@ class UserService()(implicit executionContext: ExecutionContext)
     val route = headerValueByName("Authorization") { implicit authorizationKey =>
         pathPrefix("users") {
                 get {
-                    pathEnd         { listUsers() } ~
-                    path(Segment)   { getUserById }
+                    path(Segment)   { getUserById } ~
+                    pathEnd         { listUsers() }
                 }
             }
         }

@@ -42,7 +42,7 @@ import slick.driver.PostgresDriver.simple._
 //import scala.slick.lifted.{Column, Query}
 
 object DataspaceRoleActor {
-    case class ListDataspaceRoles(val authorizationKey: String)
+    case class ListDataspaceRoles(val authorizationKey: String, val userId: Option[String], val dataspaceId: Option[String])
     case class GetDataspaceRoleById(val id: String)
     case class CreateDataspaceRole(val authorizationKey: String, val dataspaceRole: UserDataspaceRole)
     case class DeleteDataspaceRole(val authorizationKey: String, val id: String)
@@ -57,12 +57,13 @@ class DataspaceRoleActor
 
     def receive: Receive = {
 
-        case ListDataspaceRoles(authorizationKey: String) =>
+        case ListDataspaceRoles(authorizationKey: String, userId: Option[String], dataspaceId: Option[String]) =>
             CkanGodInterface.database withSession { implicit session: Session =>
 
-                val results = CkanGodInterface.listDataspaceRoles(authorizationKey)
+                val results = CkanGodInterface.listDataspaceRoles(authorizationKey, userId, dataspaceId)
 
-                sender ! (JsObject("data" -> results.toJson).prettyPrint)
+                sender ! HttpResponse(status = StatusCodes.OK,
+                                      entity = HttpEntity(ContentType(`application/json`, `UTF-8`), JsObject("data" -> results.toJson).prettyPrint))
             }
 
         case GetDataspaceRoleById(id: String) =>
@@ -70,13 +71,8 @@ class DataspaceRoleActor
 
                 val dsr = CkanGodInterface.getDataspaceRoleById(id)
 
-                sender ! HttpResponse(
-                    status = StatusCodes.OK,
-                    entity = HttpEntity(
-                        ContentType(`application/json`, `UTF-8`),
-                        dsr map {_.toJson.prettyPrint} getOrElse {""}
-                    )
-                )
+                sender ! HttpResponse(status = StatusCodes.OK,
+                                      entity = HttpEntity(ContentType(`application/json`, `UTF-8`),dsr map {_.toJson.prettyPrint} getOrElse {""}))
             }
 
         case CreateDataspaceRole(authorizationKey: String, dataspaceRole: UserDataspaceRole) => {
@@ -95,9 +91,9 @@ class DataspaceRoleActor
                                                       entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
                                                                           createdRole.map { _.toJson.prettyPrint}.getOrElse {""}),
                                                       headers = List(Location(s"${common.Config.namespace}privileges/$id")))
-                    case StatusCodes.InternalServerError|StatusCodes.Conflict  => originalSender ! HttpResponse(response.status, "Error creating dataspace role! Check if dataspace and user exist.")
+                    case StatusCodes.InternalServerError|StatusCodes.Conflict  => originalSender ! HttpResponse(response.status, "Error creating privilege! Check if dataspace and user exist.")
                     case StatusCodes.Forbidden => originalSender ! HttpResponse(response.status, "The supplied authentication is not authorized to access this resource")
-                    case _ => originalSender ! HttpResponse(response.status, "Error creating dataspace role!")
+                    case _ => originalSender ! HttpResponse(response.status, "Error creating privilege!")
                     }
             }
         }
@@ -109,7 +105,7 @@ class DataspaceRoleActor
                 val dataspaceRole = CkanGodInterface.getDataspaceRoleById(id)
 
                 dataspaceRole match {
-                    case None => originalSender ! HttpResponse(StatusCodes.NotFound, s"""Error deleting dataspace role! Dataspace role with id "$id" does not exist!""")
+                    case None => originalSender ! HttpResponse(StatusCodes.NotFound, s"""Error deleting privilege! Privilege with id "$id" does not exist!""")
                     case Some(dsr) =>
                         // TODO: Don't send the role. CKAN API ignores it, only user id and dataspace id are relevant
                         (IO(Http) ? (Post(CkanConfig.namespace + "action/organization_member_delete",
@@ -120,7 +116,7 @@ class DataspaceRoleActor
                                 case StatusCodes.OK =>
                                     originalSender ! HttpResponse(StatusCodes.NoContent)
                                 case StatusCodes.Forbidden => originalSender ! HttpResponse(response.status, "The supplied authentication is not authorized to access this resource")
-                                case _ => originalSender ! HttpResponse(response.status, "Error deleting dataspace role!")}
+                                case _ => originalSender ! HttpResponse(response.status, "Error deleting privilege!")}
                         }
                 }
             }

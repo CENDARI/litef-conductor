@@ -46,7 +46,9 @@ class SessionService()(implicit executionContext: ExecutionContext)
     val route =
         path("session") {
             post {
-                (pathEnd & entity(as[ShibData])) { getSessionKeyForUser }
+                pathEnd {
+                    entity(as[ShibData]) { getSessionKeyForUser }
+                }
             }
         }
 }

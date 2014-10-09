@@ -233,21 +233,22 @@ class ResourceActor
 
                 val (query, nextPage, currentPage) = CkanGodInterface.listDataspaceResourcesQuery(dataspaceId, since, until, start, count)
 
-                val results = query.list
-
-                sender ! (
-                    if (results.size > 0)
+                val resources = query.list
+                val results =
+                    if (resources.size > 0)
                         JsObject(
                             "nextPage"    -> JsString(nextPage map (s"${Config.namespace}dataspaces/$dataspaceId/resources/query/results/" + _)    getOrElse ""),
                             "currentPage" -> JsString(currentPage map (s"${Config.namespace}dataspaces/$dataspaceId/resources/query/results/" + _) getOrElse ""),
-                            "data"        -> results.toJson,
+                            "data"        -> resources.toJson,
                             "end"         -> JsBoolean(false)
                         ).prettyPrint
                     else
                         JsObject(
                             "end"         -> JsBoolean(true)
                         ).prettyPrint
-                )
+
+                sender ! HttpResponse(status = StatusCodes.OK,
+                                      entity = HttpEntity(ContentType(`application/json`, `UTF-8`), results))
             }
 
 

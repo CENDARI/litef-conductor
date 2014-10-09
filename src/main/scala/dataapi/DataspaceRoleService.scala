@@ -39,9 +39,9 @@ class DataspaceRoleService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
 {
     // TODO: Don't list all dataspace roles, but support iterators
-    def listDataspaceRoles()(implicit authorizationKey: String) = complete {
-        (Core.dataspaceRoleActor ? ListDataspaceRoles(authorizationKey))
-        .mapTo[String]
+    def listDataspaceRoles(userId: Option[String], dataspaceId: Option[String])(implicit authorizationKey: String) = complete {
+        (Core.dataspaceRoleActor ? ListDataspaceRoles(authorizationKey, userId, dataspaceId))
+        .mapTo[HttpResponse]
     }
 
     def getDataspaceRoleById(id: String)(implicit authorizationKey: String) =
@@ -69,11 +69,15 @@ class DataspaceRoleService()(implicit executionContext: ExecutionContext)
     val route = headerValueByName("Authorization") { implicit authorizationKey =>
         pathPrefix("privileges") {
                 get {
-                    pathEnd         { listDataspaceRoles() } ~
+                    pathEnd {
+                        parameters('userId.as[String] ?, 'dataspaceId.as[String] ?) { (u, d) => listDataspaceRoles(u, d) }
+                    } ~
                     path(Segment)   { getDataspaceRoleById }
                 } ~
                 post {
-                    (pathEnd & entity(as[UserDataspaceRole])) { createDataspaceRole }
+                    pathEnd {
+                        entity(as[UserDataspaceRole])   { createDataspaceRole }
+                    }
                 } ~
                 delete {
                     path(Segment)   { deleteDataspaceRole }

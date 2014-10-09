@@ -230,6 +230,22 @@ object CkanGodInterface {
     }
 
     /**
+     * @param id dataspace UUID
+     * @param authorizationKey CKAN user authorization id
+     * @return whether the user is dataspace administrator
+     */
+    def isUserAdministratorOfDataspace(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
+        UserDataspaceRoleTable.query
+            .filter(_.dataspaceId === id)
+            .filter(_.userApiKey === authorizationKey)
+            .filter(_.dataspaceRole === "admin")
+            .filter(_.state === "active")
+            .take(1)
+            .list
+            .size > 0
+    }
+
+    /**
      * @param id resource UUID
      * @param authorizationKey CKAN user authorization id
      * @return whether the resource is accessible to the user
@@ -306,13 +322,17 @@ object CkanGodInterface {
         .size > 0
     }
 
-    def listDataspaceRoles(authorizationKey: String) = database withSession { implicit session: Session =>
-        UserDataspaceRoleTable.query
-        .filter(_.dataspaceId in UserDataspaceRoleTable.query
-                                .filter(_.userApiKey === authorizationKey)
-                                .filter(_.state === "active")
-                                .map(_.dataspaceId))
-        .list
+    def listDataspaceRoles(authorizationKey: String, userId: Option[String], dataspaceId: Option[String]) =
+        database withSession { implicit session: Session =>
+            var query = UserDataspaceRoleTable.query
+                        .filter(_.dataspaceId in UserDataspaceRoleTable.query
+                                                .filter(_.userApiKey === authorizationKey)
+                                                .filter(_.state === "active")
+                                               .map(_.dataspaceId))
+            if (userId.isDefined) query = query.filter(_.userId === userId.get)
+            if (dataspaceId.isDefined) query = query.filter(_.dataspaceId === dataspaceId.get)
+
+            query.list
     }
 
     def getDataspaceRoleById(id: String) = database withSession { implicit session: Session =>

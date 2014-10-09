@@ -113,9 +113,11 @@ class UserActor
 
                 val results = CkanGodInterface.listUsers()
 
-                sender ! (
-                    JsObject("data" -> results.toJson).prettyPrint
-                )
+                sender ! HttpResponse(
+                    status = StatusCodes.OK,
+                    entity = HttpEntity(
+                        ContentType(`application/json`, `UTF-8`),
+                        JsObject("data" -> results.toJson).prettyPrint))
             }
 
         case response: HttpResponse =>

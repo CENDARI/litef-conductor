@@ -110,12 +110,13 @@ class DataspaceActor
                 val (query, nextPage, currentPage) =
                     CkanGodInterface.listDataspacesQuery(authorizationKey, since, until, start, count)
 
-                sender ! JsObject(
-                    // Dataspaces do not support iterators thanks to CKAN //
-                    // "nextPage"    -> JsString(nextPage.map("/resources/query/results/" + _)    getOrElse ""),
-                    // "currentPage" -> JsString(currentPage.map("/resources/query/results/" + _) getOrElse ""),
-                    "data"        -> query.list.toJson
-                ).prettyPrint
+                // Dataspaces do not support iterators thanks to CKAN //
+                // "nextPage"    -> JsString(nextPage.map("/resources/query/results/" + _)    getOrElse ""),
+                // "currentPage" -> JsString(currentPage.map("/resources/query/results/" + _) getOrElse ""),
+
+                sender ! HttpResponse(status = StatusCodes.OK,
+                                      entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
+                                                          JsObject("data" -> query.list.toJson).prettyPrint))
             }
 
         /// Decodes the iterator data and invokes ListDataspaces
