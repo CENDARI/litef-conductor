@@ -16,8 +16,15 @@ the service, execute *sbt reStart*.
 If you have plans to use a non local CKAN/PostgreSQL and Virtuoso, you need to
 forward the necessary ports to your local system through an SSH tunnel.
 
-You should copy the src/main/resources/application.conf-example to
-src/main/resources/application.conf and adjust accordingly. Do **not**
-commit the config file to the respository and do **not** package
-it in the assembly jar file.
+You should copy the *PROJECTDIR/src/main/resources/application.conf-example* to
+*PROJECTDIR/application.conf* and adjust it accordingly. Do **not** commit
+the config file to the respository and do **not** package it in the assembly
+jar file.
+
+When starting the application with *reStart*, it will start the server using
+that configuration file.
+
+If you start the server manually from the assembly jar file, you need to
+pass the *-Dconfig.file=PROJECTDIR/application.conf* argument manually.
+
 

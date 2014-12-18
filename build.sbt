@@ -55,3 +55,6 @@ seq(Revolver.settings: _*)
 testOptions += Tests.Argument(TestFrameworks.JUnit, "-v")
 
 Twirl.settings
+
+javaOptions in Revolver.reStart += "-Dconfig.file=./application.conf"
+
