@@ -6,7 +6,8 @@ Litef is a semantic indexer and the Data API service for Cendari project.
 
 You need CKAN and Virtuoso systems already installed.
 
-In order to build and run **litef-conductor**, you need [SBT](www.scala-sbt.org).
+In order to build and run **litef-conductor**, you need Java 1.7.x, Scala 2.10.4
+and [SBT](www.scala-sbt.org).
 
 In order to compile, you can use the `sbt compile` command, for starting
 the service, execute `sbt reStart`.
