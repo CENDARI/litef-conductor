@@ -47,7 +47,8 @@ scalacOptions ++= Seq(
     "-Ywarn-dead-code",
     "-language:_",
     "-target:jvm-1.7",
-    "-encoding", "UTF-8"
+    "-encoding", "UTF-8",
+    "-Xfatal-warnings"
 )
 
 seq(Revolver.settings: _*)
