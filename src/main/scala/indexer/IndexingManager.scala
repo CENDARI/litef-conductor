@@ -25,6 +25,7 @@ import VirtuosoInterface._
 import conductor._
 import ckan.CkanGodInterface.database
 import slick.driver.PostgresDriver.simple._
+import common.Config
 
 
 object IndexingManager {
@@ -46,27 +47,59 @@ object IndexingManager {
      */
     val scoreTreshold = 0.9
 
-    def saveToDatabase(resource: ckan.Resource, model: Model,
-            format: String, mimetype: String) = database.withSession { implicit session: Session =>
+    def saveGeneratedData(resource: ckan.Resource, model: Model,
+            format: String, mimetype: String): Option[String]
+            = database.withSession { implicit session: Session =>
 
         try {
+            // First, we need to create the directory for the data
+            val choppedId =
+                (resource.id take 3) + '/' +
+                (resource.id drop 3 take 3) + '/' +
+                (resource.id drop 6)
+
+            val destinationPath = new File(
+                Config.Indexer.localStoragePrefix +
+                    '/' + choppedId)
+
+            // println(s"Saving generated data to $destinationPath")
+
+            // attempt to create the directory here
+            if (!destinationPath.exists() && !destinationPath.mkdirs()) {
+                throw new RuntimeException(s"Can not create indexer data directory $destinationPath")
+            }
 
             val now = new java.sql.Timestamp(System.currentTimeMillis())
             // println(s"Saving ${resource.id}'s RDF data in ${format} format")
 
-            val stream = new java.io.ByteArrayOutputStream()
+            val filePath = destinationPath.toString() + '/' + mimetype.replace('/', ':');
+
+            val stream = new java.io.FileOutputStream(filePath)
+
+            // val stream = new java.io.ByteArrayOutputStream()
             model.write(stream, format)
             ResourceAttachmentTable.query += ResourceAttachment(
                 resource.id,
                 mimetype,
                 resource.created  getOrElse now,
                 resource.modified getOrElse now,
-                Some(stream.toString("UTF-8"))
+                None // Some(stream.toString("UTF-8"))
             )
+
+            stream.close
+
+            Some(filePath)
 
         } catch {
             case e: org.postgresql.util.PSQLException =>
                 println(e.toString())
+
+                None
+
+            case e: Exception =>
+                println(s"Unknown exception $e")
+
+                None
         }
     }
 
@@ -75,20 +108,20 @@ object IndexingManager {
         if (f.exists()) return;
 
         val resourceUri = "litef://resource/" + resource.id
-        val file = resource.localFile
+        val ckanFile = resource.localFile
         val mimetype = resource.localMimetype
 
         val results = indexers flatMap {
-            _.index(resourceUri, file, mimetype)
+            _.index(resourceUri, ckanFile, mimetype)
                 .filter(_.score > .75)
-                .map(result => Result(file, result.indexerName, result.model))
+                .map(result => Result(ckanFile, result.indexerName, result.model))
         }
 
         val joinedModel = ModelFactory.createDefaultModel
 
         // Adding indexing results
         results foreach { result =>
-            println(s"Adding model: ${result.indexerName}")
+            // println(s"Adding model: ${result.indexerName}")
             joinedModel add result.model
             // result.model.write(System.out, "N3")
             // namedGraph add result.model
@@ -99,21 +132,50 @@ object IndexingManager {
         // println("#### [END]    This is what we have generated: (Joined model) ####")
 
         // We need to save the new RDF serializations back to the database
-        saveToDatabase(resource, joinedModel, "N3", "text/n3")
-        saveToDatabase(resource, joinedModel, "RDF/XML", "application/rdf+xml")
+        val serializedFile = saveGeneratedData(resource, joinedModel, "RDF/XML", "application/rdf+xml")
+        saveGeneratedData(resource, joinedModel, "N3", "text/n3")
 
         // Removing previously generated data
         try {
-            val namedGraph = VirtuosoInterface.namedGraph(
-                "litef://resource/" + resource.id
-            ).model
+            val namedGraphUri = "litef://resource/" + resource.id;
+            val namedGraph = VirtuosoInterface.namedGraph(namedGraphUri)
 
-            namedGraph.removeAll
-            namedGraph add joinedModel
+            // namedGraph.removeAll
+            // println("Clearing the graph")
+            val clearGraph = Config.Virtuoso.connection.createStatement
+            clearGraph.execute(s"SPARQL CLEAR GRAPH <$namedGraphUri>")
+            // clearGraph.execute(s"DELETE \n FROM \n RDF_QUAD \n WHERE G \n = \n DB.DBA.RDF_MAKE_IID_OF_QNAME ('$namedGraphUri')")
 
-            println("#### [BEGIN]  This is what we have generated: (Virtuoso model) ####")
-            namedGraph.write(System.out, "N3")
-            println("#### [END]    This is what we have generated: (Virtuoso model) ####")
+            // For some reason, this fails - it generates an invalid query
+            // which virtuoso does not understand
+            // namedGraph add joinedModel
+
+            // We need to try to force-feed virtuoso
+            val file: String = serializedFile.get
+
+            // println(s"Loading new Virtuoso data from $file")
+
+            val loadRdfFile = Config.Virtuoso.connection.createStatement
+
+            // DB.DBA.TTLP_MT is for TTL and friends, while
+            // DB.DBA.RDF_LOAD_RDFXML_MT would be for xml/rdf
+            // val virtuosoInsertFunction = "DB.DBA.TTLP_MT"
+            val virtuosoInsertFunction = "DB.DBA.RDF_LOAD_RDFXML_MT"
+
+            val loadRdfFileQuery =
+                    s"""|CALL
+                        |$virtuosoInsertFunction(
+                        |    file_to_string_output('$file'),
+                        |    '',
+                        |    '$namedGraphUri'
+                        |)""".stripMargin
+
+            // println(s"SQL: $loadRdfFileQuery")
+            loadRdfFile.execute(loadRdfFileQuery)
+
+            // println("#### [BEGIN]  This is what we have generated: (Virtuoso model) ####")
+            // namedGraph.write(System.out, "N3")
+            // println("#### [END]    This is what we have generated: (Virtuoso model) ####")
 
         } catch {
             case e: com.hp.hpl.jena.shared.JenaException =>
@@ -127,6 +189,11 @@ object IndexingManager {
                     case _ => println("Unknown cause")
 
                 }
+
+            case e: virtuoso.jdbc4.VirtuosoException =>
+                println(s"Virtuoso Exception while adding the model: ${e.toString()}")
+                // e.printStackTrace
+
 
             case e: Exception =>
                 println(s"Unknown Exception while adding the model to Virtuoso: ${e.toString()}")

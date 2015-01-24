@@ -35,4 +35,6 @@ so you need to have a local ckan installation, or to use sshfs. Also, it needs
 to be able to create and write into the directory specified in
 litef.indexer.localStoragePrefix.
 
+You need to add the litef.indexer.localStoragePrefix path to the
+DirsAllowed variable in virtuoso.ini
 

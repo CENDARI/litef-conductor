@@ -180,18 +180,34 @@ class ResourceActor
 
                 println(s"################### searching for $request in $format as $mimetype")
 
-                val content = conductor.ResourceAttachmentTable.query
+                // Checking whether we have the attachment in the database
+                val resourceId = conductor.ResourceAttachmentTable.query
                     .filter(_.resourceId === request)
                     .filter(_.format === mimetype)
-                    .map(_.content)
+                    // .map(_.content) // content is no longer used - we are storing the files now
+                    .map(_.resourceId)
                     .list.headOption
 
-                val result = content.map { content =>
+                val result = resourceId.map { id =>
+                    // TODO: Move this and the same code in IndexingManager somewhere else
+                    val choppedId =
+                        (id take 3) + '/' +
+                        (id drop 3 take 3) + '/' +
+                        (id drop 6)
+
+                    val destinationPath =
+                        Config.Indexer.localStoragePrefix +
+                            '/' + choppedId
+
+                    val filePath = destinationPath + '/' + mimetype.replace('/', ':');
+
+                    val content = scala.io.Source.fromFile(filePath).mkString
+
                     HttpResponse(
                         status  = StatusCodes.OK,
                         entity = HttpEntity(
                             ContentType(MediaType.custom(mimetype), `UTF-8`),
-                            content.map(_.toString) getOrElse ""
+                            content // content.map(_.toString) getOrElse ""
                         )
                     )
                 } getOrElse {
