@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013, 2014 Ivan Cukic <ivan at mi.sanu.ac.rs>
+ * Copyright (C) 2013, 2014, 2015 Ivan Cukic <ivan at mi.sanu.ac.rs>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published
@@ -18,7 +18,7 @@
 package indexer
 
 import java.io.File
-import com.hp.hpl.jena.rdf.model.Model
+import com.hp.hpl.jena.rdf.model.{ Model, ModelFactory, Resource, Literal, ResourceFactory}
 import org.foment.utils.Filesystem._
 import org.foment.utils.Class._
 import VirtuosoInterface._
@@ -71,33 +71,68 @@ object IndexingManager {
     }
 
     def index(resource: ckan.Resource) {
+        val f = new File("/opt/litef/runtime-block-indexing");
+        if (f.exists()) return;
+
         val resourceUri = "litef://resource/" + resource.id
         val file = resource.localFile
         val mimetype = resource.localMimetype
-        val namedModel = VirtuosoInterface.namedGraph(
-                 "litef://resource/" + resource.id
-            ).model
 
-        val results = indexers flatMap { indexer =>
-            indexer.index(resourceUri, file, mimetype)
+        val results = indexers flatMap {
+            _.index(resourceUri, file, mimetype)
                 .filter(_.score > .75)
-                .map(result => Result(file, result.model))
+                .map(result => Result(file, result.indexerName, result.model))
         }
 
-        // Removing previously generated data
-        namedModel.removeAll
+        val joinedModel = ModelFactory.createDefaultModel
 
         // Adding indexing results
-        results foreach { namedModel add _.model }
+        results foreach { result =>
+            println(s"Adding model: ${result.indexerName}")
+            joinedModel add result.model
+            // result.model.write(System.out, "N3")
+            // namedGraph add result.model
+        }
 
-        // println("This is what we have generated: ###########################")
-        // namedModel.write(System.out, "N3")
-        // println("###########################################################")
-
+        // println("#### [BEGIN]  This is what we have generated: (Joined model) ####")
+        // joinedModel.write(System.out, "N3")
+        // println("#### [END]    This is what we have generated: (Joined model) ####")
 
         // We need to save the new RDF serializations back to the database
-        saveToDatabase(resource, namedModel, "N3", "text/n3")
-        saveToDatabase(resource, namedModel, "RDF/XML", "application/rdf+xml")
+        saveToDatabase(resource, joinedModel, "N3", "text/n3")
+        saveToDatabase(resource, joinedModel, "RDF/XML", "application/rdf+xml")
+
+        // Removing previously generated data
+        try {
+            val namedGraph = VirtuosoInterface.namedGraph(
+                "litef://resource/" + resource.id
+            ).model
+
+            namedGraph.removeAll
+            namedGraph add joinedModel
+
+            println("#### [BEGIN]  This is what we have generated: (Virtuoso model) ####")
+            namedGraph.write(System.out, "N3")
+            println("#### [END]    This is what we have generated: (Virtuoso model) ####")
+
+        } catch {
+            case e: com.hp.hpl.jena.shared.JenaException =>
+                println("Jena Exception while adding the model to Virtuoso:")
+
+                e.getCause match {
+                    case e: virtuoso.jdbc4.VirtuosoException =>
+                        println("Virtuoso Exception: " + e.getMessage)
+                        //e.iterator.
+
+                    case _ => println("Unknown cause")
+
+                }
+
+            case e: Exception =>
+                println(s"Unknown Exception while adding the model to Virtuoso: ${e.toString()}")
+
+        }
+
 
     }
 
@@ -148,5 +183,5 @@ object IndexingManager {
         nativeScalaIndexers
     }
 
-    case class Result(file: File, model: Model)
+    case class Result(file: File, indexerName: String, model: Model)
 }

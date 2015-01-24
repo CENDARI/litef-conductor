@@ -62,6 +62,8 @@ class EAGIndexer extends indexer.XMLIndexer {
             // Creating a repository instance
             val result = ? (a % CAO.Repository)
 
+            var unprocessed = ""
+
             // Adding the contact information
             result ++= node.child.flatMap { child =>
                 val predicate: Option[Property] = child.label match {
@@ -72,11 +74,14 @@ class EAGIndexer extends indexer.XMLIndexer {
                     case "repositorhist" => Some(CAO.repositoryHistoryNote)
 
 
-                    case label       => println(s"Unproc label: $label"); None
+                    case label => if (label != "#PCDATA") unprocessed = unprocessed + label + ","
+                                  None
                 }
 
-                predicate.map { _ % child.text }
+                predicate.map { _ % nodeText(child) }
             }
+
+            println("Unprocessed labels: " + unprocessed)
 
             // Adding the address
             result ++= address(node).map { CAO.hasRepositoryAddress % _ }
@@ -89,10 +94,10 @@ class EAGIndexer extends indexer.XMLIndexer {
         xml \\ "location" map { node =>
             ? (
                 a % vCard.Address,
-                vCard.`country-name`   % (node \\ "country").text,
-                vCard.`postal-code`    % (node \\ "postalcode").text,
-                vCard.`locality`       % (node \\ "municipality").text,
-                vCard.`street-address` % (node \\ "street").text
+                vCard.`country-name`   % nodeText(node \\ "country"),
+                vCard.`postal-code`    % nodeText(node \\ "postalcode"),
+                vCard.`locality`       % nodeText(node \\ "municipality"),
+                vCard.`street-address` % nodeText(node \\ "street")
             )
 
         }

@@ -33,7 +33,10 @@ trait AbstractIndexer {
      * @param score the score of the result, between 0 and 1
      * @param model triples to be inserted into the database
      */
-    case class Result(var score: Double = 0.0, var model: Model = null)
+    case class Result(
+        var indexerName: String = "",
+        var score: Double = 0.0,
+        var model: Model = null)
 
     /**
      * Starts the indexing of a file
@@ -56,7 +59,7 @@ trait AbstractIndexer {
 
         if (result.isEmpty) None
         else {
-            Some(Result(result.get, model))
+            Some(Result(this.getClass.getName, result.get, model))
         }
 
     }
@@ -99,6 +102,13 @@ trait AbstractIndexer {
 
     def ?(pvs: PropertyValue[_]*): Resource = ? ++= pvs
 
+    /**
+     * Gets an XML element text
+     */
+    def nodeText(node: scala.xml.Node): String =
+        scala.xml.Utility.escape(node.text)
+    def nodeText(nodes: scala.xml.NodeSeq): String =
+        scala.xml.Utility.escape(nodes.text)
 }
 
 object AbstractIndexer {

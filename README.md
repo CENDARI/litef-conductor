@@ -28,4 +28,11 @@ that configuration file.
 If you start the server manually from the assembly jar file, you need to
 pass the `-Dconfig.file=PROJECTDIR/application.conf` argument manually.
 
+## Data location
+
+Indexer needs to be able to access CKAN files directly (litef.ckan.localStoragePrefix),
+so you need to have a local ckan installation, or to use sshfs. Also, it needs
+to be able to create and write into the directory specified in
+litef.indexer.localStoragePrefix.
+
 
