@@ -43,3 +43,14 @@ In order not to have collisions between the main server and a local instance
 to create a local file /opt/litef/conductor:disable-document-processing
 before starting the local service.
 
+## Packaging
+
+For the production environments, the sbt assembly command is provided.
+It builds a single jar file that contains all the libraries and litef.
+
+For quicker deployment, but more involved maintainance, you can use
+the sbt package command and maintain the libraries manually. If you
+need to collect all the libraries, use sbt oneJar and extract the library
+jar files to the runtime classpath.
+
+

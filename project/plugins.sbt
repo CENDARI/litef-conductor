@@ -8,6 +8,8 @@ addSbtPlugin("com.dscleaver.sbt" % "sbt-quickfix" % "0.4.1")
 
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.11.2")
 
+addSbtPlugin("org.scala-sbt.plugins" % "sbt-onejar" % "0.8")
+
 resolvers += "sonatype-releases" at "https://oss.sonatype.org/content/repositories/releases/"
 
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.6.0")

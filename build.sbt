@@ -1,3 +1,5 @@
+import com.github.retronym.SbtOneJar._
+
 name := """conductor"""
 
 version := "1.0"
@@ -58,4 +60,6 @@ testOptions += Tests.Argument(TestFrameworks.JUnit, "-v")
 Twirl.settings
 
 javaOptions in Revolver.reStart += "-Dconfig.file=./application.conf"
+
+oneJarSettings
 
