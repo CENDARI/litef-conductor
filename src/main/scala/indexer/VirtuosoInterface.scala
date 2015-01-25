@@ -40,8 +40,11 @@ object VirtuosoInterface {
     //
     // }
 
-    lazy val connection = java.sql.DriverManager.getConnection(
+    lazy val connection = {
+        Class.forName("virtuoso.jdbc4.Driver");
+        java.sql.DriverManager.getConnection(
                                 s"${VirtuosoConfig.url}/DATABASE=DB/UID=${VirtuosoConfig.user}/PwD=${VirtuosoConfig.password}")
+    }
 
     def execute(query: String) =
         connection.createStatement execute query

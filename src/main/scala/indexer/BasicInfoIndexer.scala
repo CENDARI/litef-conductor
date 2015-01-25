@@ -35,7 +35,7 @@ class BasicInfoIndexer extends AbstractIndexer {
         root: => Resource
     ): Option[Double] = exceptionless (
         getBasicInfo(resource, file, root),
-        "We can not fail"
+        "BasicInfoIndexer: We can not fail"
     )
 
     // We are not getting the info about attachments

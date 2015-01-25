@@ -17,8 +17,7 @@
 
 package indexer
 
-import com.hp.hpl.jena.rdf.model.Model
-import com.hp.hpl.jena.rdf.model.Resource
+import com.hp.hpl.jena.rdf.model.{ Model, Resource, Property }
 import org.foment.utils.Exceptions._
 import nepomuk.ontology.NIE
 
@@ -33,14 +32,15 @@ class TikaIndexer extends AbstractIndexer {
         file: java.io.File,
         mimetype: String,
         root: => Resource
-    ): Option[Double] = exceptionless (
-        runTika(resource, file, root),
-        "We can not fail"
-    )
+    ): Option[Double] =
+        runTika(resource, file, root)
 
     lazy val tikaIndexer = fr.inria.aviz.elasticindexer.Indexer.instance
 
-    def runTika(resource: ckan.Resource, file: java.io.File, root: => Resource) = {
+    def addOptionalProperty[T](root: Resource, property: Property, value: T) =
+        if (value != null) root += (property % value)
+
+    def runTika(resource: ckan.Resource, file: java.io.File, root: => Resource): Option[Double] = try {
 
         val info = tikaIndexer.parseDocument(file.getName, null, new java.io.FileInputStream(file), -1)
 
@@ -49,14 +49,18 @@ class TikaIndexer extends AbstractIndexer {
 
         // TODO: We might want to save the plain text in Virtuoso,
         // or other fields
-        root ++= Seq(
-            NIE.plainTextContent % info.getText,
-            DC_11.title          % info.getTitle,
-            DC_11.creator        % info.getCreator,
-            DC_11.date           % info.getDate,
-            DC_11.format         % info.getFormat
-        )
+
+        addOptionalProperty(root, NIE.plainTextContent , info.getText)
+        addOptionalProperty(root, DC_11.title          , info.getTitle)
+        addOptionalProperty(root, DC_11.creator        , info.getCreator)
+        addOptionalProperty(root, DC_11.date           , info.getDate)
+        addOptionalProperty(root, DC_11.format         , info.getFormat)
+
         Some(0.85)
+    } catch {
+        case e: Exception =>
+            e.printStackTrace
+            None
     }
 
     override
