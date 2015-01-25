@@ -189,17 +189,9 @@ class ResourceActor
                     .list.headOption
 
                 val result = resourceId.map { id =>
-                    // TODO: Move this and the same code in IndexingManager somewhere else
-                    val choppedId =
-                        (id take 3) + '/' +
-                        (id drop 3 take 3) + '/' +
-                        (id drop 6)
+                    val destinationPath = conductor.ResourceAttachmentUtil.attachmentPathForResource(id)
 
-                    val destinationPath =
-                        Config.Indexer.localStoragePrefix +
-                            '/' + choppedId
-
-                    val filePath = destinationPath + '/' + mimetype.replace('/', ':');
+                    val filePath = destinationPath + '/' + conductor.ResourceAttachmentUtil.attachmentNameForMimetype(mimetype)
 
                     val content = scala.io.Source.fromFile(filePath).mkString
 

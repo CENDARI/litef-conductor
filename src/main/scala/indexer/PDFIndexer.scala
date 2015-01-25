@@ -30,6 +30,6 @@ class PDFIndexer extends AbstractIndexer {
         rootResource: => Resource
     ): Option[Double] = None
 
-    // if (mimetype != "text/x-plain") None
-    // else Some(IndexingResult(.5, null))
+    // PDFs can not be attachments
+    // def indexAttachment
 }

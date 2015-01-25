@@ -48,4 +48,27 @@ class PlainTextIndexer extends AbstractIndexer {
 
             Some(.95)
         }
+
+    override
+    def indexAttachment(
+        resource: conductor.ResourceAttachment,
+        file: java.io.File,
+        mimetype: String,
+        rootResource: => Resource
+    ): Option[Double] =
+        if (mimetype != "text/plain") None
+        else {
+            logger info s"indexing plain text file: ${file.toURI} ${DC_11.title} ${file.getName}"
+
+            val root = rootResource
+
+            root ++= Seq(
+                DC_11.title % file.getName,
+                DC_11.date  % file.lastModified
+            )
+
+            logger info s"created resource: ${root.getURI} ${root}"
+
+            Some(.95)
+        }
 }

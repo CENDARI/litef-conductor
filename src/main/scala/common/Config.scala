@@ -28,27 +28,30 @@ object Config {
     lazy val namespace = config getString "namespace"
 
     object Ckan {
-        lazy val home         = config getString "ckan.home"
-        lazy val namespace    = config getString "ckan.namespace"
-        //lazy val storage      = config getString "ckan.storage"
-        lazy val httpUsername = config getString "ckan.httpUsername"
-        lazy val httpPassword = config getString "ckan.httpPassword"
-        lazy val apiKey       = config getString "ckan.apiKey"
+        lazy val home          = config getString "ckan.home"
+        lazy val namespace     = config getString "ckan.namespace"
+        lazy val httpUsername  = config getString "ckan.httpUsername"
+        lazy val httpPassword  = config getString "ckan.httpPassword"
+        lazy val apiKey        = config getString "ckan.apiKey"
 
         lazy val localStoragePrefix = config getString "ckan.localStoragePrefix"
 
         object Database {
-            lazy val url      : String = config getString "ckan.postgres.url"
-            lazy val user     : String = config getString "ckan.postgres.username"
-            lazy val password : String = config getString "ckan.postgres.password"
-            lazy val driver   : String = config getString "ckan.postgres.driver"
+            lazy val url       = config getString "ckan.postgres.url"
+            lazy val user      = config getString "ckan.postgres.username"
+            lazy val password  = config getString "ckan.postgres.password"
+            lazy val driver    = config getString "ckan.postgres.driver"
         }
     }
 
     object Virtuoso {
-        lazy val url      : String = config getString "virtuoso.url"
-        lazy val user     : String = config getString "virtuoso.username"
-        lazy val password : String = config getString "virtuoso.password"
+        lazy val url           = config getString "virtuoso.url"
+        lazy val user          = config getString "virtuoso.username"
+        lazy val password      = config getString "virtuoso.password"
+    }
+
+    object Nerd {
+        lazy val namespace     = config getString "nerd.namespace"
     }
 
     object Conductor {

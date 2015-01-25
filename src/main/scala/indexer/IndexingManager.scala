@@ -59,14 +59,29 @@ object IndexingManager {
         result
     }
 
+    def index(attachment: conductor.ResourceAttachment) {
+        logger.info(s"Indexing attachment ${attachment.resourceId} ${attachment.format}")
+        val attachmentFile = new java.io.File(
+            conductor.ResourceAttachmentUtil.attachmentPathForResource(attachment.resourceId) + '/' +
+            conductor.ResourceAttachmentUtil.attachmentNameForMimetype(attachment.format)
+        )
+
+        val results = indexers flatMap {
+            _.index(attachment, attachmentFile, attachment.format)
+                .filter(_.score > .75)
+                .map(result => Result(attachmentFile, result.indexerName, result.model))
+        }
+    }
+
     def index(resource: ckan.Resource) {
-        val ckanFile = resource.localFile
+        logger.info(s"Indexing resource ${resource.id}")
+        val resourceFile = resource.localFile
         val mimetype = resource.localMimetype
 
         val results = indexers flatMap {
-            _.index(resource, ckanFile, mimetype)
+            _.index(resource, resourceFile, mimetype)
                 .filter(_.score > .75)
-                .map(result => Result(ckanFile, result.indexerName, result.model))
+                .map(result => Result(resourceFile, result.indexerName, result.model))
         }
 
         val joinedModel = ModelFactory.createDefaultModel
@@ -84,37 +99,26 @@ object IndexingManager {
         // println("#### [END]    This is what we have generated: (Joined model) ####")
 
         // We need to save the new RDF serializations back to the database
-        val serializedFile = saveGeneratedModel(resource, joinedModel, "RDF/XML", "application/rdf+xml")
+        val serializedFileOption =
+            saveGeneratedModel(resource, joinedModel, "RDF/XML", "application/rdf+xml")
         saveGeneratedModel(resource, joinedModel, "N3", "text/n3")
 
         // Removing previously generated data
         try {
             val namedGraphUri = "litef://resource/" + resource.id;
-            val namedGraph = VirtuosoInterface.namedGraph(namedGraphUri)
+            // val namedGraph = VirtuosoInterface.namedGraph(namedGraphUri)
 
             // namedGraph.removeAll
-            val clearGraph = VirtuosoInterface.execute(s"SPARQL CLEAR GRAPH <$namedGraphUri>")
+            VirtuosoInterface.clearGraph(namedGraphUri)
 
             // For some reason, this fails - it generates an invalid query
             // which virtuoso does not understand
             // namedGraph add joinedModel
 
             // We need to try to force-feed virtuoso
-            val file: String = serializedFile.get
+            val serializedFile: String = serializedFileOption.get
 
-            // DB.DBA.TTLP_MT is for TTL and friends, while
-            // DB.DBA.RDF_LOAD_RDFXML_MT would be for xml/rdf
-            // val virtuosoInsertFunction = "DB.DBA.TTLP_MT"
-            val virtuosoInsertFunction = "DB.DBA.RDF_LOAD_RDFXML_MT"
-
-            VirtuosoInterface.execute(
-                    s"""|CALL
-                        |$virtuosoInsertFunction(
-                        |    file_to_string_output('$file'),
-                        |    '',
-                        |    '$namedGraphUri'
-                        |)""".stripMargin
-                )
+            VirtuosoInterface.loadFileInfoGraph(serializedFile, namedGraphUri)
 
             // println("#### [BEGIN]  This is what we have generated: (Virtuoso model) ####")
             // namedGraph.write(System.out, "N3")

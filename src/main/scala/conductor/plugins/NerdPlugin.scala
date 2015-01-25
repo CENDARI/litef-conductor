@@ -21,11 +21,40 @@ import conductor.AbstractPluginActor
 import concurrent.Future
 import concurrent.ExecutionContext.Implicits.global
 
-class NamedEntityRecognitionPlugin extends AbstractPluginActor("NER")
+import akka.actor.Actor
+import akka.io.IO
+import akka.pattern.ask
+import spray.can.Http
+import spray.http._
+import spray.httpx.RequestBuilding._
+import spray.httpx.SprayJsonSupport._
+import spray.json._
+import DefaultJsonProtocol._
+import MediaTypes._
+import HttpCharsets._
+import HttpMethods._
+import HttpHeaders._
+
+import common.Config.{ Nerd => NerdConfig }
+
+class NerdPlugin extends AbstractPluginActor("NERD")
 {
+    import context.system
+
+    def postRequest[T](action: String, data: String)
+                      (implicit evidence: spray.httpx.marshalling.Marshaller[T]) =
+        (IO(Http) ? (
+            Post(NerdConfig.namespace + "processNERDText?text=" + data)
+        ))
+
     override
     def process(resource: ckan.Resource): Future[Unit] = Future {
 
+    }
+
+    override
+    def process(attachment: conductor.ResourceAttachment): Future[Unit] = Future {
+        ???
     }
 }
 

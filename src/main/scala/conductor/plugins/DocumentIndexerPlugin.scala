@@ -28,5 +28,10 @@ class DocumentIndexerPlugin extends AbstractPluginActor("Litef Indexer")
     def process(resource: ckan.Resource): Future[Unit] = Future {
         indexer.IndexingManager index resource
     }
+
+    override
+    def process(attachment: conductor.ResourceAttachment) = Future {
+        indexer.IndexingManager index attachment
+    }
 }
 

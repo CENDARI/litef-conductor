@@ -63,6 +63,7 @@ class AbstractPluginActor(name: String)
     val log = Logging(context.system, this)
 
     def process(resource: ckan.Resource): Future[Unit]
+    def process(attachment: conductor.ResourceAttachment): Future[Unit]
 
     def receive: Receive = {
         case DispatcherActor.ProcessResource(resource) =>
@@ -70,6 +71,7 @@ class AbstractPluginActor(name: String)
                 case Success(_) =>
                     // log.info(s"Plugin '$name' finished")
                     Core.collectorActor ! PluginActor.ProcessingFinished()
+
                 case Failure(_) =>
                     // log.info(s"Plugin '$name' failed")
                     Core.collectorActor ! PluginActor.ProcessingFailed()

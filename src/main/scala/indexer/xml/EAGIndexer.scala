@@ -25,7 +25,6 @@ import com.hp.hpl.jena.vocabulary.{ RDFS, XSD }
 import com.hp.hpl.jena.vocabulary.RDF.{`type` => a}
 
 import indexer.AbstractIndexer
-import javelin.ontology.Javelin
 import cendari.ontology.CAO
 import w3c.ontology.vCard
 
@@ -56,6 +55,9 @@ class EAGIndexer extends indexer.XMLIndexer {
 
         Some(0.9)
     }
+
+    // Attachments can not (?) be EAG files
+    // def indexAttachment
 
     def desc(xml: Elem): Iterable[Resource] =
         xml \\ "archguide" \\ "desc" map { node =>

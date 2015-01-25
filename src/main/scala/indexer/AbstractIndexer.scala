@@ -59,7 +59,34 @@ trait AbstractIndexer {
 
         // Indexing the file
         val resourceUri = "litef://resource/" + resource.id
-        val result = indexFile(resource: ckan.Resource, file, mimetype, /*lazy*/ ?:(resourceUri))
+        val result = indexFile(resource, file, mimetype, /*lazy*/ ?:(resourceUri))
+
+        if (result.isEmpty) None
+        else {
+            Some(Result(this.getClass.getName, result.get, model))
+        }
+
+    }
+
+    /**
+     * Starts the indexing of a file
+     * @return the indexing results
+     * @param file file to parse/index
+     * @param mimetype the mime type of the file
+     */
+    final
+    def index(
+        attachment: conductor.ResourceAttachment,
+        file: java.io.File,
+        mimetype: String
+    ): Option[Result] = {
+
+        // Clearing the model to receive new data
+        model = ModelFactory.createDefaultModel
+
+        // Indexing the file
+        val resourceUri = "litef://resource/" + attachment.resourceId
+        val result = indexAttachment(attachment, file, mimetype, /*lazy*/ ?:(resourceUri))
 
         if (result.isEmpty) None
         else {
@@ -81,7 +108,22 @@ trait AbstractIndexer {
         file: java.io.File,
         mimetype: String,
         rootResource: => Resource
-    ): Option[Double];
+    ): Option[Double]
+
+    /**
+     * Reimplement this method in the subclasses.
+     * @return the score of the result
+     * @param file file to parse/index
+     * @param mimetype the mime type of the file
+     * @param rootResource resource to add the data to
+     */
+    protected
+    def indexAttachment(
+        resource: conductor.ResourceAttachment,
+        file: java.io.File,
+        mimetype: String,
+        rootResource: => Resource
+    ): Option[Double] = None
 
     // I don't really like that indexers depend on Jena
     // but it seems you can't have statements without a model
@@ -141,26 +183,6 @@ object AbstractIndexer {
         }
     }
 
-    def attachmentPathForResource(resource: ckan.Resource): String = {
-        val choppedId =
-            (resource.id take 3) + '/' +
-            (resource.id drop 3 take 3) + '/' +
-            (resource.id drop 6)
-
-        val result = Config.Indexer.localStoragePrefix + '/' + choppedId
-
-        val dir = new File(result)
-
-        if (!dir.exists && !dir.mkdirs) {
-            throw new RuntimeException(s"Can not create indexer data directory $dir")
-        }
-
-        result
-    }
-
-    def attachmentNameForMimetype(mimetype: String) =
-        mimetype.replace('/', ':')
-
     /**
      * Saving processed formats. Returns an option of the file path where the
      * data has been saved
@@ -171,11 +193,11 @@ object AbstractIndexer {
 
         try {
             // First, we need to create the directory for the data
-            val destinationPath = attachmentPathForResource(resource)
+            val destinationPath = conductor.ResourceAttachmentUtil.attachmentPathForResource(resource.id)
 
             val now = new java.sql.Timestamp(System.currentTimeMillis())
 
-            val filePath = destinationPath + '/' + attachmentNameForMimetype(mimetype)
+            val filePath = destinationPath + '/' + conductor.ResourceAttachmentUtil.attachmentNameForMimetype(mimetype)
 
             val writer = new java.io.BufferedWriter(new java.io.FileWriter(filePath))
             writer write content

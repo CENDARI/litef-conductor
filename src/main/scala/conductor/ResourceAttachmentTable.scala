@@ -21,6 +21,7 @@ import slick.driver.PostgresDriver.simple._
 import scala.slick.model.ForeignKeyAction
 import java.sql.Timestamp
 import spray.json._
+import common.Config
 
 // ResourceAttachment
 case class ResourceAttachment(
@@ -30,6 +31,28 @@ case class ResourceAttachment(
     modified       : Timestamp,
     content        : Option[String]
 )
+
+object ResourceAttachmentUtil {
+    def attachmentPathForResource(resourceId: String): String = {
+        val choppedId =
+            (resourceId take 3) + '/' +
+            (resourceId drop 3 take 3) + '/' +
+            (resourceId drop 6)
+
+        val result = Config.Indexer.localStoragePrefix + '/' + choppedId
+
+        val dir = new java.io.File(result)
+
+        if (!dir.exists && !dir.mkdirs) {
+            throw new RuntimeException(s"Can not create indexer data directory $dir")
+        }
+
+        result
+    }
+
+    def attachmentNameForMimetype(mimetype: String) =
+        mimetype.replace('/', ':')
+}
 
 class ResourceAttachmentTable(tag: Tag)
     extends Table[ResourceAttachment](tag, "litef_resource_attachment")

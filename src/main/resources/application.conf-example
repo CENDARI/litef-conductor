@@ -30,7 +30,7 @@ litef.virtuoso {
 litef.conductor {
     fileSizeLimit = 10000
 
-    plugins = "conductor.plugins.DocumentIndexerPlugin,conductor.plugins.NamedEntityRecognitionPlugin"
+    plugins = "conductor.plugins.DocumentIndexerPlugin,conductor.plugins.NerdPlugin"
 }
 
 akka {

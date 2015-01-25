@@ -19,9 +19,11 @@ package indexer
 
 import com.hp.hpl.jena.rdf.model.Model
 import com.hp.hpl.jena.rdf.model.Resource
-import javelin.ontology.Javelin
+import nepomuk.ontology.NAO
 import org.foment.utils.Exceptions._
 import javelin.ontology.Implicits._
+
+import com.hp.hpl.jena.vocabulary.DC_11
 
 final
 class BasicInfoIndexer extends AbstractIndexer {
@@ -32,14 +34,18 @@ class BasicInfoIndexer extends AbstractIndexer {
         mimetype: String,
         root: => Resource
     ): Option[Double] = exceptionless (
-        getBasicInfo(file, root),
+        getBasicInfo(resource, file, root),
         "We can not fail"
     )
 
-    def getBasicInfo(file: java.io.File, root: => Resource) = {
+    // We are not getting the info about attachments
+    // def indexAttachment
+
+    def getBasicInfo(resource: ckan.Resource, file: java.io.File, root: => Resource) = {
         root ++= Seq(
-            Javelin.fileName % file.getName(),
-            Javelin.modified % file.lastModified()
+            NAO.lastModified % file.lastModified,
+            NAO.identifier   % resource.id,
+            DC_11.source     % file.getName
         )
 
         Some(1.0)
