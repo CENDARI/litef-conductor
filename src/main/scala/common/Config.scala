@@ -49,9 +49,6 @@ object Config {
         lazy val url      : String = config getString "virtuoso.url"
         lazy val user     : String = config getString "virtuoso.username"
         lazy val password : String = config getString "virtuoso.password"
-
-        lazy val jdbc       : String = s"$url/DATABASE=DB/UID=$user/PwD=$password"
-        lazy val connection = java.sql.DriverManager.getConnection(jdbc);
     }
 
     object Conductor {

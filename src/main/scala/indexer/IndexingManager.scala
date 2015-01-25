@@ -47,60 +47,16 @@ object IndexingManager {
      */
     val scoreTreshold = 0.9
 
-    def saveGeneratedData(resource: ckan.Resource, model: Model,
-            format: String, mimetype: String): Option[String]
-            = database.withSession { implicit session: Session =>
+    def saveGeneratedModel(resource: ckan.Resource, model: Model,
+            format: String, mimetype: String): Option[String] = {
 
-        try {
-            // First, we need to create the directory for the data
-            val choppedId =
-                (resource.id take 3) + '/' +
-                (resource.id drop 3 take 3) + '/' +
-                (resource.id drop 6)
+        val stream = new java.io.ByteArrayOutputStream()
+        model.write(stream, format)
 
-            val destinationPath = new File(
-                Config.Indexer.localStoragePrefix +
-                    '/' + choppedId)
+        val result = AbstractIndexer.saveGeneratedData(resource, stream.toString, mimetype)
 
-            // println(s"Saving generated data to $destinationPath")
-
-            // attempt to create the directory here
-            if (!destinationPath.exists() && !destinationPath.mkdirs()) {
-                throw new RuntimeException(s"Can not create indexer data directory $destinationPath")
-            }
-
-            val now = new java.sql.Timestamp(System.currentTimeMillis())
-            // println(s"Saving ${resource.id}'s RDF data in ${format} format")
-
-            val filePath = destinationPath.toString() + '/' + mimetype.replace('/', ':');
-
-            val stream = new java.io.FileOutputStream(filePath)
-
-            // val stream = new java.io.ByteArrayOutputStream()
-            model.write(stream, format)
-            ResourceAttachmentTable.query += ResourceAttachment(
-                resource.id,
-                mimetype,
-                resource.created  getOrElse now,
-                resource.modified getOrElse now,
-                None // Some(stream.toString("UTF-8"))
-            )
-
-            stream.close
-
-            Some(filePath)
-
-        } catch {
-            case e: org.postgresql.util.PSQLException =>
-                println(e.toString())
-
-                None
-
-            case e: Exception =>
-                println(s"Unknown exception $e")
-
-                None
-        }
+        stream.close
+        result
     }
 
     def index(resource: ckan.Resource) {
@@ -132,8 +88,8 @@ object IndexingManager {
         // println("#### [END]    This is what we have generated: (Joined model) ####")
 
         // We need to save the new RDF serializations back to the database
-        val serializedFile = saveGeneratedData(resource, joinedModel, "RDF/XML", "application/rdf+xml")
-        saveGeneratedData(resource, joinedModel, "N3", "text/n3")
+        val serializedFile = saveGeneratedModel(resource, joinedModel, "RDF/XML", "application/rdf+xml")
+        saveGeneratedModel(resource, joinedModel, "N3", "text/n3")
 
         // Removing previously generated data
         try {
@@ -141,10 +97,7 @@ object IndexingManager {
             val namedGraph = VirtuosoInterface.namedGraph(namedGraphUri)
 
             // namedGraph.removeAll
-            // println("Clearing the graph")
-            val clearGraph = Config.Virtuoso.connection.createStatement
-            clearGraph.execute(s"SPARQL CLEAR GRAPH <$namedGraphUri>")
-            // clearGraph.execute(s"DELETE \n FROM \n RDF_QUAD \n WHERE G \n = \n DB.DBA.RDF_MAKE_IID_OF_QNAME ('$namedGraphUri')")
+            val clearGraph = VirtuosoInterface.execute(s"SPARQL CLEAR GRAPH <$namedGraphUri>")
 
             // For some reason, this fails - it generates an invalid query
             // which virtuoso does not understand
@@ -153,25 +106,19 @@ object IndexingManager {
             // We need to try to force-feed virtuoso
             val file: String = serializedFile.get
 
-            // println(s"Loading new Virtuoso data from $file")
-
-            val loadRdfFile = Config.Virtuoso.connection.createStatement
-
             // DB.DBA.TTLP_MT is for TTL and friends, while
             // DB.DBA.RDF_LOAD_RDFXML_MT would be for xml/rdf
             // val virtuosoInsertFunction = "DB.DBA.TTLP_MT"
             val virtuosoInsertFunction = "DB.DBA.RDF_LOAD_RDFXML_MT"
 
-            val loadRdfFileQuery =
+            VirtuosoInterface.execute(
                     s"""|CALL
                         |$virtuosoInsertFunction(
                         |    file_to_string_output('$file'),
                         |    '',
                         |    '$namedGraphUri'
                         |)""".stripMargin
-
-            // println(s"SQL: $loadRdfFileQuery")
-            loadRdfFile.execute(loadRdfFileQuery)
+                )
 
             // println("#### [BEGIN]  This is what we have generated: (Virtuoso model) ####")
             // namedGraph.write(System.out, "N3")

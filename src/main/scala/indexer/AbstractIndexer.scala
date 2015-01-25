@@ -26,6 +26,9 @@ import com.hp.hpl.jena.rdf.model.{ Model, ModelFactory, Resource, Literal, Resou
 import com.hp.hpl.jena.vocabulary.XSD
 
 import javelin.ontology.Implicits._
+import common.Config
+import ckan.CkanGodInterface.database
+import slick.driver.PostgresDriver.simple._
 
 trait AbstractIndexer {
     /**
@@ -135,4 +138,69 @@ object AbstractIndexer {
             ResourceFactory createTypedLiteral dateTime
         }
     }
+
+    def attachmentPathForResource(resource: ckan.Resource): String = {
+        val choppedId =
+            (resource.id take 3) + '/' +
+            (resource.id drop 3 take 3) + '/' +
+            (resource.id drop 6)
+
+        val result = Config.Indexer.localStoragePrefix + '/' + choppedId
+
+        val dir = new File(result)
+
+        if (!dir.exists && !dir.mkdirs) {
+            throw new RuntimeException(s"Can not create indexer data directory $dir")
+        }
+
+        result
+    }
+
+    def attachmentNameForMimetype(mimetype: String) =
+        mimetype.replace('/', ':')
+
+    /**
+     * Saving processed formats. Returns an option of the file path where the
+     * data has been saved
+     */
+    def saveGeneratedData(resource: ckan.Resource, content: String,
+            mimetype: String): Option[String]
+            = database.withSession { implicit session: Session =>
+
+        try {
+            // First, we need to create the directory for the data
+            val destinationPath = attachmentPathForResource(resource)
+
+            val now = new java.sql.Timestamp(System.currentTimeMillis())
+
+            val filePath = destinationPath + '/' + attachmentNameForMimetype(mimetype)
+
+            val writer = new java.io.BufferedWriter(new java.io.FileWriter(filePath))
+            writer write content
+            writer.close
+
+            // val stream = new java.io.ByteArrayOutputStream()
+            conductor.ResourceAttachmentTable.query += conductor.ResourceAttachment(
+                resource.id,
+                mimetype,
+                resource.created  getOrElse now,
+                resource.modified getOrElse now,
+                None // Some(stream.toString("UTF-8"))
+            )
+
+            Some(filePath)
+
+        } catch {
+            case e: org.postgresql.util.PSQLException =>
+                println(e.toString())
+
+                None
+
+            case e: Exception =>
+                println(s"Unknown exception $e")
+
+                None
+        }
+    }
+
 }
