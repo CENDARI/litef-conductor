@@ -103,36 +103,44 @@ class CollectorActor
      */
     def processNext() = database withSession { implicit session: Session =>
 
-        // log.info("Processing the next resource:")
-
-        // Searching for the resource that needs to be processed.
-        // It needs to be locally available and to have a modification timestamp
-        // after the last time we processed a resource with this id
-        val nextQuery =
-            ckan.ResourceTable.query
-                .filter(_.modified.isNotNull)
-                .filter(_.urlType === "upload")
-                .filterNot(resource =>
-                    resource.id in ProcessedResourceTable.query
-                        .filter{ p => resource.id === p.id && p.lastProcessed <= resource.modified }
-                        .map(_.id)
-                )
-            .take(1)
-
-        val next = nextQuery
-            .list
-            .headOption
-
-        if (next.isEmpty) {
-            // If not, update the queue
-            // log.info("The queue is empty, waiting for 60 seconds...")
+        // If we have a file that tells us to stop the processing,
+        // listen to it. And try again after one minute
+        val f = new java.io.File("/opt/litef/conductor:disable-document-processing");
+        if (f.exists()) {
             system.scheduler.scheduleOnce(60 seconds, self, Start())
-
         } else {
-            // If yes, process it
-            val resource = next.get
-            // log.info(s"Processing resource: ${resource.id} / ${resource.url}")
-            processResource(resource)
+
+            // log.info("Processing the next resource:")
+
+            // Searching for the resource that needs to be processed.
+            // It needs to be locally available and to have a modification timestamp
+            // after the last time we processed a resource with this id
+            val nextQuery =
+                ckan.ResourceTable.query
+                    .filter(_.modified.isNotNull)
+                    .filter(_.urlType === "upload")
+                    .filterNot(resource =>
+                        resource.id in ProcessedResourceTable.query
+                            .filter{ p => resource.id === p.id && p.lastProcessed <= resource.modified }
+                            .map(_.id)
+                    )
+                .take(1)
+
+            val next = nextQuery
+                .list
+                .headOption
+
+            if (next.isEmpty) {
+                // If not, update the queue
+                // log.info("The queue is empty, waiting for 60 seconds...")
+                system.scheduler.scheduleOnce(60 seconds, self, Start())
+
+            } else {
+                // If yes, process it
+                val resource = next.get
+                // log.info(s"Processing resource: ${resource.id} / ${resource.url}")
+                processResource(resource)
+            }
         }
     }
 

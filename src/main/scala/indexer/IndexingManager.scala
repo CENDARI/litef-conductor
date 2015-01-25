@@ -60,9 +60,6 @@ object IndexingManager {
     }
 
     def index(resource: ckan.Resource) {
-        val f = new File("/opt/litef/runtime-block-indexing");
-        if (f.exists()) return;
-
         val ckanFile = resource.localFile
         val mimetype = resource.localMimetype
 

@@ -40,6 +40,6 @@ DirsAllowed variable in virtuoso.ini
 
 In order not to have collisions between the main server and a local instance
 (in the case where you use the main server's databases and files), you need
-to create a local file /opt/litef/runtime-block-indexing before starting the
-local service.
+to create a local file /opt/litef/conductor:disable-document-processing
+before starting the local service.
 
