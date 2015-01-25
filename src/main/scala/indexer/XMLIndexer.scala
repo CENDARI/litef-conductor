@@ -30,6 +30,7 @@ class XMLIndexer extends AbstractIndexer {
 
     final override
     def indexFile(
+        resource: ckan.Resource,
         file: java.io.File,
         mimetype: String,
         rootResource: => Resource

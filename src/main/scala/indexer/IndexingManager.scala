@@ -53,7 +53,7 @@ object IndexingManager {
         val stream = new java.io.ByteArrayOutputStream()
         model.write(stream, format)
 
-        val result = AbstractIndexer.saveGeneratedData(resource, stream.toString, mimetype)
+        val result = AbstractIndexer.saveAttachment(resource, stream.toString, mimetype)
 
         stream.close
         result
@@ -63,12 +63,11 @@ object IndexingManager {
         val f = new File("/opt/litef/runtime-block-indexing");
         if (f.exists()) return;
 
-        val resourceUri = "litef://resource/" + resource.id
         val ckanFile = resource.localFile
         val mimetype = resource.localMimetype
 
         val results = indexers flatMap {
-            _.index(resourceUri, ckanFile, mimetype)
+            _.index(resource, ckanFile, mimetype)
                 .filter(_.score > .75)
                 .map(result => Result(ckanFile, result.indexerName, result.model))
         }
@@ -150,14 +149,14 @@ object IndexingManager {
 
     }
 
-    def printResults(file: String, mimetype: String) {
-        indexers flatMap { indexer =>
-            indexer.index("litef://dump/", new java.io.File(file), mimetype)
-                .filter(_.score > .75)
-                .map{_.model.write(System.out, "N3")}
-        }
-
-    }
+    // def printResults(file: String, mimetype: String) {
+    //     indexers flatMap { indexer =>
+    //         indexer.index("litef://dump/", new java.io.File(file), mimetype)
+    //             .filter(_.score > .75)
+    //             .map{_.model.write(System.out, "N3")}
+    //     }
+    //
+    // }
 
 //  /**
 //   * Executes all indexers on the given file or directory

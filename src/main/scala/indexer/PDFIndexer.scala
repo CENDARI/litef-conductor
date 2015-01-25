@@ -24,6 +24,7 @@ final
 class PDFIndexer extends AbstractIndexer {
     override
     def indexFile(
+        resource: ckan.Resource,
         file: java.io.File,
         mimetype: String,
         rootResource: => Resource

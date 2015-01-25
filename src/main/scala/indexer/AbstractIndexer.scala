@@ -49,7 +49,7 @@ trait AbstractIndexer {
      */
     final
     def index(
-        resourceUri: String,
+        resource: ckan.Resource,
         file: java.io.File,
         mimetype: String
     ): Option[Result] = {
@@ -58,7 +58,8 @@ trait AbstractIndexer {
         model = ModelFactory.createDefaultModel
 
         // Indexing the file
-        val result = indexFile(file, mimetype, /*lazy*/ ?:(resourceUri))
+        val resourceUri = "litef://resource/" + resource.id
+        val result = indexFile(resource: ckan.Resource, file, mimetype, /*lazy*/ ?:(resourceUri))
 
         if (result.isEmpty) None
         else {
@@ -76,6 +77,7 @@ trait AbstractIndexer {
      */
     protected
     def indexFile(
+        resource: ckan.Resource,
         file: java.io.File,
         mimetype: String,
         rootResource: => Resource
@@ -163,7 +165,7 @@ object AbstractIndexer {
      * Saving processed formats. Returns an option of the file path where the
      * data has been saved
      */
-    def saveGeneratedData(resource: ckan.Resource, content: String,
+    def saveAttachment(resource: ckan.Resource, content: String,
             mimetype: String): Option[String]
             = database.withSession { implicit session: Session =>
 

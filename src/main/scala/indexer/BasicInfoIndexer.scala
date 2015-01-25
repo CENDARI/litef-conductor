@@ -27,6 +27,7 @@ final
 class BasicInfoIndexer extends AbstractIndexer {
     override
     def indexFile(
+        resource: ckan.Resource,
         file: java.io.File,
         mimetype: String,
         root: => Resource

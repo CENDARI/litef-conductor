@@ -13,7 +13,7 @@ object Indexer {
     val builtin = Seq(
         // "indexer.PDFIndexer",
         // "indexer.PlainTextIndexer",
-        // "indexer.ApacheTikaIndexer",
+        "indexer.TikaIndexer",
         "indexer.BasicInfoIndexer",
         "indexer.xml.EAGIndexer"
     )
