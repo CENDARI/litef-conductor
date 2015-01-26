@@ -63,7 +63,7 @@ object ResourceActor {
     case class GetResourceMetadata(id: String)
 
     /// Gets the meta data for the the specified resource
-    case class GetResourceMetadataRDF(id: String, format: String)
+    case class GetResourceMetadataAttachment(id: String, format: String)
 
     /// Gets the resources for the specified dataset
     case class ListDataspaceResources(
@@ -175,18 +175,16 @@ class ResourceActor
                 )
             }
 
-        case GetResourceMetadataRDF(request, format) =>
+        case GetResourceMetadataAttachment(request, mimetype) =>
             CkanGodInterface.database withSession { implicit session: Session =>
 
-                val mimetype = if (format == "xml") "application/rdf+xml" else "text/n3"
-
-                println(s"################### searching for $request in $format as $mimetype")
+                // TODO: More security checks
+                // println(s"################### searching for $request in $format as $mimetype")
 
                 // Checking whether we have the attachment in the database
                 val resourceId = conductor.ResourceAttachmentTable.query
                     .filter(_.resourceId === request)
                     .filter(_.format === mimetype)
-                    // .map(_.content) // content is no longer used - we are storing the files now
                     .map(_.resourceId)
                     .list.headOption
 
@@ -198,7 +196,7 @@ class ResourceActor
                         status  = StatusCodes.OK,
                         entity = HttpEntity(
                             ContentType(MediaType.custom(mimetype), `UTF-8`),
-                            content // content.map(_.toString) getOrElse ""
+                            content
                         )
                     )
                 } getOrElse {

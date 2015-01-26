@@ -52,12 +52,15 @@ class ResourceService()(implicit executionContext: ExecutionContext)
             }
         }
 
-    def getResourceMetadataRdf(id: String, format: String)(implicit authorizationKey: String) =
+    def getResourceAttachment(id: String, mimetype: String)(implicit authorizationKey: String) =
         authorize(ckan.CkanGodInterface.isResourceAccessibleToUser(id.split('.').head, authorizationKey)) {
             complete {
-                (Core.resourceActor ? GetResourceMetadataRDF(id, format)).mapTo[HttpResponse]
+                (Core.resourceActor ? GetResourceMetadataAttachment(id, mimetype)).mapTo[HttpResponse]
             }
         }
+
+    def getResourceAttachmentRDF(id: String, format: String)(implicit authorizationKey: String) =
+        getResourceAttachment(id, if (format == "xml") "application/rdf+xml" else "text/n3")
 
     def getResourceData(id: String)(implicit authorizationKey: String) =
         authorize(ckan.CkanGodInterface.isResourceAccessibleToUser(id, authorizationKey)) {
@@ -77,21 +80,12 @@ class ResourceService()(implicit executionContext: ExecutionContext)
     val route = headerValueByName("Authorization") { implicit authorizationKey =>
         pathPrefix("resources") {
             get {
-                /*
-                 * Getting the lists of results
-                 */
-                /*
-                (path(PathEnd) & timeRestriction)   { listResources } ~
-                path("query" / "results" / Segment) { listResourcesFromIterator } ~
-                */
-                /*
-                 * Getting the specific result item
-                 */
                 path(Segment)                       { getResourceMetadata } ~
-                path(Segment / "rdf" / Segment)     { getResourceMetadataRdf } ~
-                path(Segment / "rdf")               { getResourceMetadataRdf(_, "n3") } ~
-                path(Segment / "data")              { getResourceData }
-                // path(Segment / "$metadata" / Segment) { getResourceMetadataItem }
+                path(Segment / "data")              { getResourceData } ~
+                path(Segment / "format" / Rest)     { getResourceAttachment } ~
+                path(Segment / "rdf" / Segment)     { getResourceAttachmentRDF } ~
+                path(Segment / "rdf")               { getResourceAttachmentRDF(_, "n3") } ~
+                path(Segment / "text")              { getResourceAttachment(_, "text/plain") }
             } ~
             put {
                 complete { s"What to put?" }
