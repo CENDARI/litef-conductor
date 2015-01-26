@@ -69,14 +69,20 @@ class AbstractPluginActor(name: String)
         case DispatcherActor.ProcessResource(resource) =>
             process(resource).onComplete{
                 case Success(_) =>
-                    // log.info(s"Plugin '$name' finished")
                     Core.collectorActor ! PluginActor.ProcessingFinished()
 
                 case Failure(_) =>
-                    // log.info(s"Plugin '$name' failed")
                     Core.collectorActor ! PluginActor.ProcessingFailed()
             }
 
+        case DispatcherActor.ProcessAttachment(attachment) =>
+            process(attachment).onComplete{
+                case Success(_) =>
+                    Core.collectorActor ! PluginActor.ProcessingFinished()
+
+                case Failure(_) =>
+                    Core.collectorActor ! PluginActor.ProcessingFailed()
+            }
     }
 
 }

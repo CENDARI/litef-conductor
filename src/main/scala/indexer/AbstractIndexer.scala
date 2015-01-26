@@ -29,6 +29,8 @@ import javelin.ontology.Implicits._
 import common.Config
 import ckan.CkanGodInterface.database
 import slick.driver.PostgresDriver.simple._
+import conductor.ResourceAttachmentUtil._
+import java.sql.Timestamp
 
 trait AbstractIndexer {
     /**
@@ -58,7 +60,7 @@ trait AbstractIndexer {
         model = ModelFactory.createDefaultModel
 
         // Indexing the file
-        val resourceUri = "litef://resource/" + resource.id
+        val resourceUri = LitefNaming.graphForResource(resource.id)
         val result = indexFile(resource, file, mimetype, /*lazy*/ ?:(resourceUri))
 
         if (result.isEmpty) None
@@ -85,7 +87,7 @@ trait AbstractIndexer {
         model = ModelFactory.createDefaultModel
 
         // Indexing the file
-        val resourceUri = "litef://resource/" + attachment.resourceId
+        val resourceUri = LitefNaming.graphForResource(attachment.resourceId)
         val result = indexAttachment(attachment, file, mimetype, /*lazy*/ ?:(resourceUri))
 
         if (result.isEmpty) None
@@ -137,7 +139,7 @@ trait AbstractIndexer {
         model.createResource(file.toURI.toString)
 
     def createResource() =
-        model.createResource("litef:/" + UUID.randomUUID.toString)
+        model.createResource("litef://" + UUID.randomUUID.toString)
 
     def ?:(pvs: PropertyValue[_]*): Resource = createResource() ++= pvs
 
@@ -187,17 +189,19 @@ object AbstractIndexer {
      * Saving processed formats. Returns an option of the file path where the
      * data has been saved
      */
-    def saveAttachment(resource: ckan.Resource, content: String,
+    def saveAttachment(
+            resourceId: String,
+            resourceCreated: Option[Timestamp],
+            resourceModified: Option[Timestamp],
+            content: String,
             mimetype: String): Option[String]
             = database.withSession { implicit session: Session =>
 
         try {
             // First, we need to create the directory for the data
-            val destinationPath = conductor.ResourceAttachmentUtil.attachmentPathForResource(resource.id)
-
             val now = new java.sql.Timestamp(System.currentTimeMillis())
 
-            val filePath = destinationPath + '/' + conductor.ResourceAttachmentUtil.attachmentNameForMimetype(mimetype)
+            val filePath = conductor.ResourceAttachment(resourceId, mimetype).localPath
 
             val writer = new java.io.BufferedWriter(new java.io.FileWriter(filePath))
             writer write content
@@ -205,10 +209,10 @@ object AbstractIndexer {
 
             // val stream = new java.io.ByteArrayOutputStream()
             conductor.ResourceAttachmentTable.query += conductor.ResourceAttachment(
-                resource.id,
+                resourceId,
                 mimetype,
-                resource.created  getOrElse now,
-                resource.modified getOrElse now,
+                resourceCreated  getOrElse now,
+                resourceModified getOrElse now,
                 None // Some(stream.toString("UTF-8"))
             )
 
@@ -226,5 +230,13 @@ object AbstractIndexer {
                 None
         }
     }
+
+    def saveAttachment(resource: ckan.Resource, content: String,
+            mimetype: String): Option[String]
+            = saveAttachment(resource.id, resource.created, resource.modified, content, mimetype)
+
+    def saveAttachment(attachment: conductor.ResourceAttachment, content: String,
+            mimetype: String): Option[String]
+            = saveAttachment(attachment.resourceId, Some(attachment.created), Some(attachment.modified), content, mimetype)
 
 }

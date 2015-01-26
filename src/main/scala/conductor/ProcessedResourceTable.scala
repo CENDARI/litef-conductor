@@ -25,7 +25,8 @@ import spray.json._
 // ProcessedResource
 case class ProcessedResource(
     id             : String,
-    lastProcessed  : Option[Timestamp]
+    lastProcessed  : Option[Timestamp],
+    attachment     : Option[String]
 )
 
 class ProcessedResourceTable(tag: Tag)
@@ -33,6 +34,7 @@ class ProcessedResourceTable(tag: Tag)
 {
     val id             = column [ String            ] ("resource_id",    O.NotNull, O.PrimaryKey)
     val lastProcessed  = column [ Option[Timestamp] ] ("last_processed", O.Nullable, O.Default(None))
+    val attachment     = column [ String            ] ("attachment",     O.NotNull, O.Default(""), O.PrimaryKey)
 
     // We can not make FK on a view :/
     // val resourceFKey   = foreignKey("litef_scheduled_resource_resource_fk",
@@ -41,8 +43,15 @@ class ProcessedResourceTable(tag: Tag)
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
         id ,
-        lastProcessed
-    ) <> (ProcessedResource.tupled, ProcessedResource.unapply)
+        lastProcessed,
+        attachment
+    ) <> (to _, from _)
+
+    private def to(pr: (String, Option[Timestamp], String)) =
+        ProcessedResource(pr._1, pr._2, if (pr._3.isEmpty) None else Some(pr._3))
+
+    private def from(pr: ProcessedResource) =
+        Some((pr.id, pr.lastProcessed, pr.attachment getOrElse ""))
 }
 
 object ProcessedResourceTable {

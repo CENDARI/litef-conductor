@@ -98,49 +98,80 @@ class CollectorActor
     }
 
     /**
+     * Starts the processing of the specified resource attachment.
+     * @param attachment attachment
+     * @return nothing important
+     */
+    def processAttachment(attachment: conductor.ResourceAttachment) = Future {
+        dispatcherActor ! DispatcherActor.ProcessAttachment(attachment)
+    }
+
+    /**
      * Find the next resource, and start processing it
      * @return
      */
-    def processNext() = database withSession { implicit session: Session =>
-
+    def processNext() {
         // If we have a file that tells us to stop the processing,
         // listen to it. And try again after one minute
         val f = new java.io.File("/opt/litef/conductor:disable-document-processing");
         if (f.exists()) {
             system.scheduler.scheduleOnce(60 seconds, self, Start())
+
         } else {
-
-            // log.info("Processing the next resource:")
-
-            // Searching for the resource that needs to be processed.
-            // It needs to be locally available and to have a modification timestamp
-            // after the last time we processed a resource with this id
-            val nextQuery =
-                ckan.ResourceTable.query
-                    .filter(_.modified.isNotNull)
-                    .filter(_.urlType === "upload")
-                    .filterNot(resource =>
-                        resource.id in ProcessedResourceTable.query
-                            .filter{ p => resource.id === p.id && p.lastProcessed <= resource.modified }
-                            .map(_.id)
-                    )
-                .take(1)
-
-            val next = nextQuery
-                .list
-                .headOption
-
-            if (next.isEmpty) {
-                // If not, update the queue
-                // log.info("The queue is empty, waiting for 60 seconds...")
+            if (!processNextAttachment && !processNextResource) {
                 system.scheduler.scheduleOnce(60 seconds, self, Start())
-
-            } else {
-                // If yes, process it
-                val resource = next.get
-                // log.info(s"Processing resource: ${resource.id} / ${resource.url}")
-                processResource(resource)
             }
+
+        }
+    }
+
+    def processNextAttachment(): Boolean = database withSession { implicit session: Session =>
+        val nextQuery =
+            conductor.ResourceAttachmentTable.query
+                .filterNot(attachment =>
+                    attachment.resourceId in ProcessedResourceTable.query
+                        .filter { p =>
+                            p.attachment === attachment.format &&
+                            p.id === attachment.resourceId &&
+                            p.lastProcessed <= attachment.modified
+                        }
+                        .map { _.id }
+                )
+            .take(1)
+
+        val next = nextQuery.list.headOption
+
+        if (next.isEmpty) {
+            false
+        } else {
+            processAttachment(next.get)
+            true
+        }
+    }
+
+    def processNextResource(): Boolean = database withSession { implicit session: Session =>
+        val nextQuery =
+            ckan.ResourceTable.query
+                .filter(_.modified.isNotNull)
+                .filter(_.urlType === "upload")
+                .filterNot(resource =>
+                    resource.id in ProcessedResourceTable.query
+                        .filter { p =>
+                            !(p.attachment === "") &&
+                            p.id === resource.id &&
+                            p.lastProcessed <= resource.modified
+                        }
+                        .map { _.id }
+                )
+            .take(1)
+
+        val next = nextQuery.list.headOption
+
+        if (next.isEmpty) {
+            false
+        } else {
+            processResource(next.get)
+            true
         }
     }
 
@@ -150,15 +181,43 @@ class CollectorActor
      * @return
      */
     def markResourceAsProcessed(resource: ckan.Resource) = database withSession { implicit session: Session =>
-
         exceptionless {
-            ProcessedResourceTable.query += ProcessedResource(resource.id, resource.modified)
+            ProcessedResourceTable.query +=
+                ProcessedResource(resource.id, resource.modified, None)
             None
         }
 
-        ProcessedResourceTable.query.filter(_.id === resource.id)
+        ProcessedResourceTable.query
+            .filter { r =>
+                r.id === resource.id &&
+                r.attachment.isNull
+            }
             .map(_.lastProcessed)
             .update(resource.modified)
+    }
+
+    /**
+     * Sets the specified resource's last processed timestamp
+     * @param resource
+     * @return
+     */
+    def markAttachmentAsProcessed(attachment: conductor.ResourceAttachment) = database withSession { implicit session: Session =>
+        exceptionless {
+            ProcessedResourceTable.query +=
+                ProcessedResource(
+                    attachment.resourceId,
+                    Some(attachment.modified),
+                    Some(attachment.format))
+            None
+        }
+
+        ProcessedResourceTable.query
+            .filter { r =>
+                r.id === attachment.resourceId &&
+                r.attachment === attachment.format
+            }
+            .map(_.lastProcessed)
+            .update(Some(attachment.modified))
     }
 
     def receive: Receive = {
@@ -175,6 +234,12 @@ class CollectorActor
         case DispatcherActor.ResourceProcessingFinished(resource) =>
             // log.info(s"The dispatcher said it has finished processing $resource")
             markResourceAsProcessed(resource)
+            processNext
+
+        // We got the notice that a resource processing was finished
+        case DispatcherActor.AttachmentProcessingFinished(attachment) =>
+            // log.info(s"The dispatcher said it has finished processing $resource")
+            markAttachmentAsProcessed(attachment)
             processNext
 
         // Failed to process the resource, ignore and continue

@@ -35,26 +35,79 @@ import HttpCharsets._
 import HttpMethods._
 import HttpHeaders._
 
+import conductor.ResourceAttachmentUtil._
+
 import common.Config.{ Nerd => NerdConfig }
+import java.sql.Timestamp
 
 class NerdPlugin extends AbstractPluginActor("NERD")
 {
     import context.system
 
-    def postRequest[T](action: String, data: String)
-                      (implicit evidence: spray.httpx.marshalling.Marshaller[T]) =
+    def nerdProcess[T](dataFile: String): Future[HttpResponse] = {
+        println("NerdPlugin: Processing " + dataFile)
+        val data = java.net.URLEncoder.encode(scala.io.Source.fromFile(dataFile).mkString, "utf-8")
+        // val data = java.net.URLEncoder.encode(
+        //     "Austria invaded and fought the Serbian army at the Battle of Cer and Battle of Kolubara beginning on 12 August.",
+        //     "utf-8")
         (IO(Http) ? (
             Post(NerdConfig.namespace + "processNERDText?text=" + data)
-        ))
+            )).mapTo[HttpResponse]
+    }
 
-    override
-    def process(resource: ckan.Resource): Future[Unit] = Future {
-
+    def saveResponse(
+            resourceId: String,
+            resourceCreated: Option[Timestamp],
+            resourceModified: Option[Timestamp],
+            response: HttpResponse) {
+        indexer.AbstractIndexer.saveAttachment(
+            resourceId,
+            resourceCreated,
+            resourceModified,
+            response.entity.asString,
+            "application/x-nerd-output"
+        )
     }
 
     override
-    def process(attachment: conductor.ResourceAttachment): Future[Unit] = Future {
-        ???
+    def process(resource: ckan.Resource) = {
+        if (resource.mimetype == "text/plain") {
+            nerdProcess(resource.localPath)
+                .map { response => response.status match {
+                case StatusCodes.OK =>
+                    // println(response.entity.asString)
+                    saveResponse(resource.id,
+                                 resource.created,
+                                 resource.modified,
+                                 response)
+
+                case _ =>
+                    println("NerdPlugin: Error " + response)
+
+                }
+            }
+        } else Future {}
+    }
+
+
+    override
+    def process(attachment: conductor.ResourceAttachment) = {
+        if (attachment.format == "text/plain") {
+            nerdProcess(attachment.localPath)
+                .map { response => response.status match {
+                case StatusCodes.OK =>
+                    // println(response.entity.asString)
+                    saveResponse(attachment.resourceId,
+                                 Some(attachment.created),
+                                 Some(attachment.modified),
+                                 response)
+
+                case _ =>
+                    println("NerdPlugin: Error " + response)
+
+                }
+            }
+        } else Future {}
     }
 }
 

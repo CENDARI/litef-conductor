@@ -49,13 +49,19 @@ import akka.event.Logging
 
 object DispatcherActor {
     /// Request for processing
-    abstract class ProcessRequest(val resource: ckan.Resource)
+    abstract class ProcessRequest()
 
     /// Request for the specified resource to be processed
-    case class ProcessResource(override val resource: ckan.Resource) extends ProcessRequest(resource)
+    case class ProcessResource(val resource: ckan.Resource) extends ProcessRequest()
 
     /// Used by us to tell the caller that we have finished processing
     case class ResourceProcessingFinished(resource: ckan.Resource)
+
+    /// Request for the specified resource to be processed
+    case class ProcessAttachment(val attachment: conductor.ResourceAttachment) extends ProcessRequest()
+
+    /// Used by us to tell the caller that we have finished processing
+    case class AttachmentProcessingFinished(attachment: conductor.ResourceAttachment)
 
     /// Used by us to tell the caller that we failed to process the resource
     case class ResourceProcessingFailed(ex: RuntimeException)
@@ -101,7 +107,6 @@ class DispatcherActor
      * Starts processing the resource, calls the first plugin
      */
     def startProcessing() {
-        // log.info("Starting processing")
         leftPlugins = plugins
         startNextPlugin()
     }
@@ -110,29 +115,31 @@ class DispatcherActor
      * Continues processing the resource, calls one of the remaining plugins
      */
     def startNextPlugin() {
-        if (leftPlugins.size == 0) {
-            // log.info("No more plugins, sending the signal to the collector")
-            Core.collectorActor ! ResourceProcessingFinished(currentRequest.get.resource)
-            currentRequest = None
-
-        } else {
-            // log.info("Starting the next plugin")
+        if (leftPlugins.size != 0) {
             leftPlugins.head ! currentRequest.get
             leftPlugins = leftPlugins.tail
+
+        } else {
+            // log.info("No more plugins, sending the signal to the collector")
+            currentRequest.get match {
+                case ProcessResource(resource) =>
+                    Core.collectorActor ! ResourceProcessingFinished(resource)
+
+                case ProcessAttachment(attachment) =>
+                    Core.collectorActor ! AttachmentProcessingFinished(attachment)
+            }
+
+            currentRequest = None
 
         }
     }
 
     def receive: Receive = {
-        case request @ ProcessResource(resource) =>
-            // log.info(s"Got the request to process $resource")
-
+        case request : ProcessRequest =>
             if (currentRequest.isEmpty) {
                 currentRequest = Some(request)
                 startProcessing()
             } else {
-                // log.warning("We are already processing something!")
-
                 sender ! AlreadyRunningException
             }
 

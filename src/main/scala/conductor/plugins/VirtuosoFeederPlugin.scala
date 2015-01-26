@@ -15,7 +15,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package indexer
+package conductor.plugins
+
+import conductor.AbstractPluginActor
+import concurrent.Future
+import concurrent.ExecutionContext.Implicits.global
 
 import java.io.File
 import org.foment.utils.Filesystem._
@@ -23,22 +27,41 @@ import org.foment.utils.Class._
 import virtuoso.jena.driver.{VirtGraph, VirtModel}
 import common.Config.{ Virtuoso => VirtuosoConfig }
 
-object VirtuosoInterface {
+import conductor.ResourceAttachmentUtil._
+import indexer.LitefNaming._
 
-    lazy val log = org.slf4j.LoggerFactory getLogger getClass
 
-    // lazy val defaultGraph = new VirtGraph(VirtuosoConfig.url, VirtuosoConfig.user, VirtuosoConfig.password)
-    //
-    // def namedGraph(name: String) = {
-    //     // logger.info("Creating graph for " + name)
-    //     new VirtGraph(name, VirtuosoConfig.url, VirtuosoConfig.user, VirtuosoConfig.password)
-    // }
-    //
-    // implicit
-    // class GraphToModel(graph: VirtGraph) {
-    //     lazy val model = new VirtModel(graph)
-    //
-    // }
+class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
+{
+    import context.system
+
+    override
+    def process(resource: ckan.Resource): Future[Unit] = Future {
+
+        val resourceGraph = graphForResource(resource.id)
+
+        // If we are processing a resource, we need to empty out
+        // all the data from Virtuoso that we used to have
+        clearGraph(resourceGraph)
+
+        // Loading the file, if it is a RDF
+        if (resource.localMimetype == "application/rdf+xml") {
+            loadFileInfoGraph(resource.localPath, resourceGraph)
+        }
+
+    }
+
+    override
+    def process(attachment: conductor.ResourceAttachment): Future[Unit] = Future {
+
+        if (attachment.format endsWith "application/rdf+xml") {
+            val resourceGraph = graphForResource(attachment.resourceId)
+            loadFileInfoGraph(attachment.localPath, resourceGraph)
+
+        }
+
+    }
+
 
     lazy val connection = {
         Class.forName("virtuoso.jdbc4.Driver");
@@ -50,7 +73,7 @@ object VirtuosoInterface {
         connection.createStatement execute query
 
     def clearGraph(namedGraphUri: String) =
-        VirtuosoInterface.execute(s"SPARQL CLEAR GRAPH <$namedGraphUri>")
+        execute(s"SPARQL CLEAR GRAPH <$namedGraphUri>")
 
     def loadFileInfoGraph(file: String, namedGraphUri: String) = {
         // DB.DBA.TTLP_MT is for TTL and friends, while
@@ -58,7 +81,7 @@ object VirtuosoInterface {
         // val virtuosoInsertFunction = "DB.DBA.TTLP_MT"
         val virtuosoInsertFunction = "DB.DBA.RDF_LOAD_RDFXML_MT"
 
-        VirtuosoInterface.execute(
+        execute(
             s"""|CALL
             |$virtuosoInsertFunction(
                 |    file_to_string_output('$file'),

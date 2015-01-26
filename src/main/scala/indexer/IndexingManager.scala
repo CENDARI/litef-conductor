@@ -21,12 +21,13 @@ import java.io.File
 import com.hp.hpl.jena.rdf.model.{ Model, ModelFactory, Resource, Literal, ResourceFactory}
 import org.foment.utils.Filesystem._
 import org.foment.utils.Class._
-import VirtuosoInterface._
 import conductor._
 import ckan.CkanGodInterface.database
 import slick.driver.PostgresDriver.simple._
 import common.Config
 
+import conductor.ResourceAttachmentUtil._
+import java.sql.Timestamp
 
 object IndexingManager {
     lazy val logger = org.slf4j.LoggerFactory getLogger getClass
@@ -47,30 +48,62 @@ object IndexingManager {
      */
     val scoreTreshold = 0.9
 
-    def saveGeneratedModel(resource: ckan.Resource, model: Model,
-            format: String, mimetype: String): Option[String] = {
+    // TODO: Refactor attachment methods not to be copies of the Resource ones
+    def saveGeneratedModel(
+            resourceId: String,
+            resourceCreated: Option[Timestamp],
+            resourceModified: Option[Timestamp],
+            model: Model,
+            format: String,
+            mimetype: String
+            ): Option[String] = {
 
         val stream = new java.io.ByteArrayOutputStream()
         model.write(stream, format)
 
-        val result = AbstractIndexer.saveAttachment(resource, stream.toString, mimetype)
+        val result = AbstractIndexer.saveAttachment(
+            resourceId, resourceCreated, resourceModified, stream.toString, mimetype)
 
         stream.close
         result
     }
 
+    def saveGeneratedModels(
+            resourceId: String,
+            resourceCreated: Option[Timestamp],
+            resourceModified: Option[Timestamp],
+            model: Model,
+            mimetypePrefix: String
+            ) {
+
+        if (!model.isEmpty) {
+            saveGeneratedModel(
+                resourceId, resourceCreated, resourceModified,
+                model, "RDF/XML", mimetypePrefix + "application/rdf+xml")
+            saveGeneratedModel(
+                resourceId, resourceCreated, resourceModified,
+                model, "N3", mimetypePrefix + "text/n3")
+        }
+
+    }
+
     def index(attachment: conductor.ResourceAttachment) {
         logger.info(s"Indexing attachment ${attachment.resourceId} ${attachment.format}")
-        val attachmentFile = new java.io.File(
-            conductor.ResourceAttachmentUtil.attachmentPathForResource(attachment.resourceId) + '/' +
-            conductor.ResourceAttachmentUtil.attachmentNameForMimetype(attachment.format)
-        )
+        val attachmentFile = new java.io.File(attachment.localPath)
 
-        val results = indexers flatMap {
+        val joinedModel = ModelFactory.createDefaultModel
+
+        indexers flatMap {
             _.index(attachment, attachmentFile, attachment.format)
                 .filter(_.score > .75)
                 .map(result => Result(attachmentFile, result.indexerName, result.model))
+        } foreach {
+            joinedModel add _.model
         }
+
+        saveGeneratedModels(
+            attachment.resourceId, Some(attachment.created), Some(attachment.modified),
+            joinedModel, attachment.format + " -> ")
     }
 
     def index(resource: ckan.Resource) {
@@ -78,86 +111,22 @@ object IndexingManager {
         val resourceFile = resource.localFile
         val mimetype = resource.localMimetype
 
-        val results = indexers flatMap {
+        val joinedModel = ModelFactory.createDefaultModel
+
+        indexers flatMap {
             _.index(resource, resourceFile, mimetype)
                 .filter(_.score > .75)
                 .map(result => Result(resourceFile, result.indexerName, result.model))
+        } foreach {
+            joinedModel add _.model
         }
-
-        val joinedModel = ModelFactory.createDefaultModel
-
-        // Adding indexing results
-        results foreach { result =>
-            // println(s"Adding model: ${result.indexerName}")
-            joinedModel add result.model
-            // result.model.write(System.out, "N3")
-            // namedGraph add result.model
-        }
-
-        // println("#### [BEGIN]  This is what we have generated: (Joined model) ####")
-        // joinedModel.write(System.out, "N3")
-        // println("#### [END]    This is what we have generated: (Joined model) ####")
 
         // We need to save the new RDF serializations back to the database
-        val serializedFileOption =
-            saveGeneratedModel(resource, joinedModel, "RDF/XML", "application/rdf+xml")
-        saveGeneratedModel(resource, joinedModel, "N3", "text/n3")
-
-        // Removing previously generated data
-        try {
-            val namedGraphUri = "litef://resource/" + resource.id;
-            // val namedGraph = VirtuosoInterface.namedGraph(namedGraphUri)
-
-            // namedGraph.removeAll
-            VirtuosoInterface.clearGraph(namedGraphUri)
-
-            // For some reason, this fails - it generates an invalid query
-            // which virtuoso does not understand
-            // namedGraph add joinedModel
-
-            // We need to try to force-feed virtuoso
-            val serializedFile: String = serializedFileOption.get
-
-            VirtuosoInterface.loadFileInfoGraph(serializedFile, namedGraphUri)
-
-            // println("#### [BEGIN]  This is what we have generated: (Virtuoso model) ####")
-            // namedGraph.write(System.out, "N3")
-            // println("#### [END]    This is what we have generated: (Virtuoso model) ####")
-
-        } catch {
-            case e: com.hp.hpl.jena.shared.JenaException =>
-                println("Jena Exception while adding the model to Virtuoso:")
-
-                e.getCause match {
-                    case e: virtuoso.jdbc4.VirtuosoException =>
-                        println("Virtuoso Exception: " + e.getMessage)
-                        //e.iterator.
-
-                    case _ => println("Unknown cause")
-
-                }
-
-            case e: virtuoso.jdbc4.VirtuosoException =>
-                println(s"Virtuoso Exception while adding the model: ${e.toString()}")
-                // e.printStackTrace
-
-
-            case e: Exception =>
-                println(s"Unknown Exception while adding the model to Virtuoso: ${e.toString()}")
-
-        }
-
+        saveGeneratedModels(
+            resource.id, resource.created, resource.modified,
+            joinedModel, "")
 
     }
-
-    // def printResults(file: String, mimetype: String) {
-    //     indexers flatMap { indexer =>
-    //         indexer.index("litef://dump/", new java.io.File(file), mimetype)
-    //             .filter(_.score > .75)
-    //             .map{_.model.write(System.out, "N3")}
-    //     }
-    //
-    // }
 
 //  /**
 //   * Executes all indexers on the given file or directory

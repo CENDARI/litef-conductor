@@ -42,6 +42,8 @@ import HttpHeaders._
 import akka.event.Logging._
 import akka.event.Logging
 
+import conductor.ResourceAttachmentUtil._
+
 object ResourceActor {
     /// Gets the list of resources modified in the specified time range
     // case class ListResources(
@@ -189,10 +191,7 @@ class ResourceActor
                     .list.headOption
 
                 val result = resourceId.map { id =>
-                    val destinationPath = conductor.ResourceAttachmentUtil.attachmentPathForResource(id)
-
-                    val filePath = destinationPath + '/' + conductor.ResourceAttachmentUtil.attachmentNameForMimetype(mimetype)
-
+                    val filePath = conductor.ResourceAttachment(id, mimetype).localPath
                     val content = scala.io.Source.fromFile(filePath).mkString
 
                     HttpResponse(

@@ -27,31 +27,36 @@ import common.Config
 case class ResourceAttachment(
     resourceId     : String,
     format         : String,
-    created        : Timestamp,
-    modified       : Timestamp,
-    content        : Option[String]
+    created        : Timestamp = null,
+    modified       : Timestamp = null,
+    content        : Option[String] = None
 )
 
 object ResourceAttachmentUtil {
-    def attachmentPathForResource(resourceId: String): String = {
-        val choppedId =
-            (resourceId take 3) + '/' +
-            (resourceId drop 3 take 3) + '/' +
-            (resourceId drop 6)
+    implicit class ResourceAttachmentImplicits(attachment: ResourceAttachment) {
+        def localDirectory: String = {
+            val choppedId =
+                (attachment.resourceId take 3) + '/' +
+                (attachment.resourceId drop 3 take 3) + '/' +
+                (attachment.resourceId drop 6)
 
-        val result = Config.Indexer.localStoragePrefix + '/' + choppedId
+            val result = Config.Indexer.localStoragePrefix + '/' + choppedId
 
-        val dir = new java.io.File(result)
+            val dir = new java.io.File(result)
 
-        if (!dir.exists && !dir.mkdirs) {
-            throw new RuntimeException(s"Can not create indexer data directory $dir")
+            if (!dir.exists && !dir.mkdirs) {
+                throw new RuntimeException(s"Can not create indexer data directory $dir")
+            }
+
+            result
         }
 
-        result
-    }
+        def fileName: String =
+            attachment.format.replace('/', ':')
 
-    def attachmentNameForMimetype(mimetype: String) =
-        mimetype.replace('/', ':')
+        def localPath: String =
+            localDirectory + '/' + fileName
+    }
 }
 
 class ResourceAttachmentTable(tag: Tag)
