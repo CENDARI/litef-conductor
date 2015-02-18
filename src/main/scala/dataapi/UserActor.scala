@@ -65,9 +65,11 @@ class UserActor
                     ckanUser match {
                         // TODO: Update user data (email, full name) if not equal with what is provided in ShibData
                         case Some(cu) =>
-                            val ak = cu.apikey.getOrElse("")
                             originalSender ! HttpResponse(StatusCodes.OK,
-                                                          HttpEntity(ContentType(`application/json`, `UTF-8`), s"""{"sessionKey": "$ak"}"""))
+                                                          HttpEntity(ContentType(`application/json`, `UTF-8`), 
+                                                                     JsObject("username" -> JsString(cu.username), 
+                                                                              "sessionKey" -> JsString(cu.apikey.getOrElse("")))
+                                                                     .prettyPrint))
                         case None =>
                             val id = UUID.randomUUID().toString
                             // TODO: Ensure global uniqueness
@@ -85,8 +87,12 @@ class UserActor
                                     case StatusCodes.OK =>
                                         val createdUser = CkanGodInterface.getUserById(id)
                                         val apikey = createdUser.map {_.apikey.getOrElse("")}.getOrElse {""}
+                                        val username = createdUser.map {_.username}.getOrElse {""}
                                         originalSender ! HttpResponse(StatusCodes.OK,
-                                                                      HttpEntity(ContentType(`application/json`, `UTF-8`), s"""{"sessionKey": "$apikey"}"""))
+                                                                      HttpEntity(ContentType(`application/json`, `UTF-8`), 
+                                                                                 JsObject("username" -> JsString(username), 
+                                                                                          "sessionKey" -> JsString(apikey))
+                                                                                 .prettyPrint))
                                     case _ => originalSender ! HttpResponse(response.status, "Error getting session key!")}
                             }
                     }
