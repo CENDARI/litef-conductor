@@ -2,7 +2,7 @@ import com.github.retronym.SbtOneJar._
 
 name := """conductor"""
 
-version := "1.0"
+version := "1.1.0-SNAPSHOT"
 
 scalaVersion := "2.10.3"
 
