@@ -19,7 +19,7 @@ package core
 
 import akka.io.IO
 import akka.actor.Props
-import dataapi.{RoutedHttpService, ResourceService, DataspaceService, UserService, SessionService, DataspaceRoleService}
+import dataapi.{RoutedHttpService, ResourceService, DataspaceService, UserService, SessionService, DataspaceRoleService, StatusService}
 import spray.can.Http
 import spray.routing._
 import spray.http.HttpHeaders.RawHeader
@@ -34,6 +34,7 @@ object Rest extends App
     val routes =
         respondWithHeader(RawHeader("Access-Control-Allow-Origin", "*")) {
             pathPrefix("v1") {
+                new StatusService().route ~
                 new SessionService().route ~
                 new UserService().route ~
                 new DataspaceRoleService().route ~

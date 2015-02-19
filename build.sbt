@@ -12,6 +12,14 @@ resolvers += "spray nightlies" at "http://nightlies.spray.io"
 
 resolvers += "litef nightlies" at "https://raw.githubusercontent.com/ivan-cukic/litef-maven-repository/master/snapshots/"
 
+buildInfoSettings
+
+sourceGenerators in Compile <+= buildInfo
+
+buildInfoKeys := Seq[BuildInfoKey](version)
+
+buildInfoPackage := "info"
+
 libraryDependencies ++= {
     object V {
         val spray = "1.2.1"
