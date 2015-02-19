@@ -314,7 +314,6 @@ object CkanGodInterface {
         .filter(_.state === "active")
         .filter(_.dataspaceId in UserDataspaceRoleTable.query
                                 .filter(_.userApiKey === authorizationKey)
-                                .filter(_.dataspaceRole === "admin")
                                 .filter(_.state === "active")
                                 .map(_.dataspaceId))
         .take(1)
@@ -325,10 +324,11 @@ object CkanGodInterface {
     def listDataspaceRoles(authorizationKey: String, userId: Option[String], dataspaceId: Option[String]) =
         database withSession { implicit session: Session =>
             var query = UserDataspaceRoleTable.query
+                        .filter(_.state === "active")
                         .filter(_.dataspaceId in UserDataspaceRoleTable.query
                                                 .filter(_.userApiKey === authorizationKey)
                                                 .filter(_.state === "active")
-                                               .map(_.dataspaceId))
+                                                .map(_.dataspaceId))
             if (userId.isDefined) query = query.filter(_.userId === userId.get)
             if (dataspaceId.isDefined) query = query.filter(_.dataspaceId === dataspaceId.get)
 
