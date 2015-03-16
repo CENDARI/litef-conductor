@@ -1,123 +1,32 @@
 CENDARI REST API
 ================
 
-.. see http://pythonhosted.org//sphinxcontrib-httpdomain/
+Server location
+---------------
 
-The API works as follow:
+The API is available only internally on CENDARI servers and does not accept requests from outside (local connections and ssh tunnels only).
 
+If you want to connect to the API from outside, you can use the server connect.cendari.dariah.eu. This server can be accessed using ssh on the standard port 22 from worldwide using SSH keys, no passwords.
+Please note that you can only access the API using the account, you do not get real shell access. See the server's page for details on how to get an Account.
 
-Session
--------
+Authorization
+-------------
 
-.. http:post:: ${ROOT_NS}/session
+In order to get any result, you need to provide your CKAN API key as the 'Authorization' HTTP request header.
 
-   :<json string eppn: ePPN
-   :<json string mail: Mail
-   :<json string cn: CommonName
+Your CKAN API Key: log in to CKAN, go to your Profile and copy the value for the private API Key in the lower left corner of the page.
 
-   :>json sessionKey: the user's session key
+In order for an application (e.g. VRE) to get this key for a Shibboleth-authenticated user, it should post Shibboleth attributes to the API. The key will be returned in response, and it should be used for future API requests.
 
-Dataspace
----------
+.. toctree::
+    :maxdepth: 2
+    :hidden:
 
-GET URIs
-^^^^^^^^
-
-.. http:get:: ${ROOT_NS}/dataspaces/{id}
-
-   :arg integer id: A dataspace id.
-   :reqheader Authorization: optional session key for authenticated access
-
-   Information about the specified dataspace.
-
-
-POST URIs
-^^^^^^^^^
-
-Create a dataspace
-""""""""""""""""""
-
-.. http:post:: ${ROOT_NS}/dataspaces
-
-   :<json string name: a string between 2 and 100 characters long, containing only lowercase alphanumeric characters, `-` and `_`
-   :<json string title: optional
-   :<json string descriptio: optional
-   :statuscode 200: no error
-   :statuscode 404: no such object
-   :reqheader Authorization: required session key for authenticated access
-
-   Create a dataspace.
-
-Create a resource in dataspace
-""""""""""""""""""""""""""""""
-
-.. http:post:: ${ROOT_NS}/dataspaces/${DATASPACE_ID}/resources
-
-   :form file: file for upload
-   :form name: optional
-   :form format: optional
-   :form description: optional
-   :form setId: optional (if not specified, a new set will be created and new resource will be assigned to it)
-
-
-PUT URIs
-^^^^^^^^
-
-Resource update
-"""""""""""""""
-
-.. http:put:: ${ROOT_NS}/dataspaces/${DATASPACE_ID}/resources/${RESOURCE_ID}
-
-    :form file: file for upload
-    :form name: optional
-    :form format: optional
-    :form description: optional
-
-Resource
---------
-
-
-GET URIs
-^^^^^^^^
-
-.. http:get:: ${ROOT_NS}/resources/${ID}[.format] 
-   
-   :param format: json and html are supported
-
-   returns metadata for the resource
-
-.. http:get:: ${ROOT_NS}/resources/${ID}/data 
-
-   binary data of the object with the specified id
-
-.. http:get:: ${ROOT_NS}/resources/${ID}/rdf
-
-   extracted RDF data from the specified resource, N3 format
-
-.. http:get:: ${ROOT_NS}/resources/${ID}/rdf/xml
-
-   extracted RDF data from the specified resource, XML format
-
-Result
-------
-
-
-   A typical resource looks like this::
-
-      {
-        "id": "07b8aae6-024d-49e5-ac25-20b15d043d61",
-        "url": "http://localhost:42042/v1/resources/07b8aae6-024d-49e5-ac25-20b15d043d61",
-        "dataUrl": "http://localhost:42042/v1/resources/07b8aae6-024d-49e5-ac25-20b15d043d61/data",
-        "name": "metadata in edm format",
-        "description": "metadata in edm format",
-        "format": "RDF",
-        "mimetype": "",
-        "size": 0,
-        "created": 1401983959286,
-        "modified": 1401983959286,
-        "setId": "7a5b81a8-4260-490f-92ab-f00f65bf0a35"
-      }
-
-   :format: JSON
-
-
+    status/get-status
+    session/post-session
+    users/get-users
+    users/get-users-id
+    privileges/get-privileges
+    privileges/get-privileges-id
+    privileges/post-privileges
+    privileges/delete-privileges-id
