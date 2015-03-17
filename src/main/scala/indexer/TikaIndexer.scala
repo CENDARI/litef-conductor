@@ -35,17 +35,19 @@ class TikaIndexer extends AbstractIndexer {
     ): Option[Double] =
         runTika(resource, file, root)
 
-    lazy val tikaIndexer = fr.inria.aviz.elasticindexer.Indexer.instance
+    lazy val tikaIndexer = fr.inria.aviz.tikaextensions.TikaExtensions.instance
+    lazy val elasticIndexer = fr.inria.aviz.elasticindexer.Indexer.instance
 
     def addOptionalProperty[T](root: Resource, property: Property, value: T) =
         if (value != null) root += (property % value)
 
     def runTika(resource: ckan.Resource, file: java.io.File, root: => Resource): Option[Double] = try {
 
-        val info = tikaIndexer.parseDocument(file.getName, null, new java.io.FileInputStream(file), -1)
+        val metadata = tikaIndexer.parseDocument(file.getName, null, new java.io.FileInputStream(file), -1)
+        val info = elasticIndexer convertMetadata metadata
 
         AbstractIndexer.saveAttachment(resource, info.getText, "text/plain")
-        AbstractIndexer.saveAttachment(resource, tikaIndexer toJSON info, "application/x-elasticindexer-json-output")
+        AbstractIndexer.saveAttachment(resource, elasticIndexer toJSON info, "application/x-elasticindexer-json-output")
 
         // TODO: We might want to save the plain text in Virtuoso,
         // or other fields
