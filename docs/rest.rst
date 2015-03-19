@@ -20,7 +20,6 @@ In order for an application (e.g. VRE) to get this key for a Shibboleth-authenti
 
 .. toctree::
     :maxdepth: 2
-    :hidden:
 
     status/get-status
     session/post-session
