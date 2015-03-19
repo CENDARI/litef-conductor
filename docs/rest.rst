@@ -18,9 +18,10 @@ Your CKAN API Key: log in to CKAN, go to your Profile and copy the value for the
 
 In order for an application (e.g. VRE) to get this key for a Shibboleth-authenticated user, it should post Shibboleth attributes to the API. The key will be returned in response, and it should be used for future API requests.
 
+API Requests
+------------
+
 .. toctree::
-    :maxdepth: 2
-    :hidden:
 
     status/get-status
     session/post-session
