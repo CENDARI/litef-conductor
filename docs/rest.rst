@@ -22,6 +22,7 @@ API Requests
 ------------
 
 .. toctree::
+    :maxdepth: 2
 
     status/get-status
     session/post-session
