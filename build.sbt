@@ -43,7 +43,7 @@ libraryDependencies ++= {
         "postgresql"          % "postgresql"         % "9.1-901.jdbc4" withSources,
         "org.scalatest"       % "scalatest_2.10"     % "2.0",
         "ivan"               %% "javelin-ontologies" % "1.3",
-        "ivan"               %% "javelin"            % "1.3",
+        "ivan"               %% "javelin"            % "1.4",
         "ivan"               %% "scala-utils"        % "1.2"
     )
 }
