@@ -7,8 +7,6 @@ litef {
 litef.ckan {
     home         = "http://134.76.21.222/ckan/"
     namespace    = "http://134.76.21.222/ckan/api/3/"
-    httpUsername = ""
-    httpPassword = ""
     apiKey       = ""
 
     localStoragePrefix = "/var/lib/ckan/default/resources"

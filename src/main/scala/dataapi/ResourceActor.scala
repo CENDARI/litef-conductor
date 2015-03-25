@@ -109,11 +109,6 @@ class ResourceActor
 
     val log = Logging(context.system, this)
 
-    val validCredentials = BasicHttpCredentials(
-        CkanConfig.httpUsername,
-        CkanConfig.httpPassword
-    )
-
     def receive: Receive = {
         /// Gets the list of resources modified in the specified time range
         // case ListResources(since, until, start, count) =>

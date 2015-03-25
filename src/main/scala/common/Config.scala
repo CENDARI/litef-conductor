@@ -30,8 +30,6 @@ object Config {
     object Ckan {
         lazy val home          = config getString "ckan.home"
         lazy val namespace     = config getString "ckan.namespace"
-        lazy val httpUsername  = config getString "ckan.httpUsername"
-        lazy val httpPassword  = config getString "ckan.httpPassword"
         lazy val apiKey        = config getString "ckan.apiKey"
 
         lazy val localStoragePrefix = config getString "ckan.localStoragePrefix"
