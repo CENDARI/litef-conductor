@@ -26,6 +26,13 @@ API Requests
 
     status/get-status
     session/post-session
+    dataspaces/get-dataspaces
+    dataspaces/get-dataspaces-id
+    dataspaces/post-dataspaces
+    resources/get-resources
+    resources/get-resources-id
+    resources/post-resources
+    resources/put-resources-id
     users/get-users
     users/get-users-id
     privileges/get-privileges
