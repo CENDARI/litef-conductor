@@ -149,8 +149,8 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
                 /*
                  * Getting the list of dataspaces
                  */
-                (path(PathEnd) & timeRestriction)   { listDataspaces } ~
-                (path(PathEnd) & timeRestriction)   { listDataspaces } ~
+                (pathEnd & timeRestriction)   { listDataspaces } ~ // GET /dataspaces
+                (path(PathEnd) & timeRestriction)   { listDataspaces } ~ // GET /dataspaces/ 
                 path("query" / "results" / Segment) { listDataspacesFromIterator } ~
                 /*
                  * Getting the dataspace meta data
