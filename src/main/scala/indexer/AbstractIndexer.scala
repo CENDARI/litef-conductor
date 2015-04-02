@@ -164,6 +164,8 @@ object AbstractIndexer {
     private
     lazy val dateParser = new SimpleDateFormat("yyyy-MM-dd")
 
+    lazy val logger = org.slf4j.LoggerFactory getLogger getClass
+
     /**
      * Converting a stringified date to a rdf Literal
      */
@@ -206,6 +208,8 @@ object AbstractIndexer {
             val writer = new java.io.BufferedWriter(new java.io.FileWriter(filePath))
             writer write content
             writer.close
+
+            logger info s"Saving attachment: ${resourceId}, ${mimetype}"
 
             // val stream = new java.io.ByteArrayOutputStream()
             conductor.ResourceAttachmentTable.query += conductor.ResourceAttachment(

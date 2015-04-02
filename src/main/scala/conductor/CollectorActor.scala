@@ -181,11 +181,15 @@ class CollectorActor
      * @return
      */
     def markResourceAsProcessed(resource: ckan.Resource) = database withSession { implicit session: Session =>
-        exceptionless {
-            ProcessedResourceTable.query +=
-                ProcessedResource(resource.id, resource.modified, None)
-            None
-        }
+        // exceptionless {
+            try {
+                ProcessedResourceTable.query +=
+                    ProcessedResource(resource.id, resource.modified, None)
+                None
+            } catch {
+                case e: Exception => e.printStackTrace
+            }
+        // }
 
         ProcessedResourceTable.query
             .filter { r =>

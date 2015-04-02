@@ -114,11 +114,12 @@ object CkanGodInterface {
 
         (
             DataspaceTable.query
-                .where(_.isOrganization)
-                .where(_.id in UserDataspaceRoleTable.query
-                    .where { _.userApiKey === authorizationKey }
-                    .map   { _.dataspaceId }
-                )
+                .filter(_.isOrganization)
+                .filter(_.id in UserDataspaceRoleTable.query
+                                  .filter(_.userApiKey === authorizationKey)
+                                  .filter(_.state === "active")
+                                  .map(_.dataspaceId))
+                
                 .sortBy(_.title asc)
             ,
             None, // Dataspaces do not support iterators // IteratorData(since, until, start + count, count).generateId, // next
@@ -134,11 +135,11 @@ object CkanGodInterface {
      */
     def getDataspaceQuery(authorizationKey: String, id: String) = database withSession { implicit session: Session =>
         DataspaceTable.query
-            .where(_.id === id)
-            .where(_.id in UserDataspaceRoleTable.query
-                .where { _.userApiKey === authorizationKey }
-                .map   { _.dataspaceId }
-            )
+            .filter(_.id === id)
+            .filter(_.id in UserDataspaceRoleTable.query
+                              .filter(_.userApiKey === authorizationKey)
+                              .filter(_.state === "active")
+                              .map(_.dataspaceId))
     }
 
     /**

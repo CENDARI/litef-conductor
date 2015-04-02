@@ -93,11 +93,6 @@ class DataspaceActor
     import DataspaceActor._
     import context.system
 
-    val validCredentials = BasicHttpCredentials(
-        CkanConfig.httpUsername,
-        CkanConfig.httpPassword
-    )
-
     def postRequest[T](action: String, data: T, authorizationKey: String)(implicit evidence: spray.httpx.marshalling.Marshaller[T]) =
         (IO(Http) ? (
             Post(CkanConfig.namespace + "action/" + action, data)~>addHeader("Authorization", authorizationKey)

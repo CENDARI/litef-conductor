@@ -2,7 +2,7 @@ import com.github.retronym.SbtOneJar._
 
 name := """conductor"""
 
-version := "1.0.2"
+version := "1.1.0-SNAPSHOT"
 
 scalaVersion := "2.10.3"
 
@@ -43,7 +43,7 @@ libraryDependencies ++= {
         "postgresql"          % "postgresql"         % "9.1-901.jdbc4" withSources,
         "org.scalatest"       % "scalatest_2.10"     % "2.0",
         "ivan"               %% "javelin-ontologies" % "1.3",
-        "ivan"               %% "javelin"            % "1.3",
+        "ivan"               %% "javelin"            % "1.4",
         "ivan"               %% "scala-utils"        % "1.2"
     )
 }
