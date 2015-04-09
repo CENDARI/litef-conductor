@@ -36,6 +36,7 @@ size            Integer Resource file size
 created         Integer Timestamp created
 modified        Integer Timestamp last modified
 setId           String  Unique identifier of the set that the resource belongs to
+state           String  State can be "active" or "deleted"
 ==============  ======= ==========================================
 
 Example request (with the next page, resources that belong to a dataspace)::
@@ -58,7 +59,8 @@ Example response::
         "size": 0,
         "created": 1427724584090,
         "modified": 1427724584090,
-        "setId": "5038ef1a-475b-4312-b395-b63a2e2252fc"
+        "setId": "5038ef1a-475b-4312-b395-b63a2e2252fc",
+        "state": "active"
       }, ...],
       "end": false
     }

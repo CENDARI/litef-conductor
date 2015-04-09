@@ -19,6 +19,7 @@ name            String  Resource title
 format          String  File format (XML, RDF, JSON, JPG, ...)
 description     String  Additional information about the resource
 setId           String  If setId is not specified, a new set will be created and the resource will be assigned to it
+state           String  State can be "active" or "deleted"
 =============== ======= ===========
 
 Response JSON object:
@@ -61,5 +62,6 @@ Example response::
       "size": 0,
       "created": 1427724584090,
       "modified": 1427724584090,
-      "setId": "5038ef1a-475b-4312-b395-b63a2e2252fc"
+      "setId": "5038ef1a-475b-4312-b395-b63a2e2252fc",
+      "state": "active"
     }

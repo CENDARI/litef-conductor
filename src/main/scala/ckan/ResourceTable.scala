@@ -32,22 +32,21 @@ abstract class ResourceData {
     def modified      : Option[Timestamp]
     def created       : Option[Timestamp]
     def packageId     : Option[String]
+    def state         : Option[String]
 
     def toJson = JsObject(
             "id"             -> JsString(id),
-
             "url"            -> JsString(s"${Config.namespace}resources/${id}"),
             "dataUrl"        -> JsString(s"${Config.namespace}resources/${id}/data"),
-
             "name"           -> JsString(name        getOrElse ""),
             "description"    -> JsString(description getOrElse ""),
             "format"         -> JsString(format      getOrElse ""),
             "mimetype"       -> JsString(mimetype    getOrElse ""),
             "size"           -> JsNumber(size        getOrElse 0L),
-
             "created"        -> JsNumber(created.map  { _.getTime } getOrElse 0L),
             "modified"       -> JsNumber(modified.map { _.getTime } getOrElse 0L),
-            "setId"          -> JsString(packageId getOrElse "")
+            "setId"          -> JsString(packageId getOrElse ""),
+            "state"          -> JsString(state getOrElse "")
         )
 }
 
