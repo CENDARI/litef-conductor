@@ -18,6 +18,7 @@ import spray.json.DefaultJsonProtocol
 import ckan.DataspaceJsonProtocol._
 import java.lang.String
 import spray.json.JsonFormat
+import spray.httpx.unmarshalling.{MalformedContent, FromStringDeserializer}
 
 case class DataspaceCreate (name: String, title: Option[String], description: Option[String]){
     require(name matches "[a-z0-9_-]+")
@@ -37,6 +38,8 @@ case class CkanUser(name: String, email: String, password: String, id: String, f
 case class CkanErrorMsg (message: String, __type: String)
 case class CkanResponse[T](help: String, success: Boolean, result: Option[T], error: Option[CkanErrorMsg])
 
+case class ObjectState(state: String)
+
 object CkanJsonProtocol extends DefaultJsonProtocol {
     implicit val dataspaceCreateFormat = jsonFormat3(DataspaceCreate)
     implicit val dataspaceCreateWithIdFormat = jsonFormat4(DataspaceCreateWithId)
@@ -48,4 +51,13 @@ object CkanJsonProtocol extends DefaultJsonProtocol {
     implicit val ckanErrorMsgFormat = jsonFormat2(CkanErrorMsg)
     implicit def ckanResponseFormat[T: JsonFormat] = lazyFormat(jsonFormat4(CkanResponse.apply[T]))
     implicit val ckanOrganizationMember = jsonFormat3(CkanOrganizationMember)
+}
+
+object ObjectState {
+    implicit val stringToObjectState = new FromStringDeserializer[ObjectState] {
+        def apply(value: String) = value.toLowerCase match {
+            case "active" | "deleted" | "all" => Right(ObjectState(value.toLowerCase))
+            case x => Left(MalformedContent(s"Invalid value '$value'. Valid values are 'active', 'deleted', and 'all'"))
+        }
+    }
 }

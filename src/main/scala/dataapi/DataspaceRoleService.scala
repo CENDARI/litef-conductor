@@ -39,8 +39,8 @@ class DataspaceRoleService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
 {
     // TODO: Don't list all dataspace roles, but support iterators
-    def listDataspaceRoles(userId: Option[String], dataspaceId: Option[String])(implicit authorizationKey: String) = complete {
-        (Core.dataspaceRoleActor ? ListDataspaceRoles(authorizationKey, userId, dataspaceId))
+    def listDataspaceRoles(userId: Option[String], dataspaceId: Option[String], state: ObjectState)(implicit authorizationKey: String) = complete {
+        (Core.dataspaceRoleActor ? ListDataspaceRoles(authorizationKey, userId, dataspaceId, state))
         .mapTo[HttpResponse]
     }
 
@@ -70,7 +70,7 @@ class DataspaceRoleService()(implicit executionContext: ExecutionContext)
         pathPrefix("privileges") {
                 get {
                     pathEnd {
-                        parameters('userId.as[String] ?, 'dataspaceId.as[String] ?) { (u, d) => listDataspaceRoles(u, d) }
+                        parameters('userId.as[String] ?, 'dataspaceId.as[String] ?, 'state.as[ObjectState]? ObjectState("active")) { (u, d, s) => listDataspaceRoles(u, d, s) }
                     } ~
                     path(Segment)   { getDataspaceRoleById }
                 } ~

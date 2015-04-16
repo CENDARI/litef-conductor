@@ -4,7 +4,16 @@ GET /privileges
 Returns an array of user privileges for dataspaces. The authenticated user 
 can only list privileges for the dataspaces whose member he is.
 
-The request may include filtering parameters dataspaceId and/or userId (see example_)
+Request filter parameters:
+
+==========================  ======= ======================================================================
+Parameter                   Type    Description
+==========================  ======= ======================================================================
+dataspaceId (optional)      String  Unique identifier of the dataspace object
+userId (optional)           String  Unique identifier of the user object
+state (optional)            String  Valid values are: "active", "deleted", and "all". Default is "active".
+==========================  ======= ======================================================================
+
 
 Response JSON object:
 
@@ -52,7 +61,7 @@ Example response::
 
 Example request::
 
-    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/privileges?dataspaceId=099c3cae-9fe2-4acf-970f-b5b149eeae24
+    curl -H "Authorization: your-apikey" "http://localhost:42042/v1/privileges?dataspaceId=099c3cae-9fe2-4acf-970f-b5b149eeae24&state=all"
 
 Example response::
 

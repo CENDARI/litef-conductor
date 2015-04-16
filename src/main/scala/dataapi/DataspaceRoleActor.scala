@@ -42,7 +42,7 @@ import slick.driver.PostgresDriver.simple._
 //import scala.slick.lifted.{Column, Query}
 
 object DataspaceRoleActor {
-    case class ListDataspaceRoles(val authorizationKey: String, val userId: Option[String], val dataspaceId: Option[String])
+    case class ListDataspaceRoles(val authorizationKey: String, val userId: Option[String], val dataspaceId: Option[String], val state: ObjectState)
     case class GetDataspaceRoleById(val id: String)
     case class CreateDataspaceRole(val authorizationKey: String, val dataspaceRole: UserDataspaceRole)
     case class DeleteDataspaceRole(val authorizationKey: String, val id: String)
@@ -57,10 +57,10 @@ class DataspaceRoleActor
 
     def receive: Receive = {
 
-        case ListDataspaceRoles(authorizationKey: String, userId: Option[String], dataspaceId: Option[String]) =>
+        case ListDataspaceRoles(authorizationKey: String, userId: Option[String], dataspaceId: Option[String], state: ObjectState) =>
             CkanGodInterface.database withSession { implicit session: Session =>
 
-                val results = CkanGodInterface.listDataspaceRoles(authorizationKey, userId, dataspaceId)
+                val results = CkanGodInterface.listDataspaceRoles(authorizationKey, userId, dataspaceId, state)
 
                 sender ! HttpResponse(status = StatusCodes.OK,
                                       entity = HttpEntity(ContentType(`application/json`, `UTF-8`), JsObject("data" -> results.toJson).prettyPrint))

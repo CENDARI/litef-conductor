@@ -26,6 +26,7 @@ import com.sun.xml.internal.messaging.saaj.packaging.mime.util.BASE64EncoderStre
 import sun.misc.{BASE64Decoder, BASE64Encoder}
 import java.nio.ByteBuffer
 import scala.util.Try
+import dataapi.ObjectState
 
 object CkanGodInterface {
     val queryResultDefaultLimit = 10
@@ -322,16 +323,16 @@ object CkanGodInterface {
         .size > 0
     }
 
-    def listDataspaceRoles(authorizationKey: String, userId: Option[String], dataspaceId: Option[String]) =
+    def listDataspaceRoles(authorizationKey: String, userId: Option[String], dataspaceId: Option[String], state: ObjectState) =
         database withSession { implicit session: Session =>
             var query = UserDataspaceRoleTable.query
-                        .filter(_.state === "active")
                         .filter(_.dataspaceId in UserDataspaceRoleTable.query
                                                 .filter(_.userApiKey === authorizationKey)
                                                 .filter(_.state === "active")
                                                 .map(_.dataspaceId))
             if (userId.isDefined) query = query.filter(_.userId === userId.get)
             if (dataspaceId.isDefined) query = query.filter(_.dataspaceId === dataspaceId.get)
+            if (state.state == "active" || state.state == "deleted") query = query.filter(_.state === state.state)
 
             query.list
     }
