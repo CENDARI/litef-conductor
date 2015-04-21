@@ -1,6 +1,14 @@
 GET /dataspaces
 ===============
 
+Request filter parameters:
+
+==========================  ======= ======================================================================
+Parameter                   Type    Description
+==========================  ======= ======================================================================
+state (optional)            String  Valid values are: "active", "deleted", and "all". Default is "active".
+==========================  ======= ======================================================================
+
 Response JSON object:
 
 ==========  ======= ==========================
@@ -40,3 +48,7 @@ Example response::
         "state": "active"
       }, ...]
     } 
+
+Example request::
+
+    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/dataspaces?state=all

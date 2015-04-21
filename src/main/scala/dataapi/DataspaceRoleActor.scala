@@ -36,13 +36,13 @@ import MediaTypes._
 import HttpCharsets._
 import HttpMethods._
 import HttpHeaders._
-
+import StateFilter._
 import ckan.{ CkanGodInterface, UserDataspaceRole }
 import slick.driver.PostgresDriver.simple._
 //import scala.slick.lifted.{Column, Query}
 
 object DataspaceRoleActor {
-    case class ListDataspaceRoles(val authorizationKey: String, val userId: Option[String], val dataspaceId: Option[String], val state: ObjectState)
+    case class ListDataspaceRoles(val authorizationKey: String, val userId: Option[String], val dataspaceId: Option[String], val state: StateFilter)
     case class GetDataspaceRoleById(val id: String)
     case class CreateDataspaceRole(val authorizationKey: String, val dataspaceRole: UserDataspaceRole)
     case class DeleteDataspaceRole(val authorizationKey: String, val id: String)
@@ -57,7 +57,7 @@ class DataspaceRoleActor
 
     def receive: Receive = {
 
-        case ListDataspaceRoles(authorizationKey: String, userId: Option[String], dataspaceId: Option[String], state: ObjectState) =>
+        case ListDataspaceRoles(authorizationKey: String, userId: Option[String], dataspaceId: Option[String], state: StateFilter) =>
             CkanGodInterface.database withSession { implicit session: Session =>
 
                 val results = CkanGodInterface.listDataspaceRoles(authorizationKey, userId, dataspaceId, state)

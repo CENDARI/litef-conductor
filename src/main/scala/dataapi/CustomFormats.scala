@@ -38,7 +38,10 @@ case class CkanUser(name: String, email: String, password: String, id: String, f
 case class CkanErrorMsg (message: String, __type: String)
 case class CkanResponse[T](help: String, success: Boolean, result: Option[T], error: Option[CkanErrorMsg])
 
-case class ObjectState(state: String)
+object StateFilter extends Enumeration {
+    type StateFilter = Value
+    val ACTIVE, DELETED, ALL = Value
+}
 
 object CkanJsonProtocol extends DefaultJsonProtocol {
     implicit val dataspaceCreateFormat = jsonFormat3(DataspaceCreate)
@@ -53,11 +56,14 @@ object CkanJsonProtocol extends DefaultJsonProtocol {
     implicit val ckanOrganizationMember = jsonFormat3(CkanOrganizationMember)
 }
 
-object ObjectState {
-    implicit val stringToObjectState = new FromStringDeserializer[ObjectState] {
-        def apply(value: String) = value.toLowerCase match {
-            case "active" | "deleted" | "all" => Right(ObjectState(value.toLowerCase))
-            case x => Left(MalformedContent(s"Invalid value '$value'. Valid values are 'active', 'deleted', and 'all'"))
+object StateFilterProtocol {
+    implicit val stringToStateFilter = new FromStringDeserializer[StateFilter.StateFilter] {
+        def apply(value: String) = {
+            val name = value.toUpperCase
+            if (name == StateFilter.ACTIVE.toString) { Right(StateFilter.ACTIVE) }
+            else if (name == StateFilter.DELETED.toString) { Right(StateFilter.DELETED) }
+            else if (name == StateFilter.ALL.toString) { Right(StateFilter.ALL) }
+            else Left(MalformedContent(s"Invalid value '$value'. Valid values are 'active', 'deleted', and 'all'"))
         }
     }
 }

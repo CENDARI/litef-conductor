@@ -29,6 +29,8 @@ import CkanJsonProtocol._
 import ckan.UserDataspaceRoleJsonProtocol._
 import ckan.UserDataspaceRole
 import common.Config.{ Ckan => CkanConfig }
+import StateFilter._
+import StateFilterProtocol._
 
 // Needed for implicit conversions, not unused:
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -39,7 +41,7 @@ class DataspaceRoleService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
 {
     // TODO: Don't list all dataspace roles, but support iterators
-    def listDataspaceRoles(userId: Option[String], dataspaceId: Option[String], state: ObjectState)(implicit authorizationKey: String) = complete {
+    def listDataspaceRoles(userId: Option[String], dataspaceId: Option[String], state: StateFilter)(implicit authorizationKey: String) = complete {
         (Core.dataspaceRoleActor ? ListDataspaceRoles(authorizationKey, userId, dataspaceId, state))
         .mapTo[HttpResponse]
     }
@@ -70,7 +72,7 @@ class DataspaceRoleService()(implicit executionContext: ExecutionContext)
         pathPrefix("privileges") {
                 get {
                     pathEnd {
-                        parameters('userId.as[String] ?, 'dataspaceId.as[String] ?, 'state.as[ObjectState]? ObjectState("active")) { (u, d, s) => listDataspaceRoles(u, d, s) }
+                        parameters('userId.as[String] ?, 'dataspaceId.as[String] ?, 'state.as[StateFilter]? StateFilter.ACTIVE) { (u, d, s) => listDataspaceRoles(u, d, s) }
                     } ~
                     path(Segment)   { getDataspaceRoleById }
                 } ~
