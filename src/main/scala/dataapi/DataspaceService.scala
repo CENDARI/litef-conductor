@@ -41,13 +41,15 @@ import HttpHeaders._
 import spray.httpx.marshalling._
 import java.text.Normalizer
 import java.text.Normalizer.Form
+import StateFilter._
+import StateFilterProtocol._
 
 class DataspaceService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
 {
     // Dataspaces and metadata
-    def listDataspaces(since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) = complete {
-        (Core.dataspaceActor ? ListDataspaces(authorizationKey, since, until))
+    def listDataspaces(since: Option[Timestamp], until: Option[Timestamp], state: StateFilter)(implicit authorizationKey: String) = complete {
+        (Core.dataspaceActor ? ListDataspaces(authorizationKey, since, until, state))
             .mapTo[HttpResponse]
     }
 
@@ -61,10 +63,10 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
             .mapTo[HttpResponse]
     }
 
-    def listDataspaceResources(id: String, since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) =
+    def listDataspaceResources(id: String, since: Option[Timestamp], until: Option[Timestamp], state: StateFilter)(implicit authorizationKey: String) =
         authorize(ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
             complete {
-                (Core.resourceActor ? ListDataspaceResources(id, since, until))
+                (Core.resourceActor ? ListDataspaceResources(id, since, until, state))
                 .mapTo[HttpResponse]
             }
         }
@@ -149,8 +151,9 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
                 /*
                  * Getting the list of dataspaces
                  */
-                (pathEnd & timeRestriction)   { listDataspaces } ~ // GET /dataspaces
-                (path(PathEnd) & timeRestriction)   { listDataspaces } ~ // GET /dataspaces/ 
+                pathEndOrSingleSlash {
+                    parameters('since.as[Timestamp] ?, 'until.as[Timestamp] ?, 'state.as[StateFilter] ? StateFilter.ACTIVE) { listDataspaces }
+                } ~
                 path("query" / "results" / Segment) { listDataspacesFromIterator } ~
                 /*
                  * Getting the dataspace meta data
@@ -159,7 +162,11 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
                 /**
                  * Getting the list of resources that belong to a dataspace
                  */
-                (path(Segment / "resources" ~ PathEnd) & timeRestriction)   { listDataspaceResources } ~
+                (path(Segment / "resources" ~ PathEnd)) { id =>
+                    parameters('since.as[Timestamp] ?, 'until.as[Timestamp] ?, 'state.as[StateFilter] ? StateFilter.ACTIVE) { (since, until, state) =>
+                        listDataspaceResources(id, since, until, state)
+                    }
+                } ~
                 path(Segment / "resources" / "query" / "results" / Rest) { listDataspaceResourcesFromIterator }
             }~
             post {

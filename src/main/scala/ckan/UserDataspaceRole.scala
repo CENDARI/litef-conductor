@@ -66,7 +66,8 @@ object UserDataspaceRoleJsonProtocol extends DefaultJsonProtocol {
                 "userUrl"       -> JsString(s"${common.Config.namespace}users/${r.userId}"),
                 "dataspaceId"   -> JsString(r.dataspaceId),
                 "dataspaceUrl"  -> JsString(s"${common.Config.namespace}dataspaces/${r.dataspaceId}"),
-                "role"          -> JsString(r.dataspaceRole)
+                "role"          -> JsString(r.dataspaceRole),
+                "state"         -> JsString(r.state)
             )
 
         def read(value: JsValue) = {

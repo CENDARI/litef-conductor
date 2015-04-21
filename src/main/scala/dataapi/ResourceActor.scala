@@ -41,6 +41,7 @@ import HttpMethods._
 import HttpHeaders._
 import akka.event.Logging._
 import akka.event.Logging
+import StateFilter._
 
 import conductor.ResourceAttachmentUtil._
 
@@ -65,16 +66,17 @@ object ResourceActor {
     /// Gets the meta data for the the specified resource
     case class GetResourceMetadataAttachment(id: String, format: String)
 
-    /// Gets the resources for the specified dataset
+    /// Gets the resources for the specified dataspace
     case class ListDataspaceResources(
             val dataspaceId: String,
             val since: Option[Timestamp],
             val until: Option[Timestamp],
+            val state: StateFilter,
             val start: Int = 0,
             val count: Int = CkanGodInterface.queryResultDefaultLimit
         )
 
-    /// Gets the resources for the specified dataset
+    /// Gets the resources for the specified dataspace
     case class ListDataspaceResourcesFromIterator(
             val dataspaceId: String,
             val iterator: String
@@ -228,10 +230,10 @@ class ResourceActor
             }
 
         /// Gets the resources for the specified dataspace
-        case ListDataspaceResources(dataspaceId, since, until, start, count) =>
+        case ListDataspaceResources(dataspaceId, since, until, state, start, count) =>
             CkanGodInterface.database withSession { implicit session: Session =>
 
-                val (query, nextPage, currentPage) = CkanGodInterface.listDataspaceResourcesQuery(dataspaceId, since, until, start, count)
+                val (query, nextPage, currentPage) = CkanGodInterface.listDataspaceResourcesQuery(dataspaceId, since, until, state, start, count)
 
                 val resources = query.list
                 val results =
@@ -259,6 +261,7 @@ class ResourceActor
                 dataspaceId,
                 Some(iterator.since),
                 Some(iterator.until),
+                iterator.state,
                 iterator.start,
                 iterator.count
             ))
