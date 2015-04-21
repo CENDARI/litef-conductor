@@ -49,6 +49,6 @@ Example response::
       }, ...]
     } 
 
-Example request::
+Example request (with filter parameter 'state')::
 
     curl -H "Authorization: your-apikey"  http://localhost:42042/v1/dataspaces?state=all

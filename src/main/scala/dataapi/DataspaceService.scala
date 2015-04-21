@@ -63,10 +63,10 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
             .mapTo[HttpResponse]
     }
 
-    def listDataspaceResources(id: String, since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) =
+    def listDataspaceResources(id: String, since: Option[Timestamp], until: Option[Timestamp], state: StateFilter)(implicit authorizationKey: String) =
         authorize(ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
             complete {
-                (Core.resourceActor ? ListDataspaceResources(id, since, until))
+                (Core.resourceActor ? ListDataspaceResources(id, since, until, state))
                 .mapTo[HttpResponse]
             }
         }
@@ -162,7 +162,11 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
                 /**
                  * Getting the list of resources that belong to a dataspace
                  */
-                (path(Segment / "resources" ~ PathEnd) & timeRestriction)   { listDataspaceResources } ~
+                (path(Segment / "resources" ~ PathEnd)) { id =>
+                    parameters('since.as[Timestamp] ?, 'until.as[Timestamp] ?, 'state.as[StateFilter] ? StateFilter.ACTIVE) { (since, until, state) =>
+                        listDataspaceResources(id, since, until, state)
+                    }
+                } ~
                 path(Segment / "resources" / "query" / "results" / Rest) { listDataspaceResourcesFromIterator }
             }~
             post {
