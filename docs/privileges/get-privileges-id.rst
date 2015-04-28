@@ -21,6 +21,7 @@ userUrl         String  User resource URL
 dataspaceId     String  Unique id of the dataspace object
 dataspaceUrl    String  Dataspace resource URL
 role            String  User's role in the dataspace ("member", "editor" or "admin")
+state           String  State can be "active" or "deleted"
 =============== ======= ===========
 
 Example request::
@@ -36,5 +37,6 @@ Example response::
       "userUrl": "http://localhost:42042/v1/users/716eeb7e-1fec-4eab-9e99-c35cbe7ae96b",
       "dataspaceId": "099c3cae-9fe2-4acf-970f-b5b149eeae24",
       "dataspaceUrl": "http://localhost:42042/v1/dataspaces/099c3cae-9fe2-4acf-970f-b5b149eeae24",
-      "role": "member"
+      "role": "member",
+      "state": "active"
     }

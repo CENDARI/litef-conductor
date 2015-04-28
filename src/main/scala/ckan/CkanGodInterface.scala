@@ -26,6 +26,8 @@ import com.sun.xml.internal.messaging.saaj.packaging.mime.util.BASE64EncoderStre
 import sun.misc.{BASE64Decoder, BASE64Encoder}
 import java.nio.ByteBuffer
 import scala.util.Try
+import dataapi.StateFilter
+import dataapi.StateFilter.StateFilter
 
 object CkanGodInterface {
     val queryResultDefaultLimit = 10
@@ -69,59 +71,64 @@ object CkanGodInterface {
             .headOption
     }
 
-    /**
-     * @param _since gets only the resources newer than the specified timestamp
-     * @param _until gets only the resources older than the specified timestamp
-     * @param start (aka offset) skips first 'start' results
-     * @param _count defines how many results to return
-     * @return the query object against the collection of resources
-     */
-    def listResourcesQuery(_since: Option[Timestamp], _until: Option[Timestamp],
-                           start: Int, _count: Int) = database withSession { implicit session: Session =>
-
-        val since = _since getOrElse (new Timestamp(0))
-        val until = _until getOrElse (new Timestamp(System.currentTimeMillis()))
-        val count = math.min(_count, queryResultMaximumLimit)
-
-        (
-            ResourceTable.query
-                .where(_.modified.between(since, until))
-                .sortBy(_.modified asc)
-                .drop(start)
-                .take(count)
-            ,
-            Some(IteratorData(since, until, start + count, count).generateId), // next
-            Some(IteratorData(since, until, start,         count).generateId)  // current
-        )
-    }
+//    /**
+//     * @param _since gets only the resources newer than the specified timestamp
+//     * @param _until gets only the resources older than the specified timestamp
+//     * @param start (aka offset) skips first 'start' results
+//     * @param _count defines how many results to return
+//     * @return the query object against the collection of resources
+//     */
+//    def listResourcesQuery(_since: Option[Timestamp], _until: Option[Timestamp],
+//                           start: Int, _count: Int) = database withSession { implicit session: Session =>
+//
+//        val since = _since getOrElse (new Timestamp(0))
+//        val until = _until getOrElse (new Timestamp(System.currentTimeMillis()))
+//        val count = math.min(_count, queryResultMaximumLimit)
+//
+//        (
+//            ResourceTable.query
+//                .where(_.modified.between(since, until))
+//                .sortBy(_.modified asc)
+//                .drop(start)
+//                .take(count)
+//            ,
+//            Some(IteratorData(since, until, StateFilter.ALL, start + count, count).generateId), // next
+//            Some(IteratorData(since, until, StateFilter.ALL, start,         count).generateId)  // current
+//        )
+//    }
 
     /**
      * @param authorizationKey CKAN authorization key of the user that requests the dataspaces
      * @param _since gets only the dataspaces newer than the specified timestamp
      * @param _until gets only the dataspaces older than the specified timestamp
+     * @param state
      * @param start (aka offset) skips first 'start' results
      * @param _count defines how many results to return
      * @return the query object against the collection of dataspaces
      */
     def listDataspacesQuery(authorizationKey: String,
                             _since: Option[Timestamp], _until: Option[Timestamp],
+                            state: StateFilter,
                             start: Int, _count: Int
                             ) = database withSession { implicit session: Session =>
 
         val since = _since getOrElse (new Timestamp(0))
         val until = _until getOrElse (new Timestamp(System.currentTimeMillis()))
         val count = math.min(_count, queryResultMaximumLimit)
+        
+        var query = DataspaceTable.query
+                    .filter(_.isOrganization)
+                    .filter(_.id in UserDataspaceRoleTable.query
+                                    .filter(_.userApiKey === authorizationKey)
+                                    .filter(_.state === "active")
+                                    .map(_.dataspaceId))
+                            
+        if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) query = query.filter(_.state === state.toString.toLowerCase) 
+        
+        query = query.sortBy(_.title asc)
 
         (
-            DataspaceTable.query
-                .filter(_.isOrganization)
-                .filter(_.id in UserDataspaceRoleTable.query
-                                  .filter(_.userApiKey === authorizationKey)
-                                  .filter(_.state === "active")
-                                  .map(_.dataspaceId))
-                
-                .sortBy(_.title asc)
-            ,
+            query,
             None, // Dataspaces do not support iterators // IteratorData(since, until, start + count, count).generateId, // next
             None  // Dataspaces do not support iterators // IteratorData(since, until, start,         count).generateId  // current
         )
@@ -158,6 +165,7 @@ object CkanGodInterface {
      * @param dataspaceId UUID of the requested dataspace
      * @param _since gets only the resources newer than the specified timestamp
      * @param _until gets only the resources older than the specified timestamp
+     * @param state
      * @param start (aka offset) skips first 'start' results
      * @param _count defines how many results to return
      * @return query object for resources belonging to the specified dataspace
@@ -166,23 +174,28 @@ object CkanGodInterface {
                             // already authorized // authorizationKey: String,
                             dataspaceId: String,
                             _since: Option[Timestamp], _until: Option[Timestamp],
+                            state: StateFilter,
                             start: Int, _count: Int
                             ) = database withSession { implicit session: Session =>
 
         val since = _since getOrElse (new Timestamp(0))
         val until = _until getOrElse (new Timestamp(System.currentTimeMillis()))
         val count = math.min(_count, queryResultMaximumLimit)
-
-        (
-            DataspaceResourceTable.query
-                .where(_.dataspaceId === dataspaceId)
-                .where(_.modified.between(since, until))
-                .sortBy(_.modified asc)
+        
+        var query = DataspaceResourceTable.query
+                    .filter(_.dataspaceId === dataspaceId)
+                    .filter(_.modified.between(since, until))
+        
+        if(state == StateFilter.ACTIVE || state == StateFilter.DELETED) query = query.filter(_.state === state.toString.toLowerCase)
+        
+        query = query.sortBy(_.modified asc)
                 .drop(start)
                 .take(count)
-            ,
-            Some(IteratorData(since, until, start + count, count).generateId), // next
-            Some(IteratorData(since, until, start,         count).generateId)  // current
+
+        (
+            query,
+            Some(IteratorData(since, until, state, start + count, count).generateId), // next
+            Some(IteratorData(since, until, state, start,         count).generateId)  // current
         )
     }
 
@@ -357,16 +370,16 @@ object CkanGodInterface {
         .size > 0
     }
 
-    def listDataspaceRoles(authorizationKey: String, userId: Option[String], dataspaceId: Option[String]) =
+    def listDataspaceRoles(authorizationKey: String, userId: Option[String], dataspaceId: Option[String], state: StateFilter) =
         database withSession { implicit session: Session =>
             var query = UserDataspaceRoleTable.query
-                        .filter(_.state === "active")
                         .filter(_.dataspaceId in UserDataspaceRoleTable.query
                                                 .filter(_.userApiKey === authorizationKey)
                                                 .filter(_.state === "active")
                                                 .map(_.dataspaceId))
             if (userId.isDefined) query = query.filter(_.userId === userId.get)
             if (dataspaceId.isDefined) query = query.filter(_.dataspaceId === dataspaceId.get)
+            if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) query = query.filter(_.state === state.toString.toLowerCase)
 
             query.list
     }
@@ -395,17 +408,19 @@ object CkanGodInterface {
      * exposing the start/offset mechanism
      * @param since
      * @param until
+     * @param state
      * @param start
      * @param count
      */
-    case class IteratorData(val since: Timestamp, val until: Timestamp, val start: Int, val count: Int) {
+    case class IteratorData(val since: Timestamp, val until: Timestamp, val state: StateFilter, val start: Int, val count: Int) {
         def generateId: String = {
             val since = this.since.getTime
             val until = this.until.getTime
 
-            val bytes = ByteBuffer.allocate(8 * 2 + 4 * 2)
+            val bytes = ByteBuffer.allocate(8 * 2 + 4 * 3)
                             .putLong(since)
                             .putLong(until)
+                            .putInt(state.id)
                             .putInt(start)
                             .putInt(count)
                             .array
@@ -425,12 +440,14 @@ object CkanGodInterface {
 
             val since = bytes.getLong
             val until = bytes.getLong
+            val state = bytes.getInt
             val start = bytes.getInt
             val count = bytes.getInt
-
+            
             IteratorData(
                 new Timestamp(since),
                 new Timestamp(until),
+                StateFilter(state),
                 start,
                 count)
         }
