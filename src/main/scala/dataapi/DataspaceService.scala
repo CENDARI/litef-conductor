@@ -127,6 +127,13 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
             }
         }
 
+      def deleteDataspace(id: String) (implicit authorizationKey: String) =
+          authorize(ckan.CkanGodInterface.isDataspaceDeletableByUser(id, authorizationKey)) {
+          complete {
+              (Core.dataspaceActor ? DeleteDataspace(authorizationKey, id))
+              .mapTo[HttpResponse]
+          }
+      }
 //    def normalizeText(text: String)= {
 //        Normalizer.normalize(text, Form.NFD)
 //            .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
@@ -194,6 +201,9 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
                     & formFields('format.as[Option[String]])
                     & formFields('name.as[Option[String]])
                     & formFields('description.as[Option[String]])) { updateResourceInDataspace }
+            } ~
+            delete {
+                path(Segment)   { deleteDataspace }
             }
         }
     }

@@ -84,6 +84,11 @@ object DataspaceActor {
     case class CreatePackageInDataspace(
             val authorizationKey: String,
             val p: PackageCreateWithId)
+    
+    case class DeleteDataspace(
+       val authorizationKey: String,
+       val id: String
+    )
 }
 
 class DataspaceActor
@@ -214,6 +219,23 @@ class DataspaceActor
             postRequest("package_create", p, authorizationKey)
                 .mapTo[HttpResponse]
                 .map { response => originalSender ! response}
+        }
+         
+        case DeleteDataspace(authorizationKey, id) => {
+            val originalSender = sender
+            
+            (IO(Http) ? (Post(CkanConfig.namespace + "action/organization_delete", HttpEntity(`application/json`, """{ "id": """"+ id + """"}""" ))~>addHeader("Authorization", authorizationKey)))
+            .mapTo[HttpResponse]
+            .map { response => response.status match {
+                case StatusCodes.OK =>
+                    val deletedResource = CkanGodInterface.getDataspace(authorizationKey, id)
+                    originalSender ! HttpResponse(status = StatusCodes.OK,
+                                                  entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
+                                                                         deletedResource.map { _.toJson.prettyPrint}.getOrElse {""}))
+                                                                        
+                case StatusCodes.Forbidden => originalSender ! HttpResponse(response.status, "The supplied authentication is not authorized to access this resource")
+                case _ => originalSender ! HttpResponse(response.status, s"""Error deleting dataspace "$id"!""")}
+            }
         }
 
         case response: HttpResponse =>

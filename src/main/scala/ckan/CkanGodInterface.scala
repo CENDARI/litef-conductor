@@ -230,6 +230,41 @@ object CkanGodInterface {
             .size > 0
     }
 
+     /**
+     * @param id resource UUID
+     * @param authorizationKey CKAN user authorization id
+     * @return whether the resource can be deleted by user
+     */
+    def isResourceDeletableByUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
+            DataspaceResourceTable.query
+            .map(_.justIds)
+            .filter(_._2 === id)
+            .filter(_._1 in UserDataspaceRoleTable.query
+                               .filter(_.userApiKey === authorizationKey)
+                               .filter(_.dataspaceRole inSet List("admin", "editor"))
+                               .filter(_.state === "active")
+                               .map(_.dataspaceId))
+            .take(1)
+            .list
+            .size > 0
+    }
+
+       /**
+     * @param id resource UUID
+     * @param authorizationKey CKAN user authorization id
+     * @return whether the resource can be deleted by user
+     */
+    def isDataspaceDeletableByUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
+        UserDataspaceRoleTable.query
+            .filter(_.dataspaceId === id)
+            .filter(_.userApiKey === authorizationKey)
+            .filter(_.dataspaceRole inSet List("admin"))
+            .filter(_.state === "active")
+            .take(1)
+            .list
+            .size > 0
+    }
+    
     /**
      * @param id dataspace UUID
      * @param authorizationKey CKAN user authorization id
