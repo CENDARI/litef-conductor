@@ -32,7 +32,7 @@ import MediaTypes._
 import HttpCharsets._
 import HttpMethods._
 import HttpHeaders._
-
+import StateFilter._
 import common.Config.{ Ckan => CkanConfig }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -54,6 +54,7 @@ object DataspaceActor {
             val authorizationKey: String,
             val since: Option[Timestamp],
             val until: Option[Timestamp],
+            val state: StateFilter,
             val start: Int = 0,
             val count: Int = CkanGodInterface.queryResultDefaultLimit
         )
@@ -84,6 +85,11 @@ object DataspaceActor {
     case class CreatePackageInDataspace(
             val authorizationKey: String,
             val p: PackageCreateWithId)
+    
+    case class DeleteDataspace(
+       val authorizationKey: String,
+       val id: String
+    )
 }
 
 class DataspaceActor
@@ -100,10 +106,10 @@ class DataspaceActor
 
     def receive: Receive = {
         /// Gets the list of resources modified in the specified time range
-        case ListDataspaces(authorizationKey, since, until, start, count) =>
+        case ListDataspaces(authorizationKey, since, until, state, start, count) =>
             CkanGodInterface.database withSession { implicit session: Session =>
                 val (query, nextPage, currentPage) =
-                    CkanGodInterface.listDataspacesQuery(authorizationKey, since, until, start, count)
+                    CkanGodInterface.listDataspacesQuery(authorizationKey, since, until, state, start, count)
 
                 // Dataspaces do not support iterators thanks to CKAN //
                 // "nextPage"    -> JsString(nextPage.map("/resources/query/results/" + _)    getOrElse ""),
@@ -121,6 +127,7 @@ class DataspaceActor
                 authorizationKey,
                 Some(iterator.since),
                 Some(iterator.until),
+                iterator.state,
                 iterator.start,
                 iterator.count
             ))
@@ -214,6 +221,23 @@ class DataspaceActor
             postRequest("package_create", p, authorizationKey)
                 .mapTo[HttpResponse]
                 .map { response => originalSender ! response}
+        }
+         
+        case DeleteDataspace(authorizationKey, id) => {
+            val originalSender = sender
+            
+            (IO(Http) ? (Post(CkanConfig.namespace + "action/organization_delete", HttpEntity(`application/json`, """{ "id": """"+ id + """"}""" ))~>addHeader("Authorization", authorizationKey)))
+            .mapTo[HttpResponse]
+            .map { response => response.status match {
+                case StatusCodes.OK =>
+                    val deletedResource = CkanGodInterface.getDataspace(authorizationKey, id)
+                    originalSender ! HttpResponse(status = StatusCodes.OK,
+                                                  entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
+                                                                         deletedResource.map { _.toJson.prettyPrint}.getOrElse {""}))
+                                                                        
+                case StatusCodes.Forbidden => originalSender ! HttpResponse(response.status, "The supplied authentication is not authorized to access this resource")
+                case _ => originalSender ! HttpResponse(response.status, s"""Error deleting dataspace "$id"!""")}
+            }
         }
 
         case response: HttpResponse =>

@@ -9,6 +9,14 @@ Parameter   Type    Description
 did         String  Unique identifier of the dataspace object
 ==========  ======= ========================================
 
+Request filter parameters:
+
+==========================  ======= ======================================================================
+Parameter                   Type    Description
+==========================  ======= ======================================================================
+state (optional)            String  Valid values are: "active", "deleted", and "all". Default is "active".
+==========================  ======= ======================================================================
+
 Response JSON object:
 
 ======================  ======= ==========================
@@ -36,6 +44,7 @@ size            Integer Resource file size
 created         Integer Timestamp created
 modified        Integer Timestamp last modified
 setId           String  Unique identifier of the set that the resource belongs to
+state           String  State can be "active" or "deleted"
 ==============  ======= ==========================================
 
 Example request (with the next page, resources that belong to a dataspace)::
@@ -58,13 +67,18 @@ Example response::
         "size": 0,
         "created": 1427724584090,
         "modified": 1427724584090,
-        "setId": "5038ef1a-475b-4312-b395-b63a2e2252fc"
+        "setId": "5038ef1a-475b-4312-b395-b63a2e2252fc",
+        "state": "active"
       }, ...],
       "end": false
     }
 
-Example response (when there are no more resources int the dataspace to return)::
+Example response (when there are no more resources in the dataspace to return)::
     
     {
       "end": true
     }
+
+Example request (with filter parameter ``state``)::
+
+    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/dataspaces/c5633d7f-8bb8-4b77-be22-6ee722ff4705/resources?state=all

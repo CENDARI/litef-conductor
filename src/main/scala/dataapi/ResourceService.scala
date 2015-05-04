@@ -68,7 +68,16 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                 (Core.resourceActor ? GetResourceData(id)).mapTo[HttpResponse]
             }
         }
-
+      
+    def deleteResource(id: String)(implicit authorizationKey: String) = {
+        authorize(ckan.CkanGodInterface.isResourceDeletableByUser(id, authorizationKey)) { //TODO: dodaj isResourceDeletableByUser
+          complete {
+              (Core.resourceActor ? DeleteResource(authorizationKey, id))
+              .mapTo[HttpResponse]
+          }
+       }
+    }
+    
     // def getResourceMetadataItem(id: String, item: String)(implicit authorizationKey: String) =
     //     if (item == "data")
     //         getResourceData(id)
@@ -89,6 +98,9 @@ class ResourceService()(implicit executionContext: ExecutionContext)
             } ~
             put {
                 complete { s"What to put?" }
+            } ~
+            delete {
+                path(Segment)   { deleteResource }
             }
         }
     }

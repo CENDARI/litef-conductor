@@ -41,6 +41,7 @@ import HttpMethods._
 import HttpHeaders._
 import akka.event.Logging._
 import akka.event.Logging
+import StateFilter._
 
 import conductor.ResourceAttachmentUtil._
 
@@ -65,16 +66,17 @@ object ResourceActor {
     /// Gets the meta data for the the specified resource
     case class GetResourceMetadataAttachment(id: String, format: String)
 
-    /// Gets the resources for the specified dataset
+    /// Gets the resources for the specified dataspace
     case class ListDataspaceResources(
             val dataspaceId: String,
             val since: Option[Timestamp],
             val until: Option[Timestamp],
+            val state: StateFilter,
             val start: Int = 0,
             val count: Int = CkanGodInterface.queryResultDefaultLimit
         )
 
-    /// Gets the resources for the specified dataset
+    /// Gets the resources for the specified dataspace
     case class ListDataspaceResourcesFromIterator(
             val dataspaceId: String,
             val iterator: String
@@ -98,6 +100,11 @@ object ResourceActor {
             val format: Option[String],
             val description: Option[String]
         )
+    case class DeleteResource(
+            val authorizationKey: String,
+            val id: String
+        )
+    
 }
 
 class ResourceActor
@@ -228,10 +235,10 @@ class ResourceActor
             }
 
         /// Gets the resources for the specified dataspace
-        case ListDataspaceResources(dataspaceId, since, until, start, count) =>
+        case ListDataspaceResources(dataspaceId, since, until, state, start, count) =>
             CkanGodInterface.database withSession { implicit session: Session =>
 
-                val (query, nextPage, currentPage) = CkanGodInterface.listDataspaceResourcesQuery(dataspaceId, since, until, start, count)
+                val (query, nextPage, currentPage) = CkanGodInterface.listDataspaceResourcesQuery(dataspaceId, since, until, state, start, count)
 
                 val resources = query.list
                 val results =
@@ -259,6 +266,7 @@ class ResourceActor
                 dataspaceId,
                 Some(iterator.since),
                 Some(iterator.until),
+                iterator.state,
                 iterator.start,
                 iterator.count
             ))
@@ -362,7 +370,25 @@ class ResourceActor
             }
         }
 
-        case response: HttpResponse =>
+        case DeleteResource(authorizationKey, id) => {
+            val originalSender = sender
+            
+            (IO(Http) ? (Post(CkanConfig.namespace + "action/resource_delete", HttpEntity(`application/json`, """{ "id": """"+ id + """"}""" ))~>addHeader("Authorization", authorizationKey)))
+            .mapTo[HttpResponse]
+            .map { response => response.status match {
+                case StatusCodes.OK =>
+                    /*val deletedResource = CkanGodInterface.getResource(id)
+                    originalSender ! HttpResponse(status = StatusCodes.OK,
+                                                  entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
+                                                                         deletedResource.map { _.toJson.prettyPrint}.getOrElse {""}))*/
+                     originalSender ! HttpResponse(StatusCodes.NoContent)  
+                                                                        
+                case StatusCodes.Forbidden => originalSender ! HttpResponse(response.status, "The supplied authentication is not authorized to access this resource")
+                case _ => originalSender ! HttpResponse(response.status, s"""Error deleting resource "$id"!""" + response)}
+            }
+        }
+
+    case response: HttpResponse =>
             println(s"Sending the response back to the requester $response")
 
         case other =>
