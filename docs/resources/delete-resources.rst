@@ -1,5 +1,5 @@
 DELETE /resources/$id
-===================
+=====================
 
 Parameters:
 
