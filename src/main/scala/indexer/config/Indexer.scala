@@ -15,6 +15,7 @@ object Indexer {
         // "indexer.PlainTextIndexer",
         "indexer.TikaIndexer",
         "indexer.BasicInfoIndexer",
+        "indexer.NerdJsonIndexer",
         "indexer.xml.EAGIndexer"
     )
 }
