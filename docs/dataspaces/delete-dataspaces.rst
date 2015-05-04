@@ -1,5 +1,5 @@
 DELETE /dataspaces/$id
-===================
+======================
 
 Parameters:
 

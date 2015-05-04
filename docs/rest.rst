@@ -29,10 +29,12 @@ API Requests
     dataspaces/get-dataspaces
     dataspaces/get-dataspaces-id
     dataspaces/post-dataspaces
+    dataspaces/delete-dataspaces
     resources/get-resources
     resources/get-resources-id
     resources/post-resources
     resources/put-resources-id
+    resources/delete-resources
     users/get-users
     users/get-users-id
     privileges/get-privileges
