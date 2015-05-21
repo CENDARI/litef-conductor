@@ -119,8 +119,8 @@ object UserResourceJsonProtocol extends DefaultJsonProtocol {
         }
     }
 
-    implicit object UserResourceSeqJsonFormat extends RootJsonFormat[List[UserPackage]] {
-        def write(ds: List[UserPackage]) =
+    implicit object UserResourceSeqJsonFormat extends RootJsonFormat[Vector[UserPackage]] {
+        def write(ds: Vector[UserPackage]) =
             JsArray(ds.map{ _.toJson })
 
         def read(value: JsValue) =

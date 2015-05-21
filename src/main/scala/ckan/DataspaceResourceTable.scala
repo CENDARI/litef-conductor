@@ -120,8 +120,8 @@ object DataspaceResourceJsonProtocol extends DefaultJsonProtocol {
         }
     }
 
-    implicit object DataspaceResourceSeqJsonFormat extends RootJsonFormat[List[DataspaceResource]] {
-        def write(ds: List[DataspaceResource]) =
+    implicit object DataspaceResourceSeqJsonFormat extends RootJsonFormat[Vector[DataspaceResource]] {
+        def write(ds: Vector[DataspaceResource]) =
             JsArray(ds.map{ _.toJson })
 
         def read(value: JsValue) =

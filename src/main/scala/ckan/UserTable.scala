@@ -88,8 +88,8 @@ object UserJsonProtocol extends DefaultJsonProtocol {
         }
     }
 
-    implicit object UserSeqJsonFormat extends RootJsonFormat[List[User]] {
-        def write(u: List[User]) =
+    implicit object UserSeqJsonFormat extends RootJsonFormat[Vector[User]] {
+        def write(u: Vector[User]) =
             JsArray(u.map{ _.toJson })
 
         def read(value: JsValue) =

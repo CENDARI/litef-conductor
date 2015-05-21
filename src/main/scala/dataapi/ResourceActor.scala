@@ -104,7 +104,7 @@ object ResourceActor {
             val authorizationKey: String,
             val id: String
         )
-    
+
 }
 
 class ResourceActor
@@ -240,7 +240,7 @@ class ResourceActor
 
                 val (query, nextPage, currentPage) = CkanGodInterface.listDataspaceResourcesQuery(dataspaceId, since, until, state, start, count)
 
-                val resources = query.list
+                val resources = query.buildColl[Vector]
                 val results =
                     if (resources.size > 0)
                         JsObject(
@@ -372,7 +372,7 @@ class ResourceActor
 
         case DeleteResource(authorizationKey, id) => {
             val originalSender = sender
-            
+
             (IO(Http) ? (Post(CkanConfig.namespace + "action/resource_delete", HttpEntity(`application/json`, """{ "id": """"+ id + """"}""" ))~>addHeader("Authorization", authorizationKey)))
             .mapTo[HttpResponse]
             .map { response => response.status match {
@@ -381,8 +381,8 @@ class ResourceActor
                     originalSender ! HttpResponse(status = StatusCodes.OK,
                                                   entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
                                                                          deletedResource.map { _.toJson.prettyPrint}.getOrElse {""}))*/
-                     originalSender ! HttpResponse(StatusCodes.NoContent)  
-                                                                        
+                     originalSender ! HttpResponse(StatusCodes.NoContent)
+
                 case StatusCodes.Forbidden => originalSender ! HttpResponse(response.status, "The supplied authentication is not authorized to access this resource")
                 case _ => originalSender ! HttpResponse(response.status, s"""Error deleting resource "$id"!""" + response)}
             }

@@ -85,7 +85,7 @@ object DataspaceActor {
     case class CreatePackageInDataspace(
             val authorizationKey: String,
             val p: PackageCreateWithId)
-    
+
     case class DeleteDataspace(
        val authorizationKey: String,
        val id: String
@@ -117,7 +117,7 @@ class DataspaceActor
 
                 sender ! HttpResponse(status = StatusCodes.OK,
                                       entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
-                                                          JsObject("data" -> query.list.toJson).prettyPrint))
+                                                          JsObject("data" -> query.buildColl[Vector].toJson).prettyPrint))
             }
 
         /// Decodes the iterator data and invokes ListDataspaces
@@ -222,10 +222,10 @@ class DataspaceActor
                 .mapTo[HttpResponse]
                 .map { response => originalSender ! response}
         }
-         
+
         case DeleteDataspace(authorizationKey, id) => {
             val originalSender = sender
-            
+
             (IO(Http) ? (Post(CkanConfig.namespace + "action/organization_delete", HttpEntity(`application/json`, """{ "id": """"+ id + """"}""" ))~>addHeader("Authorization", authorizationKey)))
             .mapTo[HttpResponse]
             .map { response => response.status match {
@@ -234,7 +234,7 @@ class DataspaceActor
                     originalSender ! HttpResponse(status = StatusCodes.OK,
                                                   entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
                                                                          deletedResource.map { _.toJson.prettyPrint}.getOrElse {""}))
-                                                                        
+
                 case StatusCodes.Forbidden => originalSender ! HttpResponse(response.status, "The supplied authentication is not authorized to access this resource")
                 case _ => originalSender ! HttpResponse(response.status, s"""Error deleting dataspace "$id"!""")}
             }

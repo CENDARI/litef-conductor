@@ -167,8 +167,8 @@ object ResourceJsonProtocol extends DefaultJsonProtocol {
         }
     }
 
-    implicit object ResourceSeqJsonFormat extends RootJsonFormat[List[Resource]] {
-        def write(ds: List[Resource]) =
+    implicit object ResourceSeqJsonFormat extends RootJsonFormat[Vector[Resource]] {
+        def write(ds: Vector[Resource]) =
             JsArray(ds.map{ _.toJson })
 
         def read(value: JsValue) =

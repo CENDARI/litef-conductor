@@ -33,15 +33,25 @@ object NerdItemProtocol extends DefaultJsonProtocol {
     implicit object NerdItemFormat extends RootJsonFormat[NerdItem] {
         def read(value: JsValue) =
             value.asJsObject.getFields("type", "nerd_score", "rawName") match {
-                case collection.mutable.ArrayBuffer(itemType, _score, text) =>
+                case Seq(JsString(itemType), JsString(_score), JsString(text)) =>
                     try {
-                        val score = _score.convertTo[String].toDouble
-                        new NerdItem(itemType.convertTo[String], score, text.convertTo[String])
+                        val score = _score.toDouble
+                        new NerdItem(itemType, score, text)
                     } catch {
                         case ex : Exception =>
                             ex.printStackTrace
                             null
                     }
+
+                // case collection.mutable.ArrayBuffer(itemType, _score, text) =>
+                //     try {
+                //         val score = _score.convertTo[String].toDouble
+                //         new NerdItem(itemType.convertTo[String], score, text.convertTo[String])
+                //     } catch {
+                //         case ex : Exception =>
+                //             ex.printStackTrace
+                //             null
+                //     }
 
                 case elseval =>
                     logger info elseval.toString

@@ -115,16 +115,16 @@ object CkanGodInterface {
         val since = _since getOrElse (new Timestamp(0))
         val until = _until getOrElse (new Timestamp(System.currentTimeMillis()))
         val count = math.min(_count, queryResultMaximumLimit)
-        
+
         var query = DataspaceTable.query
                     .filter(_.isOrganization)
                     .filter(_.id in UserDataspaceRoleTable.query
                                     .filter(_.userApiKey === authorizationKey)
                                     .filter(_.state === "active")
                                     .map(_.dataspaceId))
-                            
-        if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) query = query.filter(_.state === state.toString.toLowerCase) 
-        
+
+        if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) query = query.filter(_.state === state.toString.toLowerCase)
+
         query = query.sortBy(_.title asc)
 
         (
@@ -181,13 +181,13 @@ object CkanGodInterface {
         val since = _since getOrElse (new Timestamp(0))
         val until = _until getOrElse (new Timestamp(System.currentTimeMillis()))
         val count = math.min(_count, queryResultMaximumLimit)
-        
+
         var query = DataspaceResourceTable.query
                     .filter(_.dataspaceId === dataspaceId)
                     .filter(_.modified.between(since, until))
-        
+
         if(state == StateFilter.ACTIVE || state == StateFilter.DELETED) query = query.filter(_.state === state.toString.toLowerCase)
-        
+
         query = query.sortBy(_.modified asc)
                 .drop(start)
                 .take(count)
@@ -277,7 +277,7 @@ object CkanGodInterface {
             .list
             .size > 0
     }
-    
+
     /**
      * @param id dataspace UUID
      * @param authorizationKey CKAN user authorization id
@@ -329,7 +329,7 @@ object CkanGodInterface {
         .filterNot(_.sysadmin.isNull)
         .filterNot( _.sysadmin)
         .filterNot(_.username inSet List("logged_in", "visitor", "default"))
-        .list
+        .buildColl[Vector]
     }
 
     def getUserById(id: String) = database withSession { implicit session: Session =>
@@ -381,7 +381,7 @@ object CkanGodInterface {
             if (dataspaceId.isDefined) query = query.filter(_.dataspaceId === dataspaceId.get)
             if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) query = query.filter(_.state === state.toString.toLowerCase)
 
-            query.list
+            query.buildColl[Vector]
     }
 
     def getDataspaceRoleById(id: String) = database withSession { implicit session: Session =>
@@ -443,7 +443,7 @@ object CkanGodInterface {
             val state = bytes.getInt
             val start = bytes.getInt
             val count = bytes.getInt
-            
+
             IteratorData(
                 new Timestamp(since),
                 new Timestamp(until),
