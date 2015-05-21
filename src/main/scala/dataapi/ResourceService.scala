@@ -25,6 +25,7 @@ import dataapi.ResourceActor._
 import spray.http.HttpResponse
 import java.sql.Timestamp
 import core.Core
+import slick.driver.PostgresDriver.simple._
 
 // Needed for implicit conversions, not unused:
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -68,7 +69,7 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                 (Core.resourceActor ? GetResourceData(id)).mapTo[HttpResponse]
             }
         }
-      
+
     def deleteResource(id: String)(implicit authorizationKey: String) = {
         authorize(ckan.CkanGodInterface.isResourceDeletableByUser(id, authorizationKey)) { //TODO: dodaj isResourceDeletableByUser
           complete {
@@ -77,24 +78,42 @@ class ResourceService()(implicit executionContext: ExecutionContext)
           }
        }
     }
-    
+
     // def getResourceMetadataItem(id: String, item: String)(implicit authorizationKey: String) =
     //     if (item == "data")
     //         getResourceData(id)
     //     else complete {
     //         (Core.resourceActor ? GetResourceMetadataItem(id, item)).mapTo[String]
     //     }
+    //
+    implicit def actorRefFactory = core.Core.system
+    implicit def settings = spray.routing.RoutingSettings.default
+
+    lazy val logger = org.slf4j.LoggerFactory getLogger getClass
 
     // Defining the routes for different methods of the service
     val route = headerValueByName("Authorization") { implicit authorizationKey =>
         pathPrefix("resources") {
             get {
                 path(Segment)                       { getResourceMetadata } ~
-                path(Segment / "data")              { getResourceData } ~
+                path(Segment / "OLDDATA")           { getResourceData } ~
                 path(Segment / "format" / Rest)     { getResourceAttachment } ~
                 path(Segment / "rdf" / Segment)     { getResourceAttachmentRDF } ~
                 path(Segment / "rdf")               { getResourceAttachmentRDF(_, "n3") } ~
-                path(Segment / "text")              { getResourceAttachment(_, "text/plain") }
+                path(Segment / "text")              { getResourceAttachment(_, "text/plain") } ~
+                path(Segment / "data")              { id =>
+                    authorize(ckan.CkanGodInterface.isResourceDeletableByUser(id, authorizationKey)) {
+                        val resource = ckan.CkanGodInterface.getResource(id)
+
+                        resource map { resource =>
+                            logger info s"REQ RES ${resource.id} -> ${resource.localPath}"
+                            getFromFile(resource.localPath)
+                        } getOrElse {
+                            // TODO: Make this work properly
+                            getFromFile("/error505")
+                        }
+                    }
+                }
             } ~
             put {
                 complete { s"What to put?" }
