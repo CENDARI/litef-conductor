@@ -43,10 +43,12 @@ abstract class ResourceData {
             "format"         -> JsString(format      getOrElse ""),
             "mimetype"       -> JsString(mimetype    getOrElse ""),
             "size"           -> JsNumber(size        getOrElse 0L),
-            "created"        -> JsNumber(created.map  { _.getTime } getOrElse 0L),
-            "modified"       -> JsNumber(modified.map { _.getTime } getOrElse 0L),
+            "created_epoch"  -> JsNumber(created.map  { _.getTime } getOrElse 0L),
+            "modified_epoch" -> JsNumber(modified.map { _.getTime } getOrElse 0L),
             "setId"          -> JsString(packageId getOrElse ""),
-            "state"          -> JsString(state getOrElse "")
+            "state"          -> JsString(state getOrElse ""),
+            "created"        -> JsString(( ((created.map {_.toString}).map {_.replace(' ','T')}).map {_.concat("Z")} getOrElse "" )),
+            "modified"       -> JsString(( ((modified.map {_.toString}).map {_.replace(' ','T')}).map {_.concat("Z")} getOrElse "" ))
         )
 }
 
