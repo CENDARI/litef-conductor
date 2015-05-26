@@ -23,9 +23,11 @@ name            String  Resource title
 description     String  Additional information about the resource
 format          String  Resource file format
 mimetype        String  Resource file MIME Type
-size            Integer Resource file size
-created         Integer Timestamp created
-modified        Integer Timestamp last modified
+size            Integer Resource file size (in KB)
+created         String  Timestamp created in W3 format
+created_epoch   Integer Timestamp created
+modified        String  Timestamp last modified in W3 format
+modified_epoch  Integer Timestamp last modified
 setId           String  Unique identifier of the set that the resource belongs to
 state           String  State can be "active" or "deleted"
 ==============  ======= ==========================================
