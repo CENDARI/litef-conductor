@@ -34,6 +34,16 @@ abstract class ResourceData {
     def packageId     : Option[String]
     def state         : Option[String]
 
+    private def getMime = 
+    {
+      val tmp = java.nio.file.Paths.get(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6))
+        
+      if(java.nio.file.Files.probeContentType(tmp) == null)
+        ""
+      else
+        java.nio.file.Files.probeContentType(tmp)
+        
+    }
     def toJson = JsObject(
             "id"             -> JsString(id),
             "url"            -> JsString(s"${Config.namespace}resources/${id}"),
@@ -41,8 +51,10 @@ abstract class ResourceData {
             "name"           -> JsString(name        getOrElse ""),
             "description"    -> JsString(description getOrElse ""),
             "format"         -> JsString(format      getOrElse ""),
-            "mimetype"       -> JsString(mimetype    getOrElse ""),
-            "size"           -> JsNumber(size        getOrElse 0L),
+            //"mimetype"       -> JsString(mimetype    getOrElse ""),
+            "mimetype"       -> JsString(getMime),
+            //"size"           -> JsNumber(size        getOrElse 0L),
+            "size"           -> JsNumber(size getOrElse (new java.io.File(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6) )).length/1024),
             "created_epoch"  -> JsNumber(created.map  { _.getTime } getOrElse 0L),
             "modified_epoch" -> JsNumber(modified.map { _.getTime } getOrElse 0L),
             "setId"          -> JsString(packageId getOrElse ""),
@@ -94,7 +106,7 @@ case class Resource(
         val fileSize = (new java.io.File(localPath)).length
         fileSize <= Config.Conductor.fileSizeLimit
     }
-
+    
     lazy val isProcessable = isLocal // && isBelowSizeThreshold
     lazy val content = io.Source.fromFile(localPath).mkString
 
