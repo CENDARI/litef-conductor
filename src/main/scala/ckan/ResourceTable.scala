@@ -37,12 +37,14 @@ abstract class ResourceData {
     private def getMime = 
     {
       val tmp = java.nio.file.Paths.get(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6))
-        
+      
+    (mimetype getOrElse (
       if(java.nio.file.Files.probeContentType(tmp) == null)
         ""
       else
         java.nio.file.Files.probeContentType(tmp)
-        
+        )
+     )
     }
     def toJson = JsObject(
             "id"             -> JsString(id),
