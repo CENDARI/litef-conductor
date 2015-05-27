@@ -71,31 +71,31 @@ object CkanGodInterface {
             .headOption
     }
 
-//    /**
-//     * @param _since gets only the resources newer than the specified timestamp
-//     * @param _until gets only the resources older than the specified timestamp
-//     * @param start (aka offset) skips first 'start' results
-//     * @param _count defines how many results to return
-//     * @return the query object against the collection of resources
-//     */
-//    def listResourcesQuery(_since: Option[Timestamp], _until: Option[Timestamp],
-//                           start: Int, _count: Int) = database withSession { implicit session: Session =>
-//
-//        val since = _since getOrElse (new Timestamp(0))
-//        val until = _until getOrElse (new Timestamp(System.currentTimeMillis()))
-//        val count = math.min(_count, queryResultMaximumLimit)
-//
-//        (
-//            ResourceTable.query
-//                .where(_.modified.between(since, until))
-//                .sortBy(_.modified asc)
-//                .drop(start)
-//                .take(count)
-//            ,
-//            Some(IteratorData(since, until, StateFilter.ALL, start + count, count).generateId), // next
-//            Some(IteratorData(since, until, StateFilter.ALL, start,         count).generateId)  // current
-//        )
-//    }
+    /**
+     * @param _since gets only the resources newer than the specified timestamp
+     * @param _until gets only the resources older than the specified timestamp
+     * @param start (aka offset) skips first 'start' results
+     * @param _count defines how many results to return
+     * @return the query object against the collection of resources
+     */
+    def listResourcesQuery(_since: Option[Timestamp], _until: Option[Timestamp],
+                           start: Int, _count: Int) = database withSession { implicit session: Session =>
+
+        val since = _since getOrElse (new Timestamp(0))
+        val until = _until getOrElse (new Timestamp(System.currentTimeMillis()))
+        val count = math.min(_count, queryResultMaximumLimit)
+
+        (
+            ResourceTable.query
+                .where(_.modified.between(since, until))
+                .sortBy(_.modified asc)
+                .drop(start)
+                .take(count)
+            ,
+            Some(IteratorData(since, until, StateFilter.ALL, start + count, count).generateId), // next
+            Some(IteratorData(since, until, StateFilter.ALL, start,         count).generateId)  // current
+        )
+    }
 
     /**
      * @param authorizationKey CKAN authorization key of the user that requests the dataspaces

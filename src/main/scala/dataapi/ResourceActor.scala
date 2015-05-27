@@ -47,15 +47,15 @@ import conductor.ResourceAttachmentUtil._
 
 object ResourceActor {
     /// Gets the list of resources modified in the specified time range
-    // case class ListResources(
-    //         val since: Option[Timestamp],
-    //         val until: Option[Timestamp],
-    //         val start: Int = 0,
-    //         val count: Int = CkanGodInterface.queryResultDefaultLimit
-    //     )
+     case class ListResources(
+             val since: Option[Timestamp],
+             val until: Option[Timestamp],
+             val start: Int = 0,
+             val count: Int = CkanGodInterface.queryResultDefaultLimit
+         )
 
     /// Gets the next results for the iterator
-    // case class ListResourcesFromIterator(val iterator: String)
+     case class ListResourcesFromIterator(val iterator: String)
 
     /// Gets the data of the specified resource
     case class GetResourceData(id: String)
@@ -118,27 +118,26 @@ class ResourceActor
 
     def receive: Receive = {
         /// Gets the list of resources modified in the specified time range
-        // case ListResources(since, until, start, count) =>
-        //     CkanGodInterface.database withSession { implicit session: Session =>
-        //
-        //         val (query, nextPage, currentPage) = CkanGodInterface.listResourcesQuery(since, until, start, count)
-        //
-        //         sender ! JsObject(
-        //             "nextPage"    -> JsString(nextPage.map("/resources/query/results/" + _)    getOrElse ""),
-        //             "currentPage" -> JsString(currentPage.map("/resources/query/results/" + _) getOrElse ""),
-        //             "data"        -> query.list.toJson
-        //         ).prettyPrint
-        //
-        //     }
-        //
-        // case ListResourcesFromIterator(iteratorData) =>
-        //     val iterator = IteratorData.fromId(iteratorData).get
-        //     receive(ListResources(
-        //         Some(iterator.since),
-        //         Some(iterator.until),
-        //         iterator.start,
-        //         iterator.count
-        //     ))
+        case ListResources(since, until, start, count) =>
+            CkanGodInterface.database withSession { implicit session: Session =>
+        
+                 val (query, nextPage, currentPage) = CkanGodInterface.listResourcesQuery(since, until, start, count)
+                 sender ! JsObject(
+                     "nextPage"    -> JsString(nextPage.map("/resources/query/results/" + _)    getOrElse ""),
+                     "currentPage" -> JsString(currentPage.map("/resources/query/results/" + _) getOrElse ""),
+                     "data"        -> query.buildColl[Vector].toJson//.toJson
+                 ).prettyPrint
+        
+             }
+        
+         case ListResourcesFromIterator(iteratorData) =>
+             val iterator = IteratorData.fromId(iteratorData).get
+             receive(ListResources(
+                 Some(iterator.since),
+                 Some(iterator.until),
+                 iterator.start,
+                 iterator.count
+             ))
 
         /// Gets the meta data for the the specified resource
         // case GetResourceMetadata(id) => IO(Http) forward {
