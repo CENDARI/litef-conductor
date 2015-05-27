@@ -37,15 +37,22 @@ abstract class ResourceData {
     private def getMime = 
     {
       val tmp = java.nio.file.Paths.get(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6))
-      
-    (mimetype getOrElse (
-      if(java.nio.file.Files.probeContentType(tmp) == null)
-        ""
-      else
-        java.nio.file.Files.probeContentType(tmp)
+      (mimetype getOrElse (
+        if(java.nio.file.Files.probeContentType(tmp) == null)
+          ""
+        else
+          java.nio.file.Files.probeContentType(tmp)
         )
-     )
+      )
     }
+    
+//returns file size in KB
+    private def fileSize = 
+    {
+      val file = new java.io.File(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6) );
+      file.length()/1024.0;
+    }
+    
     def toJson = JsObject(
             "id"             -> JsString(id),
             "url"            -> JsString(s"${Config.namespace}resources/${id}"),
@@ -56,7 +63,7 @@ abstract class ResourceData {
             //"mimetype"       -> JsString(mimetype    getOrElse ""),
             "mimetype"       -> JsString(getMime),
             //"size"           -> JsNumber(size        getOrElse 0L),
-            "size"           -> JsNumber(size getOrElse (new java.io.File(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6) )).length/1024),
+            "size"           -> JsNumber(fileSize),
             "created_epoch"  -> JsNumber(created.map  { _.getTime } getOrElse 0L),
             "modified_epoch" -> JsNumber(modified.map { _.getTime } getOrElse 0L),
             "setId"          -> JsString(packageId getOrElse ""),
