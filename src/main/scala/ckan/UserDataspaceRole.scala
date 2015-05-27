@@ -82,8 +82,8 @@ object UserDataspaceRoleJsonProtocol extends DefaultJsonProtocol {
         }
     }
 
-    implicit object UserDataspaceRoleSeqJsonFormat extends RootJsonFormat[Vector[UserDataspaceRole]] {
-        def write(r: Vector[UserDataspaceRole]) =
+    implicit object UserDataspaceRoleSeqJsonFormat extends RootJsonFormat[List[UserDataspaceRole]] {
+        def write(r: List[UserDataspaceRole]) =
             JsArray(r.map{ _.toJson })
 
         def read(value: JsValue) =

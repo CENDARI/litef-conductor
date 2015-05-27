@@ -240,7 +240,7 @@ class ResourceActor
 
                 val (query, nextPage, currentPage) = CkanGodInterface.listDataspaceResourcesQuery(dataspaceId, since, until, state, start, count)
 
-                val resources = query.buildColl[Vector]
+                val resources = query.list
                 val results =
                     if (resources.size > 0)
                         JsObject(

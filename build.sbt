@@ -33,7 +33,7 @@ libraryDependencies ++= {
         "io.spray"            % "spray-can"          % V.spray         withSources,
         "io.spray"            % "spray-routing"      % V.spray         withSources,
         // "io.spray"            % "spray-testkit"      % V.spray         % "test",
-        "io.spray"           %% "spray-json"         % V.spray         withSources,
+        "io.spray"           %% "spray-json"         % "1.2.3"         withSources,
         "io.spray"            % "spray-client"       % V.spray         withSources,
         "io.spray"            % "spray-http"         % V.spray         withSources,
         // "org.specs2"         %% "specs2"             % "1.14"          % "test",

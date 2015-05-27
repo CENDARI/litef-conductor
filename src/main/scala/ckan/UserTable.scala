@@ -28,7 +28,7 @@ case class User(
     openid      : Option[String]    = None,
     state       : String,
     about       : Option[String]    = None,
-    sysadmin    : Option[Boolean]   = None
+    sysadmin    : Option[Boolean]   = Some(false)
 ){
     lazy val emailHash = email match {
         case None | Some("")    => ""
@@ -49,7 +49,7 @@ class UserTable(tag: Tag)
     val openid   = column[ Option[String] ] ("openid")
     val state    = column[ String         ] ("state", O.NotNull)
     val about    = column[ Option[String] ] ("about")
-    val sysadmin = column[ Option[Boolean]] ("sysadmin")
+    val sysadmin = column[ Option[Boolean]] ("sysadmin", O.Default(Some(false)))
 
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
@@ -88,8 +88,8 @@ object UserJsonProtocol extends DefaultJsonProtocol {
         }
     }
 
-    implicit object UserSeqJsonFormat extends RootJsonFormat[Vector[User]] {
-        def write(u: Vector[User]) =
+    implicit object UserSeqJsonFormat extends RootJsonFormat[List[User]] {
+        def write(u: List[User]) =
             JsArray(u.map{ _.toJson })
 
         def read(value: JsValue) =
