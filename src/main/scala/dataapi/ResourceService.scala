@@ -37,12 +37,12 @@ class ResourceService()(implicit executionContext: ExecutionContext)
 {
      // Resources and metadata
      def listResources(since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) =
-        /* complete*/ {
+        complete {
              (Core.resourceActor ? ListResources(since, until)).mapTo[HttpResponse]//.mapTo[String]
          }
     
      def listResourcesFromIterator(iteratorData: String)(implicit authorizationKey: String) =
-         /*complete*/ {
+         complete {
              (Core.resourceActor ? ListResourcesFromIterator(iteratorData)).mapTo[HttpResponse]
          }
 
@@ -104,7 +104,7 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                 path(Segment / "data")              { id =>
                     authorize(ckan.CkanGodInterface.isResourceDeletableByUser(id, authorizationKey)) {
                         val resource = ckan.CkanGodInterface.getResource(id)
-                 
+                        print("MILAN" + listResources(None,None))
                         resource map { resource => 
                             logger info s"REQ RES ${resource.id} -> ${resource.localPath}"
                             getFromFile(resource.localPath)

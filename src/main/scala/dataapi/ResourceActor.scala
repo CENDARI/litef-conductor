@@ -122,12 +122,14 @@ class ResourceActor
             CkanGodInterface.database withSession { implicit session: Session =>
         
                  val (query, nextPage, currentPage) = CkanGodInterface.listResourcesQuery(since, until, start, count)
-                 sender ! JsObject(
-                     "nextPage"    -> JsString(nextPage.map("/resources/query/results/" + _)    getOrElse ""),
-                     "currentPage" -> JsString(currentPage.map("/resources/query/results/" + _) getOrElse ""),
-                     "data"        -> query.buildColl[Vector].toJson//.toJson
-                 ).prettyPrint
-        
+                 val results= JsObject(
+                          "nextPage"    -> JsString(nextPage.map("/resources/query/results/" + _)    getOrElse ""),
+                          "currentPage" -> JsString(currentPage.map("/resources/query/results/" + _) getOrElse ""),
+                          "data"        -> query.list.toJson//.toJson
+                            ).prettyPrint
+                            print("TST" + results)
+                   sender ! HttpResponse(status = StatusCodes.OK,
+                                                 entity = HttpEntity(ContentType(`application/json`, `UTF-8`), results))
              }
         
          case ListResourcesFromIterator(iteratorData) =>
