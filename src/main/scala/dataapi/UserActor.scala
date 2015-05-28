@@ -86,13 +86,18 @@ class UserActor
                             .map { response => response.status match {
                                     case StatusCodes.OK =>
                                         val createdUser = CkanGodInterface.getUserById(id)
-                                        val apikey = createdUser.map {_.apikey.getOrElse("")}.getOrElse {""}
-                                        val username = createdUser.map {_.username}.getOrElse {""}
-                                        originalSender ! HttpResponse(StatusCodes.OK,
+                                        createdUser match {
+                                            case Some(u) =>
+                                                val apikey = u.apikey.getOrElse("")
+                                                val username = u.username
+                                                originalSender ! HttpResponse(StatusCodes.OK,
                                                                       HttpEntity(ContentType(`application/json`, `UTF-8`), 
-                                                                                 JsObject("username" -> JsString(username), 
+                                                                                 JsObject("username" -> JsString(username),
                                                                                           "sessionKey" -> JsString(apikey))
                                                                                  .prettyPrint))
+                                            case None =>
+                                                originalSender ! HttpResponse(StatusCodes.InternalServerError, "Error getting session key. Cannot create a session for a new user based on information provided.")
+                                        }
                                     case _ => originalSender ! HttpResponse(response.status, "Error getting session key!")}
                             }
                     }

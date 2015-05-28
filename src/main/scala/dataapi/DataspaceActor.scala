@@ -117,7 +117,7 @@ class DataspaceActor
 
                 sender ! HttpResponse(status = StatusCodes.OK,
                                       entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
-                                                          JsObject("data" -> query.buildColl[Vector].toJson).prettyPrint))
+                                                          JsObject("data" -> query.list.toJson).prettyPrint))
             }
 
         /// Decodes the iterator data and invokes ListDataspaces

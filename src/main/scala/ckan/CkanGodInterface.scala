@@ -329,7 +329,7 @@ object CkanGodInterface {
         .filterNot(_.sysadmin.isNull)
         .filterNot( _.sysadmin)
         .filterNot(_.username inSet List("logged_in", "visitor", "default"))
-        .buildColl[Vector]
+        .list
     }
 
     def getUserById(id: String) = database withSession { implicit session: Session =>
@@ -381,7 +381,7 @@ object CkanGodInterface {
             if (dataspaceId.isDefined) query = query.filter(_.dataspaceId === dataspaceId.get)
             if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) query = query.filter(_.state === state.toString.toLowerCase)
 
-            query.buildColl[Vector]
+            query.list
     }
 
     def getDataspaceRoleById(id: String) = database withSession { implicit session: Session =>
