@@ -36,15 +36,15 @@ class ResourceService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
 {
      // Resources and metadata
-     def listResources(since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) =
-        complete {
-             (Core.resourceActor ? ListResources(since, until)).mapTo[HttpResponse]//.mapTo[String]
-         }
+     // def listResources(since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) =
+     //   complete {
+     //        (Core.resourceActor ? ListResources(since, until)).mapTo[String]
+     //    }
     
-     def listResourcesFromIterator(iteratorData: String)(implicit authorizationKey: String) =
-         complete {
-             (Core.resourceActor ? ListResourcesFromIterator(iteratorData)).mapTo[HttpResponse]
-         }
+     // def listResourcesFromIterator(iteratorData: String)(implicit authorizationKey: String) =
+     //     complete {
+     //         (Core.resourceActor ? ListResourcesFromIterator(iteratorData)).mapTo[HttpResponse]
+     //     }
 
     def getResourceMetadata(id: String)(implicit authorizationKey: String) =
         authorize(ckan.CkanGodInterface.isResourceAccessibleToUser(id.split('.').head, authorizationKey)) {
@@ -104,7 +104,7 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                 path(Segment / "data")              { id =>
                     authorize(ckan.CkanGodInterface.isResourceDeletableByUser(id, authorizationKey)) {
                         val resource = ckan.CkanGodInterface.getResource(id)
-                        print("MILAN" + listResources(None,None))
+                        
                         resource map { resource => 
                             logger info s"REQ RES ${resource.id} -> ${resource.localPath}"
                             getFromFile(resource.localPath)

@@ -50,7 +50,11 @@ abstract class ResourceData {
     private def fileSize = 
     {
       val file = new java.io.File(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6) );
-      file.length()/1024.0;
+      val sz = file.length()/1024.0;
+      if( sz <1.0)
+        1L;
+      else
+        scala.math.round (sz)
     }
     
     def toJson = JsObject(
