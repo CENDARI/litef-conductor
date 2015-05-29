@@ -47,22 +47,52 @@ import StateFilterProtocol._
 class DataspaceService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
 {
+    def stringToTimestamp(value: Option[String]):Option[Timestamp] =
+    {
+      def transform(list:List[String], value:String):Option[Timestamp] = list match{
+          case Nil => throw new java.text.ParseException("Unable to parse date string!", 0)
+          case x::tail => try{
+                            if(x == "yyyy")
+                            {
+                                if(value.length == 4)
+                                  Some( new Timestamp((new java.text.SimpleDateFormat(x).parse(value).getTime())))
+                                else
+                                  throw new java.text.ParseException("Unable to parse date string!", 0)
+                            }
+                            else
+                              Some( new Timestamp((new java.text.SimpleDateFormat(x).parse(value).getTime())))
+                              
+                          }
+                          catch
+                          {
+                           
+                           case e: java.text.ParseException  => transform(tail, value)
+                          }
+         }
+         var formats = List("yyyy-MM-dd'T'HH:mm:ssZ","yyyy-MM-dd'T'HH:mm:ss","yyyy-MM-dd", "yyyy-MM", "yyyy")
+         value match {
+           case Some(v) => transform(formats, v)
+           case None => None
+         }
+         
+    }
+      
     // Dataspaces and metadata
     def listDataspaces(since: Option[String], until: Option[String], state: StateFilter)(implicit authorizationKey: String) = {
-        val _since = since match
+        try
         {
-          case Some(v) =>Some( new Timestamp((new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(v).getTime())))
-          case None => None
+          val _since = stringToTimestamp(since)
+          val _until = stringToTimestamp(until)
+          complete {
+          (Core.dataspaceActor ? ListDataspaces(authorizationKey, _since, _until, state))
+              .mapTo[HttpResponse]
+          }
         }
-        val _until = until match
+        catch
         {
-          case Some(v) =>Some( new Timestamp((new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(v).getTime())))
-          case None => None
+          case e: java.text.ParseException  => complete { HttpResponse(StatusCodes.BadRequest, "Invalid date format") }
         }
-        complete {
-        (Core.dataspaceActor ? ListDataspaces(authorizationKey, _since, _until, state))
-            .mapTo[HttpResponse]
-        }
+        
     }
 
     def listDataspacesFromIterator(iteratorData: String)(implicit authorizationKey: String) = complete {
@@ -77,20 +107,21 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
 
      def listDataspaceResources(id: String, since: Option[String], until: Option[String], state: StateFilter)(implicit authorizationKey: String) =
         authorize(ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
-            val _since = since match
-            {
-              case Some(v) =>Some( new Timestamp((new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(v).getTime())))
-              case None => None
-            }
-            val _until = until match
-            {
-              case Some(v) =>Some( new Timestamp((new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(v).getTime())))
-              case None => None
-            }
-            complete {
-                (Core.resourceActor ? ListDataspaceResources(id, _since, _until, state))
-                .mapTo[HttpResponse]
-            }
+          try
+          {
+              val _since = stringToTimestamp(since)
+              val _until = stringToTimestamp(until)
+              complete {
+                  (Core.resourceActor ? ListDataspaceResources(id, _since, _until, state))
+                  .mapTo[HttpResponse]
+              }
+
+          }
+          catch
+          {
+            case e: java.text.ParseException  => complete { HttpResponse(StatusCodes.BadRequest, "Invalid date format") }
+          }
+        
         }
 
     def listDataspaceResourcesFromIterator(id: String, iteratorData: String)(implicit authorizationKey: String) =

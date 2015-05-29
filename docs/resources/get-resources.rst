@@ -85,6 +85,6 @@ Example request (with filter parameter ``state``)::
 
     curl -H "Authorization: your-apikey"  http://localhost:42042/v1/dataspaces/c5633d7f-8bb8-4b77-be22-6ee722ff4705/resources?state=all
 
-Example request (with filter parameters ``since`` and ``until``, in format ``yyyy-MM-dd'T'HH:mm:ssZ`` )::
+Example request (with filter parameters ``since`` and ``until``, in format ``yyyy-MM-dd'T'HH:mm:ssZ``, ``yyyy-MM-dd'T'HH:mm:ss``, ``yyyy-MM-dd``, ``yyyy-MM``, ``yyyy`` )::
 
     curl -H "Authorization: your-apikey"  http://localhost:42042/v1/dataspaces/c5633d7f-8bb8-4b77-be22-6ee722ff4705/resources?since=2015-05-20T13:00:00-0000\&until=2015-06-01T13:00:00-0200
