@@ -122,6 +122,7 @@ object CkanGodInterface {
                                     .filter(_.userApiKey === authorizationKey)
                                     .filter(_.state === "active")
                                     .map(_.dataspaceId))
+                    .filter(_.created.between(since, until))
 
         if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) query = query.filter(_.state === state.toString.toLowerCase)
 

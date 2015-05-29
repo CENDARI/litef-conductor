@@ -48,9 +48,21 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
 {
     // Dataspaces and metadata
-    def listDataspaces(since: Option[Timestamp], until: Option[Timestamp], state: StateFilter)(implicit authorizationKey: String) = complete {
-        (Core.dataspaceActor ? ListDataspaces(authorizationKey, since, until, state))
+    def listDataspaces(since: Option[String], until: Option[String], state: StateFilter)(implicit authorizationKey: String) = {
+        val _since = since match
+        {
+          case Some(v) =>Some( new Timestamp((new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(v).getTime())))
+          case None => None
+        }
+        val _until = until match
+        {
+          case Some(v) =>Some( new Timestamp((new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(v).getTime())))
+          case None => None
+        }
+        complete {
+        (Core.dataspaceActor ? ListDataspaces(authorizationKey, _since, _until, state))
             .mapTo[HttpResponse]
+        }
     }
 
     def listDataspacesFromIterator(iteratorData: String)(implicit authorizationKey: String) = complete {
@@ -63,10 +75,20 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
             .mapTo[HttpResponse]
     }
 
-    def listDataspaceResources(id: String, since: Option[Timestamp], until: Option[Timestamp], state: StateFilter)(implicit authorizationKey: String) =
+     def listDataspaceResources(id: String, since: Option[String], until: Option[String], state: StateFilter)(implicit authorizationKey: String) =
         authorize(ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
+            val _since = since match
+            {
+              case Some(v) =>Some( new Timestamp((new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(v).getTime())))
+              case None => None
+            }
+            val _until = until match
+            {
+              case Some(v) =>Some( new Timestamp((new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(v).getTime())))
+              case None => None
+            }
             complete {
-                (Core.resourceActor ? ListDataspaceResources(id, since, until, state))
+                (Core.resourceActor ? ListDataspaceResources(id, _since, _until, state))
                 .mapTo[HttpResponse]
             }
         }
@@ -159,7 +181,7 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
                  * Getting the list of dataspaces
                  */
                 pathEndOrSingleSlash {
-                    parameters('since.as[Timestamp] ?, 'until.as[Timestamp] ?, 'state.as[StateFilter] ? StateFilter.ACTIVE) { listDataspaces }
+                    parameters('since.as[String] ?, 'until.as[String] ?, 'state.as[StateFilter] ? StateFilter.ACTIVE) { listDataspaces }
                 } ~
                 path("query" / "results" / Segment) { listDataspacesFromIterator } ~
                 /*
@@ -170,7 +192,7 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
                  * Getting the list of resources that belong to a dataspace
                  */
                 (path(Segment / "resources" ~ PathEnd)) { id =>
-                    parameters('since.as[Timestamp] ?, 'until.as[Timestamp] ?, 'state.as[StateFilter] ? StateFilter.ACTIVE) { (since, until, state) =>
+                  parameters('since.as[String] ?, 'until.as[String] ?, 'state.as[StateFilter] ? StateFilter.ACTIVE) { (since, until, state) =>
                         listDataspaceResources(id, since, until, state)
                     }
                 } ~
