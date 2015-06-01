@@ -71,7 +71,7 @@ abstract class ResourceData {
             "setId"          -> JsString(packageId getOrElse ""),
             "state"          -> JsString(state getOrElse ""),
             "created"        -> JsString(created.map{_.toString} getOrElse ""),
-            "modified"       -> JsString(created.map{_.toString} getOrElse "")
+            "modified"       -> JsString(modified.map{_.toString} getOrElse "")
         )
 }
 
