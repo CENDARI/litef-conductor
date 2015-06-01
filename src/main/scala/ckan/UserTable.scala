@@ -80,6 +80,7 @@ object UserJsonProtocol extends DefaultJsonProtocol {
                 "fullname"      -> JsString(u.fullname getOrElse ""),
                 "about"         -> JsString(u.about getOrElse ""),
                 "emailHash"     -> JsString(u.emailHash),
+                "sysadmin"      -> JsBoolean(u.sysadmin getOrElse false),
                 "state"         -> JsString(u.state)
             )
 

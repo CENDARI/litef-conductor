@@ -68,7 +68,8 @@ class UserActor
                             originalSender ! HttpResponse(StatusCodes.OK,
                                                           HttpEntity(ContentType(`application/json`, `UTF-8`), 
                                                                      JsObject("username" -> JsString(cu.username), 
-                                                                              "sessionKey" -> JsString(cu.apikey.getOrElse("")))
+                                                                              "sessionKey" -> JsString(cu.apikey.getOrElse("")),
+                                                                              "sysadmin" -> JsBoolean(cu.sysadmin.getOrElse(false)))
                                                                      .prettyPrint))
                         case None =>
                             val id = UUID.randomUUID().toString
@@ -90,10 +91,12 @@ class UserActor
                                             case Some(u) =>
                                                 val apikey = u.apikey.getOrElse("")
                                                 val username = u.username
+                                                val sysadmin = u.sysadmin.getOrElse(false)
                                                 originalSender ! HttpResponse(StatusCodes.OK,
                                                                       HttpEntity(ContentType(`application/json`, `UTF-8`), 
                                                                                  JsObject("username" -> JsString(username),
-                                                                                          "sessionKey" -> JsString(apikey))
+                                                                                          "sessionKey" -> JsString(apikey),
+                                                                                          "sysadmin" -> JsBoolean(sysadmin))
                                                                                  .prettyPrint))
                                             case None =>
                                                 originalSender ! HttpResponse(StatusCodes.InternalServerError, "Error getting session key. Cannot create a session for a new user based on information provided.")

@@ -71,7 +71,7 @@ class ResourceService()(implicit executionContext: ExecutionContext)
         }
 
     def deleteResource(id: String)(implicit authorizationKey: String) = {
-        authorize(ckan.CkanGodInterface.isResourceDeletableByUser(id, authorizationKey)) { //TODO: dodaj isResourceDeletableByUser
+        authorize(ckan.CkanGodInterface.isResourceDeletableByUser(id, authorizationKey)) {
           complete {
               (Core.resourceActor ? DeleteResource(authorizationKey, id))
               .mapTo[HttpResponse]

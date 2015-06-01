@@ -28,6 +28,14 @@ import java.nio.ByteBuffer
 import scala.util.Try
 import dataapi.StateFilter
 import dataapi.StateFilter.StateFilter
+import scala.slick.lifted.CanBeQueryCondition
+
+// optionally filter on a column with a supplied predicate https://gist.github.com/cvogt/9193220
+case class MaybeFilter[X, Y](val query: scala.slick.lifted.Query[X, Y]) {
+  def filter[T,R:CanBeQueryCondition](data: Option[T])(f: T => X => R) = {
+    data.map(v => MaybeFilter(query.filter(f(v)))).getOrElse(this)
+  }
+}
 
 object CkanGodInterface {
     val queryResultDefaultLimit = 10
@@ -116,20 +124,21 @@ object CkanGodInterface {
         val until = _until getOrElse (new Timestamp(System.currentTimeMillis()))
         val count = math.min(_count, queryResultMaximumLimit)
 
-        var query = DataspaceTable.query
-                    .filter(_.isOrganization)
-                    .filter(_.id in UserDataspaceRoleTable.query
+        var q = DataspaceTable.query
+                .filter(_.isOrganization)
+                .filter(_.created.between(since, until))
+
+        if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) q = q.filter(_.state === state.toString.toLowerCase)
+        
+        if (!isSysadmin(authorizationKey))
+          q = q.filter(_.id in UserDataspaceRoleTable.query
                                     .filter(_.userApiKey === authorizationKey)
                                     .filter(_.state === "active")
                                     .map(_.dataspaceId))
-                    .filter(_.created.between(since, until))
-
-        if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) query = query.filter(_.state === state.toString.toLowerCase)
-
-        query = query.sortBy(_.title asc)
+        q = q.sortBy(_.title asc)
 
         (
-            query,
+            q,
             None, // Dataspaces do not support iterators // IteratorData(since, until, start + count, count).generateId, // next
             None  // Dataspaces do not support iterators // IteratorData(since, until, start,         count).generateId  // current
         )
@@ -142,12 +151,14 @@ object CkanGodInterface {
      * @return query object that will return the specified dataspace
      */
     def getDataspaceQuery(authorizationKey: String, id: String) = database withSession { implicit session: Session =>
-        DataspaceTable.query
-            .filter(_.id === id)
-            .filter(_.id in UserDataspaceRoleTable.query
-                              .filter(_.userApiKey === authorizationKey)
-                              .filter(_.state === "active")
-                              .map(_.dataspaceId))
+        var q = DataspaceTable.query
+                .filter(_.id === id)
+        if(!isSysadmin(authorizationKey)) 
+            q = q.filter(_.id in UserDataspaceRoleTable.query
+                                .filter(_.userApiKey === authorizationKey)
+                                .filter(_.state === "active")
+                                .map(_.dataspaceId))
+        q
     }
 
     /**
@@ -207,7 +218,7 @@ object CkanGodInterface {
      */
     def isPackageInDataspace(dataspaceId: String, packageId: String): Boolean = database withSession { implicit session: Session =>
         PackageTable.query
-            .where(p => p.id === packageId && p.state === "active" && p.ownerOrg === dataspaceId)
+            .filter(p => p.id === packageId && p.state === "active" && p.ownerOrg === dataspaceId)
             .take(1)
             .list
             .size > 0
@@ -219,13 +230,15 @@ object CkanGodInterface {
      * @return whether the dataspace is accessible to the user
      */
     def isDataspaceAccessibleToUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
-        UserDataspaceRoleTable.query
-            .filter(_.dataspaceId === id)
-            .filter(_.userApiKey === authorizationKey)
-            .filter(_.state === "active")
-            .take(1)
-            .list
-            .size > 0
+        if(isSysadmin(authorizationKey))
+            true
+        else UserDataspaceRoleTable.query
+                .filter(_.dataspaceId === id)
+                .filter(_.userApiKey === authorizationKey)
+                .filter(_.state === "active")
+                .take(1)
+                .list
+                .size > 0
     }
 
     /**
@@ -234,14 +247,16 @@ object CkanGodInterface {
      * @return whether the dataspace is modifiable to the user
      */
     def isDataspaceModifiableByUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
-        UserDataspaceRoleTable.query
-            .filter(_.dataspaceId === id)
-            .filter(_.userApiKey === authorizationKey)
-            .filter(_.dataspaceRole inSet List("admin", "editor"))
-            .filter(_.state === "active")
-            .take(1)
-            .list
-            .size > 0
+        if(isSysadmin(authorizationKey))
+            true
+        else UserDataspaceRoleTable.query
+                .filter(_.dataspaceId === id)
+                .filter(_.userApiKey === authorizationKey)
+                .filter(_.dataspaceRole inSet List("admin", "editor"))
+                .filter(_.state === "active")
+                .take(1)
+                .list
+                .size > 0
     }
 
      /**
@@ -250,6 +265,9 @@ object CkanGodInterface {
      * @return whether the resource can be deleted by user
      */
     def isResourceDeletableByUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
+        if(isSysadmin(authorizationKey))
+            true
+        else
             DataspaceResourceTable.query
             .map(_.justIds)
             .filter(_._2 === id)
@@ -269,10 +287,12 @@ object CkanGodInterface {
      * @return whether the resource can be deleted by user
      */
     def isDataspaceDeletableByUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
-        UserDataspaceRoleTable.query
+        if(isSysadmin(authorizationKey))
+            true
+        else UserDataspaceRoleTable.query
             .filter(_.dataspaceId === id)
             .filter(_.userApiKey === authorizationKey)
-            .filter(_.dataspaceRole inSet List("admin"))
+            .filter(_.dataspaceRole === "admin")
             .filter(_.state === "active")
             .take(1)
             .list
@@ -301,16 +321,19 @@ object CkanGodInterface {
      * @return whether the resource is accessible to the user
      */
     def isResourceAccessibleToUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
-        DataspaceResourceTable.query
-            .map(_.justIds)
-            .filter(_._2 === id)
-            .filter(_._1 in UserDataspaceRoleTable.query
-                               .filter(_.userApiKey === authorizationKey)
-                               .filter(_.state === "active")
-                               .map(_.dataspaceId))
-            .take(1)
-            .list
-            .size > 0
+        if(isSysadmin(authorizationKey)) 
+            true
+        else
+            DataspaceResourceTable.query
+                .map(_.justIds)
+                .filter(_._2 === id)
+                .filter(_._1 in UserDataspaceRoleTable.query
+                                   .filter(_.userApiKey === authorizationKey)
+                                   .filter(_.state === "active")
+                                   .map(_.dataspaceId))
+                .take(1)
+                .list
+                .size > 0
     }
 
     /**
@@ -318,27 +341,43 @@ object CkanGodInterface {
      * @return whether there is a CKAN user with specified authorization key
      */
     def isRegisteredUser(authorizationKey: String): Boolean = database withSession { implicit session: Session =>
-        UserTable.query.filter(_.apikey === authorizationKey).take(1).list.size > 0
+        UserTable.query
+          .filter(_.apikey === authorizationKey)
+          .filter(_.state === "active")
+          .take(1)
+          .list
+          .size > 0
+    }
+    
+    /**
+     * @param authorizationKey CKAN user authorization key
+     * @return whether the user with specified authorization key is a CKAN admin
+     */
+    def isSysadmin(authorizationKey: String): Boolean = database withSession { implicit session: Session =>
+        UserTable.query
+        .filter(_.apikey === authorizationKey)
+        .filter(_.sysadmin)
+        .filter(_.state === "active")
+        .take(1)
+        .list
+        .size > 0
     }
 
     /**
-     * @return list of CKAN users (sysadmins and default CKAN users omitted)
+     * @return list of CKAN users (default CKAN users omitted)
      */
     def listUsers() = database withSession { implicit session: Session =>
-        // TODO: Return only users with state "active"?
         UserTable.query
-        .filterNot(_.sysadmin.isNull)
-        .filterNot( _.sysadmin)
         .filterNot(_.username inSet List("logged_in", "visitor", "default"))
+        .filter(_.state === "active")
         .list
     }
 
     def getUserById(id: String) = database withSession { implicit session: Session =>
         UserTable.query
         .filter(_.id === id)
-        .filterNot(_.sysadmin.isNull)
-        .filterNot( _.sysadmin)
         .filterNot(_.username inSet List("logged_in", "visitor", "default"))
+        .filter(_.state === "active")
         .list
         .headOption
     }
@@ -346,9 +385,8 @@ object CkanGodInterface {
     def getUserByOpenId(openId: String) = database withSession { implicit session: Session =>
         UserTable.query
         .filter(_.openid === openId)
-        .filterNot(_.sysadmin.isNull)
-        .filterNot( _.sysadmin)
         .filterNot(_.username inSet List("logged_in", "visitor", "default"))
+        .filter(_.state === "active")
         .list
         .headOption
     }
@@ -359,30 +397,33 @@ object CkanGodInterface {
     // Distinguish these two and send appropriate responses.
     // Currently 403 (Not authorized) is sent in both cases.
     def isDataspaceRoleAccessibleToUser(id: String, authorizationKey: String) = database withSession { implicit session: Session =>
-        UserDataspaceRoleTable.query
-        .filter(_.id === id)
-        .filter(_.state === "active")
-        .filter(_.dataspaceId in UserDataspaceRoleTable.query
-                                .filter(_.userApiKey === authorizationKey)
-                                .filter(_.state === "active")
-                                .map(_.dataspaceId))
-        .take(1)
-        .list
-        .size > 0
+        var q = UserDataspaceRoleTable.query
+                .filter(_.id === id)
+                .filter(_.state === "active")
+        
+        if(!isSysadmin(authorizationKey))
+          q = q.filter(_.dataspaceId in UserDataspaceRoleTable.query
+                                        .filter(_.userApiKey === authorizationKey)
+                                        .filter(_.state === "active")
+                                        .map(_.dataspaceId))
+        q.take(1).list.size > 0
     }
 
     def listDataspaceRoles(authorizationKey: String, userId: Option[String], dataspaceId: Option[String], state: StateFilter) =
         database withSession { implicit session: Session =>
-            var query = UserDataspaceRoleTable.query
-                        .filter(_.dataspaceId in UserDataspaceRoleTable.query
-                                                .filter(_.userApiKey === authorizationKey)
-                                                .filter(_.state === "active")
-                                                .map(_.dataspaceId))
-            if (userId.isDefined) query = query.filter(_.userId === userId.get)
-            if (dataspaceId.isDefined) query = query.filter(_.dataspaceId === dataspaceId.get)
-            if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) query = query.filter(_.state === state.toString.toLowerCase)
+            var q = MaybeFilter(UserDataspaceRoleTable.query)
+                        .filter(userId)(u => r => r.userId === u)
+                        .filter(dataspaceId)(d => r => r.dataspaceId === d)
+                        .query
+                        
+            if(!isSysadmin(authorizationKey))
+              q = q.filter(_.dataspaceId in UserDataspaceRoleTable.query
+                                            .filter(_.userApiKey === authorizationKey)
+                                            .filter(_.state === "active")
+                                            .map(_.dataspaceId))
+            if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) q = q.filter(_.state === state.toString.toLowerCase)
 
-            query.list
+            q.list
     }
 
     def getDataspaceRoleById(id: String) = database withSession { implicit session: Session =>
