@@ -1,16 +1,21 @@
-GET /resources
+GET /dataspaces/$did/resources
 ==============================
+
+Parameters:
+
+==========  ======= ========================================
+Parameter   Type    Description
+==========  ======= ========================================
+did         String  Unique identifier of the dataspace object
+==========  ======= ========================================
 
 Request filter parameters:
 
-==========================  =================== ======================================================================
-Parameter                   Type                Description
-==========================  =================== ======================================================================
-dataspaceId (optional)      String              Unique identifier of the dataspace object
-state (optional)            String              Valid values are: "active", "deleted", and "all". Default is "active".
-since (optional)            DateTime (ISO 8601) If specified, only the resources created or modified after the specified date/time will be included
-until (optional)            DateTime (ISO 8601) If specified, only the resources created or modified before the specified date/time will be included
-==========================  =================== ======================================================================
+==========================  ======= ======================================================================
+Parameter                   Type    Description
+==========================  ======= ======================================================================
+state (optional)            String  Valid values are: "active", "deleted", and "all". Default is "active".
+==========================  ======= ======================================================================
 
 Response JSON object:
 
@@ -19,7 +24,7 @@ Attribute               Type    Description
 ======================  ======= ==========================
 nextPage (optional)     String  URL of the next page of results
 currentPage (optional)  String  URL of the current page of results
-data (optional)         Array   Array of resource objects
+data (optional)         Array   Array of resource objects that belong to the dataspace
 end                     Boolean ``false`` if there are no more resources to return, otherwise ``true``
 ======================  ======= ==========================
 
@@ -36,9 +41,9 @@ description     String  Additional information about the resource
 format          String  Resource file format
 mimetype        String  Resource file MIME Type
 size            Integer Resource file size (in KB)
-created         String  Timestamp created in ISO 8601 format
+created         String  Timestamp created in W3 format
 created_epoch   Integer Timestamp created
-modified        String  Timestamp last modified in ISO 8601 format
+modified        String  Timestamp last modified in W3 format
 modified_epoch  Integer Timestamp last modified
 setId           String  Unique identifier of the set that the resource belongs to
 state           String  State can be "active" or "deleted"
@@ -46,13 +51,13 @@ state           String  State can be "active" or "deleted"
 
 Example request (with the next page, resources that belong to a dataspace)::
 
-    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/resources
+    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/dataspaces/c5633d7f-8bb8-4b77-be22-6ee722ff4705/resources
 
 Example response::
 
     {
-      "nextPage": "http://localhost:42042/v1/resources/query/results/AAAAAAAAAAAAAAFNuaKzXwAAAAAAAAAKAAAACg==",
-      "currentPage": "http://localhost:42042/v1/resources/query/results/AAAAAAAAAAAAAAFNuaKzXwAAAAAAAAAAAAAACg==",
+      "nextPage": "http://localhost:42042/v1/dataspaces/c5633d7f-8bb8-4b77-be22-6ee722ff4705/resources/query/results/AAAAAAAAAAAAAAFMazuo2AAAAAoAAAAK",
+      "currentPage": "http://localhost:42042/v1/dataspaces/c5633d7f-8bb8-4b77-be22-6ee722ff4705/resources/query/results/AAAAAAAAAAAAAAFMazuo2AAAAAAAAAAK",
       "data": [{
         "id": "fee6284a-154d-4a33-832c-1836c5561658",
         "url": "http://localhost:42042/v1/resources/fee6284a-154d-4a33-832c-1836c5561658",
@@ -78,12 +83,10 @@ Example response (when there are no more resources in the dataspace to return)::
       "end": true
     }
 
-Example request (with filter parameters ``dataspaceId`` and ``state``)::
+Example request (with filter parameter ``state``)::
 
-    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/resources?dataspaceId=c5633d7f-8bb8-4b77-be22-6ee722ff4705\&state=all
+    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/dataspaces/c5633d7f-8bb8-4b77-be22-6ee722ff4705/resources?state=all
 
-Example requests (with filter parameters ``since`` and ``until``)::
+Example request (with filter parameters ``since`` and ``until``, in format ``yyyy-MM-dd'T'HH:mm:ssZ``, ``yyyy-MM-dd'T'HH:mm:ss``, ``yyyy-MM-dd``, ``yyyy-MM``, ``yyyy`` )::
 
-    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/resources?since=2015\&until=2016
-    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/resources?since=2015-05-01
-    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/resources?until=2015-05-01T10:00:00Z
+    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/dataspaces/c5633d7f-8bb8-4b77-be22-6ee722ff4705/resources?since=2015-05-20T13:00:00-0000\&until=2015-06-01T13:00:00-0200

@@ -34,4 +34,34 @@ class CommonDirectives(implicit executionContext: ExecutionContext)
     val timeRestriction =
         parameter('since.as[Timestamp]?) &
         parameter('until.as[Timestamp]?)
+        
+    def stringToTimestamp(value: Option[String]):Option[Timestamp] =
+    {
+      def transform(list:List[String], value:String):Option[Timestamp] = list match{
+          case Nil => throw new java.text.ParseException("Unable to parse date string!", 0)
+          case x::tail => try{
+                            if(x == "yyyy")
+                            {
+                                if(value.length == 4)
+                                  Some( new Timestamp((new java.text.SimpleDateFormat(x).parse(value).getTime())))
+                                else
+                                  throw new java.text.ParseException("Unable to parse date string!", 0)
+                            }
+                            else
+                              Some( new Timestamp((new java.text.SimpleDateFormat(x).parse(value).getTime())))
+                              
+                          }
+                          catch
+                          {
+                           
+                           case e: java.text.ParseException  => transform(tail, value)
+                          }
+         }
+         var formats = List("yyyy-MM-dd'T'HH:mm:ssZ","yyyy-MM-dd'T'HH:mm:ss","yyyy-MM-dd", "yyyy-MM", "yyyy")
+         value match {
+           case Some(v) => transform(formats, v)
+           case None => None
+         }
+         
+    }
 }

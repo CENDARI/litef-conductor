@@ -47,15 +47,20 @@ import conductor.ResourceAttachmentUtil._
 
 object ResourceActor {
     /// Gets the list of resources modified in the specified time range
-    // case class ListResources(
-    //         val since: Option[Timestamp],
-    //         val until: Option[Timestamp],
-    //         val start: Int = 0,
-    //         val count: Int = CkanGodInterface.queryResultDefaultLimit
-    //     )
+     case class ListResources(
+            val authorizationKey:   String,
+            val since:              Option[Timestamp],
+            val until:              Option[Timestamp],
+            val state:              StateFilter,
+            val start:              Int = 0,
+            val count:              Int = CkanGodInterface.queryResultDefaultLimit
+         )
 
     /// Gets the next results for the iterator
-    // case class ListResourcesFromIterator(val iterator: String)
+    case class ListResourcesFromIterator(
+        val authorizationKey: String,
+        val iterator: String
+    )
 
     /// Gets the data of the specified resource
     case class GetResourceData(id: String)
@@ -75,13 +80,29 @@ object ResourceActor {
             val start: Int = 0,
             val count: Int = CkanGodInterface.queryResultDefaultLimit
         )
-
+        
     /// Gets the resources for the specified dataspace
     case class ListDataspaceResourcesFromIterator(
             val dataspaceId: String,
             val iterator: String
         )
 
+    /// Gets the resources for the specified package
+    case class ListPackageResources(
+            val setId: String,
+            val since: Option[Timestamp],
+            val until: Option[Timestamp],
+            val state: StateFilter,
+            val start: Int = 0,
+            val count: Int = CkanGodInterface.queryResultDefaultLimit
+    )
+    
+    /// Gets the resources for the specified package
+    case class ListPackageResourcesFromIterator(
+            val setId: String,
+            val iterator: String
+    )
+    
     case class CreateResource(
             val authorizationKey: String,
             val id: String,
@@ -115,31 +136,44 @@ class ResourceActor
     import context.system
 
     val log = Logging(context.system, this)
-
+    
     def receive: Receive = {
         /// Gets the list of resources modified in the specified time range
-        // case ListResources(since, until, start, count) =>
-        //     CkanGodInterface.database withSession { implicit session: Session =>
-        //
-        //         val (query, nextPage, currentPage) = CkanGodInterface.listResourcesQuery(since, until, start, count)
-        //
-        //         sender ! JsObject(
-        //             "nextPage"    -> JsString(nextPage.map("/resources/query/results/" + _)    getOrElse ""),
-        //             "currentPage" -> JsString(currentPage.map("/resources/query/results/" + _) getOrElse ""),
-        //             "data"        -> query.list.toJson
-        //         ).prettyPrint
-        //
-        //     }
-        //
-        // case ListResourcesFromIterator(iteratorData) =>
-        //     val iterator = IteratorData.fromId(iteratorData).get
-        //     receive(ListResources(
-        //         Some(iterator.since),
-        //         Some(iterator.until),
-        //         iterator.start,
-        //         iterator.count
-        //     ))
-
+        case ListResources(authorizationKey, since, until, state, start, count) =>
+            
+            CkanGodInterface.database withSession { implicit session: Session =>
+                
+                val (query, nextPage, currentPage) = CkanGodInterface.listResourcesQuery(authorizationKey, since, until, state, start, count)
+                
+                val resources = query.list
+                val results = 
+                    if (resources.size > 0)
+                        JsObject(
+                            "nextPage"    -> JsString(nextPage map (s"${Config.namespace}resources/query/results/" + _)    getOrElse ""),
+                            "currentPage" -> JsString(currentPage map (s"${Config.namespace}resources/query/results/" + _) getOrElse ""),
+                            "data"        -> resources.toJson,
+                            "end"         -> JsBoolean(false)
+                        ).prettyPrint
+                    else
+                        JsObject(
+                            "end"         -> JsBoolean(true)
+                        ).prettyPrint
+                
+                sender ! HttpResponse(status = StatusCodes.OK,
+                                      entity = HttpEntity(ContentType(`application/json`, `UTF-8`), results))
+            }
+            
+        case ListResourcesFromIterator(authorizationKey, iteratorData) =>
+            val iterator = IteratorData.fromId(iteratorData).get
+            receive(ListResources(
+                    authorizationKey,
+                    Some(iterator.since),
+                    Some(iterator.until),
+                    iterator.state,
+                    iterator.start,
+                    iterator.count
+                ))
+            
         /// Gets the meta data for the the specified resource
         // case GetResourceMetadata(id) => IO(Http) forward {
         //     Get(CkanConfig.namespace + "action/resource_show?id=" + id) ~>
