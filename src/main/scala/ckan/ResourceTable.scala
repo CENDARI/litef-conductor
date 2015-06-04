@@ -50,13 +50,29 @@ abstract class ResourceData {
     private def fileSize = 
     {
       val file = new java.io.File(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6) );
-      val sz = file.length()/1024.0;
-      if( sz <1.0)
-        1L;
+      if(!file.exists())
+        0L
       else
-        scala.math.round (sz)
+      {
+        val sz = file.length()/1024.0;
+        if( sz <1.0)
+          1L;
+        else
+          scala.math.round (sz)
+      }
     }
     
+    private def formatTime(time : Option[Timestamp]) = 
+  {
+    time match {
+      case None => ""
+      case Some(v)=> val tz = java.util.TimeZone.getTimeZone("UTC");
+        val df = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+        df.setTimeZone(tz);
+        df.format(new java.util.Date(v.getTime()))
+    }
+  }
+  
     def toJson = JsObject(
             "id"             -> JsString(id),
             "url"            -> JsString(s"${Config.namespace}resources/${id}"),
@@ -70,8 +86,8 @@ abstract class ResourceData {
             "modified_epoch" -> JsNumber(modified.map { _.getTime } getOrElse 0L),
             "setId"          -> JsString(packageId getOrElse ""),
             "state"          -> JsString(state getOrElse ""),
-            "created"        -> JsString(created.map{_.toString} getOrElse ""),
-            "modified"       -> JsString(modified.map{_.toString} getOrElse "")
+            "created"        -> JsString(formatTime(created)),
+            "modified"       -> JsString(formatTime(modified))
         )
 }
 
