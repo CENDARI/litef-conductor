@@ -306,7 +306,7 @@ object CkanGodInterface {
             .size > 0
     }
 
-       /**
+    /**
      * @param id resource UUID
      * @param authorizationKey CKAN user authorization id
      * @return whether the resource can be deleted by user
@@ -315,22 +315,6 @@ object CkanGodInterface {
         if(isSysadmin(authorizationKey))
             true
         else UserDataspaceRoleTable.query
-            .filter(_.dataspaceId === id)
-            .filter(_.userApiKey === authorizationKey)
-            .filter(_.dataspaceRole === "admin")
-            .filter(_.state === "active")
-            .take(1)
-            .list
-            .size > 0
-    }
-
-    /**
-     * @param id dataspace UUID
-     * @param authorizationKey CKAN user authorization id
-     * @return whether the user is dataspace administrator
-     */
-    def isUserAdministratorOfDataspace(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
-        UserDataspaceRoleTable.query
             .filter(_.dataspaceId === id)
             .filter(_.userApiKey === authorizationKey)
             .filter(_.dataspaceRole === "admin")
