@@ -24,9 +24,9 @@ description     String  Additional information about the resource
 format          String  Resource file format
 mimetype        String  Resource file MIME Type
 size            Integer Resource file size (in KB)
-created         String  Timestamp created in W3 format
+created         String  Timestamp created in ISO 8601 format
 created_epoch   Integer Timestamp created
-modified        String  Timestamp last modified in W3 format
+modified        String  Timestamp last modified in ISO 8601 format
 modified_epoch  Integer Timestamp last modified
 setId           String  Unique identifier of the set that the resource belongs to
 state           String  State can be "active" or "deleted"
@@ -45,10 +45,12 @@ Example response::
       "name": "CENDARI-logo.jpg",
       "description": "CENDARI logo 150x150 without text",
       "format": "JPG",
-      "mimetype": "",
-      "size": 0,
-      "created": 1427724584090,
-      "modified": 1427724584090,
+      "mimetype": "application/octet-stream",
+      "size": 1,
+      "created_epoch": 1427724584090,
+      "modified_epoch": 1427724584090,
       "setId": "5038ef1a-475b-4312-b395-b63a2e2252fc",
       "state": "active"
+      "created": "2015-03-30'T'16:09:44Z",
+      "modified": "2015-03-30'T'16:09:44Z"
     }

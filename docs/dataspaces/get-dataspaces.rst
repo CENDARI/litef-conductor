@@ -3,11 +3,13 @@ GET /dataspaces
 
 Request filter parameters:
 
-==========================  ======= ======================================================================
-Parameter                   Type    Description
-==========================  ======= ======================================================================
-state (optional)            String  Valid values are: "active", "deleted", and "all". Default is "active".
-==========================  ======= ======================================================================
+==========================  =================== ======================================================================
+Parameter                   Type                Description
+==========================  =================== ======================================================================
+state (optional)            String              Valid values are: "active", "deleted", and "all". Default is "active".
+since (optional)            DateTime (ISO 8601) If specified, only the resources created or modified after the specified date/time will be included
+until (optional)            DateTime (ISO 8601) If specified, only the resources created or modified before the specified date/time will be includeds
+==========================  =================== ======================================================================
 
 Response JSON object:
 
@@ -53,9 +55,9 @@ Example request (with filter parameter ``state``)::
 
     curl -H "Authorization: your-apikey"  http://localhost:42042/v1/dataspaces?state=all
 
-Example request (with filter parameters ``since`` and ``until``, in format ``yyyy-MM-dd'T'HH:mm:ssZ``, ``yyyy-MM-dd'T'HH:mm:ss``, ``yyyy-MM-dd``, ``yyyy-MM``, ``yyyy`` )::
+Example request (with filter parameters ``since`` and ``until``)::
 
-    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/dataspaces?since=2015-05-20T13:00:00-0100\&until=2015-06-01T13:00:00
+    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/dataspaces?since=2015-05-20T13:00:00\&until=2015-06-01T13:00:00
 
 Example response when there are no valid results::
 

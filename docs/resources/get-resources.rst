@@ -66,8 +66,8 @@ Example response::
         "modified_epoch": 1427724584090,
         "setId": "5038ef1a-475b-4312-b395-b63a2e2252fc",
         "state": "active",
-        "created": "2015-03-30 16:09:44.090419",
-        "modified": "2015-03-30 16:09:44.090419"
+        "created": "2015-03-30T16:09:44Z",
+        "modified": "2015-03-30T16:09:44Z"
       }, ...],
       "end": false
     }
@@ -84,6 +84,4 @@ Example request (with filter parameters ``dataspaceId`` and ``state``)::
 
 Example requests (with filter parameters ``since`` and ``until``)::
 
-    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/resources?since=2015\&until=2016
-    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/resources?since=2015-05-01
-    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/resources?until=2015-05-01T10:00:00Z
+    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/resources?since=2015-05-20T13:00:00\&until=2015-06-01T13:00:00

@@ -11,11 +11,13 @@ did         String  Unique identifier of the dataspace object
 
 Request filter parameters:
 
-==========================  ======= ======================================================================
-Parameter                   Type    Description
-==========================  ======= ======================================================================
-state (optional)            String  Valid values are: "active", "deleted", and "all". Default is "active".
-==========================  ======= ======================================================================
+==========================  =================== ======================================================================
+Parameter                   Type                Description
+==========================  =================== ======================================================================
+state (optional)            String              Valid values are: "active", "deleted", and "all". Default is "active".
+since (optional)            DateTime (ISO 8601) If specified, only the resources created or modified after the specified date/time will be included
+until (optional)            DateTime (ISO 8601) If specified, only the resources created or modified before the specified date/time will be included
+==========================  =================== ======================================================================
 
 Response JSON object:
 
@@ -41,9 +43,9 @@ description     String  Additional information about the resource
 format          String  Resource file format
 mimetype        String  Resource file MIME Type
 size            Integer Resource file size (in KB)
-created         String  Timestamp created in W3 format
+created         String  Timestamp created in ISO 8601 format
 created_epoch   Integer Timestamp created
-modified        String  Timestamp last modified in W3 format
+modified        String  Timestamp last modified in ISO 8601 format
 modified_epoch  Integer Timestamp last modified
 setId           String  Unique identifier of the set that the resource belongs to
 state           String  State can be "active" or "deleted"
@@ -71,8 +73,8 @@ Example response::
         "modified_epoch": 1427724584090,
         "setId": "5038ef1a-475b-4312-b395-b63a2e2252fc",
         "state": "active",
-        "created": "2015-03-30 16:09:44.090419",
-        "modified": "2015-03-30 16:09:44.090419"
+        "created": "2015-03-30'T'16:09:44Z",
+        "modified": "2015-03-30'T'16:09:44Z"
       }, ...],
       "end": false
     }
@@ -87,6 +89,6 @@ Example request (with filter parameter ``state``)::
 
     curl -H "Authorization: your-apikey"  http://localhost:42042/v1/dataspaces/c5633d7f-8bb8-4b77-be22-6ee722ff4705/resources?state=all
 
-Example request (with filter parameters ``since`` and ``until``, in format ``yyyy-MM-dd'T'HH:mm:ssZ``, ``yyyy-MM-dd'T'HH:mm:ss``, ``yyyy-MM-dd``, ``yyyy-MM``, ``yyyy`` )::
+Example request (with filter parameters ``since`` and ``until``)::
 
-    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/dataspaces/c5633d7f-8bb8-4b77-be22-6ee722ff4705/resources?since=2015-05-20T13:00:00-0000\&until=2015-06-01T13:00:00-0200
+    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/dataspaces/c5633d7f-8bb8-4b77-be22-6ee722ff4705/resources?since=2015-05-20T13:00:00\&until=2015-06-01T13:00:00
