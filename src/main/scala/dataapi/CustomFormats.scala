@@ -43,6 +43,11 @@ object StateFilter extends Enumeration {
     val ACTIVE, DELETED, ALL = Value
 }
 
+//object VisibilityFilter extends Enumeration {
+//    type VisibilityFilter = Value
+//    val PRIVATE, PUBLIC, ALL = Value
+//}
+
 object CkanJsonProtocol extends DefaultJsonProtocol {
     implicit val dataspaceCreateFormat = jsonFormat3(DataspaceCreate)
     implicit val dataspaceCreateWithIdFormat = jsonFormat4(DataspaceCreateWithId)

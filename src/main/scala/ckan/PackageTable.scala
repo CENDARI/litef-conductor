@@ -28,7 +28,8 @@ case class Package(
     description : Option[String]    = None,
     state       : Option[String]    = None,
     dataspaceId : Option[String]    = None,
-    `private`   : Option[Boolean]   = Some(false)
+    modified    : Option[Timestamp] = None,
+    isPrivate   : Option[Boolean]   = Some(false)
 )
 
 class PackageTable(tag: Tag) extends Table[Package](tag, "package") {
@@ -38,9 +39,10 @@ class PackageTable(tag: Tag) extends Table[Package](tag, "package") {
     val description = column[Option[String]]("notes")
     val state       = column[Option[String]]("state")
     val dataspaceId = column[Option[String]]("owner_org")
-    val `private`   = column[Option[Boolean]]("private", O.Default(Some(false)))
+    val modified    = column[Option[Timestamp]]("metadata_modified")
+    val isPrivate   = column[Option[Boolean]]("private", O.Default(Some(false)))
     
-    def * = (id, name, title, description, state, dataspaceId, `private`) <> (Package.tupled, Package.unapply)
+    def * = (id, name, title, description, state, dataspaceId, modified, isPrivate) <> (Package.tupled, Package.unapply)
     
     def justIds = (dataspaceId,id)
 }
@@ -53,13 +55,13 @@ object PackageJsonProtocol extends DefaultJsonProtocol {
             JsObject(
                 "id"            -> JsString(p.id),
                 "url"           -> JsString(s"${Config.namespace}sets/${p.id}"),
-                "resources"     -> JsString(s"${Config.namespace}sets/${p.id}/resources"),
                 "name"          -> JsString(p.name),
                 "title"         -> JsString(p.title getOrElse ""),
                 "description"   -> JsString(p.description getOrElse ""),
                 "dataspaceId"   -> JsString(p.dataspaceId getOrElse ""),
                 "dataspaceUrl"  -> JsString(p.dataspaceId map{ s"${Config.namespace}dataspaces/" + _ } getOrElse ""),
-                "private"       -> JsBoolean(p.`private` getOrElse false),
+                "resources"     -> JsString(s"${Config.namespace}sets/${p.id}/resources"),
+                //"private"       -> JsBoolean(p.isPrivate getOrElse false),
                 "state"         -> JsString(p.state getOrElse "")
             )
 

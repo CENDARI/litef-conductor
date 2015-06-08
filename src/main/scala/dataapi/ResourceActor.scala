@@ -36,7 +36,7 @@ import ckan.DataspaceResourceJsonProtocol._
 import CkanJsonProtocol._
 import spray.httpx.SprayJsonSupport._
 import scala.slick.lifted.{Column, Query}
-import ckan.CkanGodInterface.IteratorData
+import ckan.IteratorData
 import HttpMethods._
 import HttpHeaders._
 import akka.event.Logging._

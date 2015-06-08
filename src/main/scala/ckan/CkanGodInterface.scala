@@ -22,12 +22,11 @@ import java.sql.Timestamp
 import scala.slick.lifted
 import common.Config.Ckan.{Database => CkanDatabaseConfig}
 import scala.slick.model.Table
-import com.sun.xml.internal.messaging.saaj.packaging.mime.util.BASE64EncoderStream
-import sun.misc.{BASE64Decoder, BASE64Encoder}
-import java.nio.ByteBuffer
 import scala.util.Try
 import dataapi.StateFilter
 import dataapi.StateFilter.StateFilter
+//import dataapi.VisibilityFilter
+//import dataapi.VisibilityFilter.VisibilityFilter
 import scala.slick.lifted.CanBeQueryCondition
 
 // optionally filter on a column with a supplied predicate https://gist.github.com/cvogt/9193220
@@ -114,6 +113,54 @@ object CkanGodInterface {
         )
     }
 
+    def listPackagesQuery(authorizationKey: String, state: StateFilter, start: Int, _count: Int) = database withSession { 
+        implicit session: Session =>
+        
+        val since = new Timestamp(0)
+        val until = new Timestamp(System.currentTimeMillis())
+        val count = math.min(_count, queryResultMaximumLimit)
+        
+        var q = PackageTable.query
+                .filter(_.modified.between(since, until))
+                
+        if(!isSysadmin(authorizationKey)) 
+            q = q.filter(_.dataspaceId in UserDataspaceRoleTable.query
+                                            .filter(_.userApiKey === authorizationKey)
+                                            .filter(_.state === "active")
+                                            .map(_.dataspaceId))
+        
+        if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) q = q.filter(_.state === state.toString.toLowerCase)
+        
+        q = q.sortBy( p => (p.dataspaceId, p.title asc)).drop(start).take(count)
+        
+        (
+            q,
+            Some(IteratorData(since, until, state, start + count, count).generateId), // next
+            Some(IteratorData(since, until, state, start,         count).generateId)  // current
+        )
+    }
+    
+    def listDataspacePackagesQuery(dataspaceId: String, state: StateFilter, start: Int, _count: Int) = database withSession {
+        implicit session: Session =>
+        
+        val since = new Timestamp(0)
+        val until = new Timestamp(System.currentTimeMillis())
+        val count = math.min(_count, queryResultMaximumLimit)
+        
+        var q = PackageTable.query
+                .filter(_.dataspaceId === dataspaceId)
+                .filter(_.modified.between(since, until))
+                
+        if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) q = q.filter(_.state === state.toString.toLowerCase)
+        
+        q = q.sortBy(_.title asc).drop(start).take(count)
+        
+        (
+            q,
+            Some(IteratorData(since, until, state, start + count, count).generateId), // next
+            Some(IteratorData(since, until, state, start,         count).generateId)  // current
+        )
+    }
     /**
      * @param authorizationKey CKAN authorization key of the user that requests the dataspaces
      * @param _since gets only the dataspaces newer than the specified timestamp
@@ -453,54 +500,4 @@ object CkanGodInterface {
             .list
             .headOption
         }
-
-    /**
-     * A convenience class to manage the chunked responses without explicitely
-     * exposing the start/offset mechanism
-     * @param since
-     * @param until
-     * @param state
-     * @param start
-     * @param count
-     */
-    case class IteratorData(val since: Timestamp, val until: Timestamp, val state: StateFilter, val start: Int, val count: Int) {
-        def generateId: String = {
-            val since = this.since.getTime
-            val until = this.until.getTime
-
-            val bytes = ByteBuffer.allocate(8 * 2 + 4 * 3)
-                            .putLong(since)
-                            .putLong(until)
-                            .putInt(state.id)
-                            .putInt(start)
-                            .putInt(count)
-                            .array
-
-            IteratorData.base64encoder.encode(bytes)
-        }
-    }
-
-
-    object IteratorData {
-        val base64encoder = new BASE64Encoder()
-        val base64decoder = new BASE64Decoder()
-
-        def fromId(id: String) = Try {
-            val raw = base64decoder.decodeBuffer(id)
-            val bytes = ByteBuffer.wrap(raw)
-
-            val since = bytes.getLong
-            val until = bytes.getLong
-            val state = bytes.getInt
-            val start = bytes.getInt
-            val count = bytes.getInt
-
-            IteratorData(
-                new Timestamp(since),
-                new Timestamp(until),
-                StateFilter(state),
-                start,
-                count)
-        }
-    }
 }

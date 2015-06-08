@@ -78,7 +78,7 @@ object DataspaceJsonProtocol extends DefaultJsonProtocol {
                 "id"             -> JsString(ds.id),
                 "url"            -> JsString(s"${Config.namespace}dataspaces/${ds.id}"),
                 "resources"      -> JsString(s"${Config.namespace}dataspaces/${ds.id}/resources"),
-
+                "sets"           -> JsString(s"${Config.namespace}dataspaces/${ds.id}/sets"),
                 "name"           -> JsString(ds.name),
                 "title"          -> JsString(ds.title       getOrElse ""),
                 "description"    -> JsString(ds.description getOrElse ""),

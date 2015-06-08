@@ -25,6 +25,7 @@ import spray.json._
 import spray.http._
 import dataapi.DataspaceActor._
 import dataapi.ResourceActor._
+import dataapi.PackageActor._
 import spray.http.HttpResponse
 import java.sql.Timestamp
 import core.Core
@@ -102,6 +103,22 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
             }
         }
 
+    def listDataspacePackages(id: String, state: StateFilter) (implicit authorizationKey: String) = {
+        authorize(ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
+            complete {
+                (Core.packageActor ? ListDataspacePackages(id, state))
+                .mapTo[HttpResponse]
+            }
+        }
+    }
+    def listDataspacePackagesFromIterator(id: String, iteratorData: String) (implicit authorizationKey: String) = {
+        authorize(ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
+            complete {
+                (Core.packageActor ? ListDataspacePackagesFromIterator(id, iteratorData))
+                .mapTo[HttpResponse]
+            }
+        }
+    }
     def createDataspace(dataspace: DataspaceCreate)(implicit authorizationKey: String) = complete {
         (Core.dataspaceActor ? CreateDataspace(authorizationKey,
                                                new DataspaceCreateWithId(UUID.randomUUID.toString
@@ -197,7 +214,16 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
                         listDataspaceResources(id, since, until, state)
                     }
                 } ~
-                path(Segment / "resources" / "query" / "results" / Rest) { listDataspaceResourcesFromIterator }
+                path(Segment / "resources" / "query" / "results" / Rest) { listDataspaceResourcesFromIterator } ~
+                /*
+                 * Getting the list of sets that belong to a dataspace
+                 */
+                path(Segment / "sets") { id =>
+                    parameters('state.as[StateFilter] ? StateFilter.ACTIVE) { state =>
+                        listDataspacePackages(id, state)
+                    }
+                } ~
+                path(Segment / "sets" / "query" / "results"/ Segment) { listDataspacePackagesFromIterator }
             }~
             post {
               /*

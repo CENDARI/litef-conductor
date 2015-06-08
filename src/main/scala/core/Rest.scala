@@ -19,7 +19,7 @@ package core
 
 import akka.io.IO
 import akka.actor.Props
-import dataapi.{RoutedHttpService, ResourceService, DataspaceService, UserService, SessionService, DataspaceRoleService, StatusService}
+import dataapi.{RoutedHttpService, ResourceService, DataspaceService, UserService, SessionService, DataspaceRoleService, StatusService, PackageService}
 import spray.can.Http
 import spray.routing._
 import spray.http.HttpHeaders.RawHeader
@@ -39,7 +39,8 @@ object Rest extends App
                 new UserService().route ~
                 new DataspaceRoleService().route ~
                 new ResourceService().route ~
-                new DataspaceService().route
+                new DataspaceService().route ~
+                new PackageService().route
             }
         }
 

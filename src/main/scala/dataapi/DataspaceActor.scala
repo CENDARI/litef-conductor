@@ -45,7 +45,7 @@ import ckan.ResourceJsonProtocol._
 import CkanJsonProtocol._
 import scala.slick.lifted.{Column, Query}
 import spray.http.HttpHeaders.Location
-import ckan.CkanGodInterface.IteratorData
+import ckan.IteratorData
 import java.util.UUID
 
 object DataspaceActor {
