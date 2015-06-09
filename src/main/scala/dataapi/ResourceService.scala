@@ -152,7 +152,7 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                 path(Segment / "rdf")               { getResourceAttachmentRDF(_, "n3") } ~
                 path(Segment / "text")              { getResourceAttachment(_, "text/plain") } ~
                 path(Segment / "data")              { id =>
-                    authorize(ckan.CkanGodInterface.isResourceDeletableByUser(id, authorizationKey)) {
+                    authorize(ckan.CkanGodInterface.isResourceAccessibleToUser(id, authorizationKey)) {
                         val resource = ckan.CkanGodInterface.getResource(id)
                         
                         resource map { resource => 
