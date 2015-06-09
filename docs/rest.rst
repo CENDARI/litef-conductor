@@ -31,6 +31,7 @@ API Requests
     dataspaces/post-dataspaces
     dataspaces/delete-dataspaces
     dataspaces/get-dataspace-resources
+    dataspaces/get-dataspace-sets
     sets/get-sets
     resources/get-resources
     resources/get-resources-id
