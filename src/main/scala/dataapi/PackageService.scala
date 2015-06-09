@@ -49,6 +49,13 @@ class PackageService()(implicit executionContext: ExecutionContext)
             (packageActor ? ListPackagesFromIterator(authorizationKey, iteratorData)).mapTo[HttpResponse]
         }
     
+    def getPackageMetadata(id: String) (implicit authorizationKey: String) =
+        authorize(ckan.CkanGodInterface.isPackageAccessibleToUser(id, authorizationKey)) {
+            complete {
+                (packageActor ? GetPackageMetadata(id)).mapTo[HttpResponse]
+            }
+        }
+    
     val route = headerValueByName("Authorization") { implicit authorizationKey =>
         pathPrefix("sets") {
             get {
@@ -57,7 +64,8 @@ class PackageService()(implicit executionContext: ExecutionContext)
                                'state.as[StateFilter] ? StateFilter.ACTIVE) 
                     { listPackages }
                 } ~
-                path("query" / "results" / Segment) {listPackagesFromIterator}
+                path("query" / "results" / Segment) {listPackagesFromIterator} ~
+                path(Segment) {getPackageMetadata}
             }
         }
     }

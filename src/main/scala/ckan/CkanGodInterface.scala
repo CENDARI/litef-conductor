@@ -65,7 +65,7 @@ object CkanGodInterface {
             getResourceQuery(id).list.headOption
         }
     }
-
+    
     /**
      * @param id UUID of the desired resource
      * @return the URL for the specified resource
@@ -76,7 +76,7 @@ object CkanGodInterface {
             .list
             .headOption
     }
-
+    
     /**
      * @param authorizationKey CKAN authorization key of the user that requests resources
      * @param _since gets only the resources newer than the specified timestamp
@@ -111,6 +111,12 @@ object CkanGodInterface {
             Some(IteratorData(since, until, state, start + count, count).generateId), // next
             Some(IteratorData(since, until, state, start,         count).generateId)  // current
         )
+    }
+    
+    def getPackage(id: String): Option[Package] = database withSession { implicit session: Session =>
+        database withSession { implicit session: Session =>
+            PackageTable.query.filter(_.id === id).list.headOption
+        }
     }
 
     def listPackagesQuery(authorizationKey: String, state: StateFilter, start: Int, _count: Int) = database withSession { 

@@ -58,6 +58,10 @@ object PackageActor {
         val dataspaceId: String,
         val iteratorData: String
     )
+    
+    case class GetPackageMetadata(
+        val id: String
+    )
 }
 
 class PackageActor extends Actor with dataapi.DefaultValues {
@@ -127,7 +131,21 @@ class PackageActor extends Actor with dataapi.DefaultValues {
                     iterator.start,
                     iterator.count
                 ))
-            
+          
+        case GetPackageMetadata(id) =>
+            CkanGodInterface.database withSession { implicit session: Session =>
+
+                val result = CkanGodInterface.getPackage(id)
+                result match { 
+                  case Some(p) =>
+                      sender ! HttpResponse(
+                                  status = StatusCodes.OK,
+                                  entity = HttpEntity(ContentType(`application/json`, `UTF-8`), 
+                                                      p.toJson.prettyPrint))
+                  case None =>
+                      sender ! HttpResponse(StatusCodes.NotFound, s"""Set with id "$id" not found""")
+                }
+            }
         case response: HttpResponse =>
             println(s"Sending the response back to the requester $response")
 
