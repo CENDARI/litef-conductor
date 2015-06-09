@@ -17,6 +17,7 @@ Attribute       Type    Description
 id              String  Unique identifier of the dataspace object
 url             String  Dataspace resource URL
 resources       String  URL for the dataspace's resources
+sets            String  URL for the dataspace's resources
 name            String  Dataspace unique name
 title           String  Dataspace title
 description     String  Additional information about the dataspace
@@ -33,6 +34,7 @@ Example response::
       "id": "c5633d7f-8bb8-4b77-be22-6ee722ff4705",
       "url": "http://localhost:42042/v1/dataspaces/c5633d7f-8bb8-4b77-be22-6ee722ff4705",
       "resources": "http://localhost:42042/v1/dataspaces/c5633d7f-8bb8-4b77-be22-6ee722ff4705/resources",
+      "sets": "http://localhost:42042/v1/dataspaces/c5633d7f-8bb8-4b77-be22-6ee722ff4705/sets",
       "name": "cendari-dataspace",
       "title": "CENDARI dataspace",
       "description": "Content of this dataspaces is created within the CENDARI project",
