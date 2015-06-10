@@ -15,7 +15,6 @@
 
 package dataapi
 
-import spray.http.HttpResponse
 import spray.http._
 import akka.actor.Actor
 import ckan.CkanGodInterface
@@ -28,11 +27,17 @@ import ckan.IteratorData
 //import VisibilityFilter._
 import scala.slick.lifted.Query
 import slick.driver.PostgresDriver.simple._
-//import akka.io.IO
-//import akka.pattern.ask
+import akka.io.IO
+import akka.pattern.ask
+import spray.can.Http
+import spray.httpx.RequestBuilding._
+import spray.httpx.SprayJsonSupport._
 import StateFilter._
+import common.Config. { Ckan => CkanConfig }
 import common.Config
 import ckan.PackageJsonProtocol._
+import dataapi.CkanJsonProtocol.CkanApiPackageJsonFormat
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object PackageActor {
     case class ListPackages(
@@ -62,11 +67,18 @@ object PackageActor {
     case class GetPackageMetadata(
         val id: String
     )
+    
+    case class CreatePackage(
+        val authorizationKey: String,
+        val pckg: CkanApiPackage
+    )
 }
 
 class PackageActor extends Actor with dataapi.DefaultValues {
     import PackageActor._
     import context.system
+    
+    lazy val logger = org.slf4j.LoggerFactory getLogger getClass
 
     def receive: Receive = {
         case ListPackages(authorizationKey, state, start, count) =>
@@ -135,7 +147,7 @@ class PackageActor extends Actor with dataapi.DefaultValues {
         case GetPackageMetadata(id) =>
             CkanGodInterface.database withSession { implicit session: Session =>
 
-                val result = CkanGodInterface.getPackage(id)
+                val result = CkanGodInterface.getPackageById(id)
                 result match { 
                   case Some(p) =>
                       sender ! HttpResponse(
@@ -146,6 +158,31 @@ class PackageActor extends Actor with dataapi.DefaultValues {
                       sender ! HttpResponse(StatusCodes.NotFound, s"""Set with id "$id" not found""")
                 }
             }
+            
+        case CreatePackage(authorizationKey, pckg) => {
+            val originalSender = sender
+            
+            (IO(Http) ? (Post(CkanConfig.namespace + "action/package_create", pckg)~>addHeader("Authorization", authorizationKey)))
+            .mapTo[HttpResponse]
+            .map { response => response.status match {
+                    case StatusCodes.OK =>
+                        // TODO: Try to read resource from (ugly) CKAN response, not from db
+                        val res = CkanGodInterface.getPackageByName(pckg.name)
+                        res match {
+                            case Some(cp) =>
+                                originalSender ! HttpResponse(status = StatusCodes.Created,
+                                                              entity = HttpEntity(ContentType(`application/json`, `UTF-8`),cp.toJson.prettyPrint),
+                                                              headers = List(Location(s"${Config.namespace}sets/${cp.id}")))
+                            case None =>
+                                originalSender ! HttpResponse(StatusCodes.InternalServerError, "Error reading newly created set from the database")
+                        }
+                        
+                    case _ => 
+                        logger error s"${response.entity}"
+                        originalSender ! HttpResponse(response.status, "Error creating package")
+                    }
+            }
+        }
         case response: HttpResponse =>
             println(s"Sending the response back to the requester $response")
 

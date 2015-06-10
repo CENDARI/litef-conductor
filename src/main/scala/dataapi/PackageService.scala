@@ -23,6 +23,14 @@ import StateFilterProtocol._
 //import akka.actor.ActorRef
 import akka.pattern.ask
 import spray.http.HttpResponse
+import dataapi.CkanJsonProtocol.CkanApiPackageJsonFormat
+
+//import spray.json._
+//import spray.http._
+//import MediaTypes._
+//import HttpCharsets._
+//import HttpMethods._
+//import HttpHeaders._
 
 class PackageService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
@@ -56,6 +64,15 @@ class PackageService()(implicit executionContext: ExecutionContext)
             }
         }
     
+    def createPackage(pckg: CkanApiPackage) (implicit authorizationKey: String) = {
+        authorize(ckan.CkanGodInterface.isDataspaceModifiableByUser(pckg.dataspaceId, authorizationKey)) {
+            complete {
+                (packageActor ? CreatePackage(authorizationKey, pckg)).mapTo[HttpResponse]
+            }
+        }
+    }
+        
+    
     val route = headerValueByName("Authorization") { implicit authorizationKey =>
         pathPrefix("sets") {
             get {
@@ -66,6 +83,9 @@ class PackageService()(implicit executionContext: ExecutionContext)
                 } ~
                 path("query" / "results" / Segment) {listPackagesFromIterator} ~
                 path(Segment) {getPackageMetadata}
+            } ~
+            post {
+                pathEnd { entity(as[CkanApiPackage]) { createPackage } }
             }
         }
     }

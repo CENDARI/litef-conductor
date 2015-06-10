@@ -14,10 +14,9 @@
  */
 package dataapi
 
-import spray.json.DefaultJsonProtocol
+import spray.json._
 import ckan.DataspaceJsonProtocol._
 import java.lang.String
-import spray.json.JsonFormat
 import spray.httpx.unmarshalling.{MalformedContent, FromStringDeserializer}
 
 case class DataspaceCreate (name: String, title: Option[String], description: Option[String]){
@@ -27,7 +26,12 @@ case class DataspaceCreateWithId (id: String, name: String, title: Option[String
 case class DataspaceUpdate (title: Option[String], description: Option[String])
 case class DataspaceUpdateWithId (id: String, title: Option[String], description: Option[String])
 //case class Resource(id: String, name: Option[String], description: Option[String], format: Option[String], package_id: String, upload: String )
-case class PackageCreateWithId(name: String, owner_org: String, title: String, `private`: Boolean = true)
+case class PackageCreateWithId(name: String, owner_org: String, title: String, `private`: Boolean = true) 
+
+case class CkanApiPackage(val name: String, val title: Option[String], val description: Option[String], val dataspaceId: String, val isPrivate: Option[Boolean]){
+    require(name matches "[a-z0-9_-]{2,100}")
+}
+
 case class CkanOrganizationMember(id: String, username: String, role: String) {
     require(role == "admin" || role == "editor" || role == "member")
 }
@@ -59,6 +63,21 @@ object CkanJsonProtocol extends DefaultJsonProtocol {
     implicit val ckanErrorMsgFormat = jsonFormat2(CkanErrorMsg)
     implicit def ckanResponseFormat[T: JsonFormat] = lazyFormat(jsonFormat4(CkanResponse.apply[T]))
     implicit val ckanOrganizationMember = jsonFormat3(CkanOrganizationMember)
+    
+    implicit object CkanApiPackageJsonFormat extends RootJsonFormat[CkanApiPackage] {
+        def write(p: CkanApiPackage) =
+            JsObject(
+                "name"          -> JsString(p.name),
+                "title"         -> JsString(p.title getOrElse ""),
+                "notes"         -> JsString(p.description getOrElse ""),
+                "owner_org"     -> JsString(p.dataspaceId),
+                "private"       -> JsBoolean(p.isPrivate getOrElse true)
+            )
+
+        def read(value: JsValue) = {
+            jsonFormat5(CkanApiPackage).read(value)
+        }
+    }
 }
 
 object StateFilterProtocol {

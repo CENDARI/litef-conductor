@@ -113,9 +113,15 @@ object CkanGodInterface {
         )
     }
     
-    def getPackage(id: String): Option[Package] = database withSession { implicit session: Session =>
+    def getPackageById(id: String): Option[Package] = database withSession { implicit session: Session =>
         database withSession { implicit session: Session =>
             PackageTable.query.filter(_.id === id).list.headOption
+        }
+    }
+    
+    def getPackageByName(name: String): Option[Package] = database withSession { implicit session: Session =>
+        database withSession { implicit session: Session =>
+            PackageTable.query.filter(_.name === name).list.headOption
         }
     }
 
