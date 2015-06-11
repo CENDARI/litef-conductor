@@ -28,9 +28,12 @@ case class DataspaceUpdateWithId (id: String, title: Option[String], description
 //case class Resource(id: String, name: Option[String], description: Option[String], format: Option[String], package_id: String, upload: String )
 case class PackageCreateWithId(name: String, owner_org: String, title: String, `private`: Boolean = true) 
 
-case class CkanApiPackage(val name: String, val title: Option[String], val description: Option[String], val dataspaceId: String, val isPrivate: Option[Boolean]){
+case class CkanApiPackageCreate(val name: String, val title: Option[String], val description: Option[String], val dataspaceId: String, val isPrivate: Option[Boolean]){
     require(name matches "[a-z0-9_-]{2,100}")
 }
+
+case class CkanApiPackageUpdate(val title: Option[String], val description: Option[String], val isPrivate: Option[Boolean])
+case class CkanApiPackageUpdateWithId(val id: String, val title: Option[String], val notes: Option[String], val `private`: Option[Boolean])
 
 case class CkanOrganizationMember(id: String, username: String, role: String) {
     require(role == "admin" || role == "editor" || role == "member")
@@ -40,7 +43,8 @@ case class ShibData(mail: String, eppn: String, cn: String)
 case class CkanUser(name: String, email: String, password: String, id: String, fullname: String, openid: String)
 
 case class CkanErrorMsg (message: String, __type: String)
-case class CkanResponse[T](help: String, success: Boolean, result: Option[T], error: Option[CkanErrorMsg])
+//case class CkanResponse[T](help: String, success: Boolean, result: Option[T], error: Option[CkanErrorMsg])
+case class CkanResponse(help: String, success: Boolean, result: Option[Map[String, JsValue]], error: Option[CkanErrorMsg])
 
 object StateFilter extends Enumeration {
     type StateFilter = Value
@@ -61,11 +65,12 @@ object CkanJsonProtocol extends DefaultJsonProtocol {
     implicit val shibDataFormat = jsonFormat3(ShibData)
     implicit val ckanUserFormat = jsonFormat6(CkanUser)
     implicit val ckanErrorMsgFormat = jsonFormat2(CkanErrorMsg)
-    implicit def ckanResponseFormat[T: JsonFormat] = lazyFormat(jsonFormat4(CkanResponse.apply[T]))
+    //implicit def ckanResponseFormat[T: JsonFormat] = lazyFormat(jsonFormat4(CkanResponse.apply[T]))
+    implicit def ckanResponseFormat = jsonFormat4(CkanResponse)
     implicit val ckanOrganizationMember = jsonFormat3(CkanOrganizationMember)
     
-    implicit object CkanApiPackageJsonFormat extends RootJsonFormat[CkanApiPackage] {
-        def write(p: CkanApiPackage) =
+    implicit object CkanApiPackageCreateJsonFormat extends RootJsonFormat[CkanApiPackageCreate] {
+        def write(p: CkanApiPackageCreate) =
             JsObject(
                 "name"          -> JsString(p.name),
                 "title"         -> JsString(p.title getOrElse ""),
@@ -75,8 +80,25 @@ object CkanJsonProtocol extends DefaultJsonProtocol {
             )
 
         def read(value: JsValue) = {
-            jsonFormat5(CkanApiPackage).read(value)
+            jsonFormat5(CkanApiPackageCreate).read(value)
         }
+    }
+    
+    implicit object CkanApiPackageUpdateJsonFormat extends RootJsonFormat[CkanApiPackageUpdate] {
+        def write(p: CkanApiPackageUpdate) = {
+            throw new DeserializationException("CkanApiPackageUpdate cannot be transformed to JSON")
+        }
+        def read(value: JsValue) = 
+            jsonFormat3(CkanApiPackageUpdate).read(value)
+    }
+    
+    implicit object CkanApiPackageUpdateWithIdJsonFormat extends RootJsonFormat[CkanApiPackageUpdateWithId] {
+        def write(p: CkanApiPackageUpdateWithId) = {
+            jsonFormat4(CkanApiPackageUpdateWithId).write(p)
+            
+        }
+        def read(value: JsValue) = 
+            throw new DeserializationException("CkanApiPackageUpdateWithId cannot be read from JSON")
     }
 }
 

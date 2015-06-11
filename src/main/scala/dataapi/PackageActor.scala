@@ -36,7 +36,9 @@ import StateFilter._
 import common.Config. { Ckan => CkanConfig }
 import common.Config
 import ckan.PackageJsonProtocol._
-import dataapi.CkanJsonProtocol.CkanApiPackageJsonFormat
+//import dataapi.CkanJsonProtocol.CkanApiPackageCreateJsonFormat
+//import dataapi.CkanJsonProtocol.CkanApiPackageUpdateWithIdJsonFormat
+import dataapi.CkanJsonProtocol._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object PackageActor {
@@ -70,7 +72,12 @@ object PackageActor {
     
     case class CreatePackage(
         val authorizationKey: String,
-        val pckg: CkanApiPackage
+        val pckg: CkanApiPackageCreate
+    )
+    
+    case class UpdatePackage(
+        val authorizationKey: String,
+        val pckg: CkanApiPackageUpdateWithId
     )
 }
 
@@ -179,10 +186,49 @@ class PackageActor extends Actor with dataapi.DefaultValues {
                         
                     case _ => 
                         logger error s"${response.entity}"
-                        originalSender ! HttpResponse(response.status, "Error creating package")
+                        originalSender ! HttpResponse(response.status, "Error creating a set")
                     }
             }
         }
+        case UpdatePackage(authorizationKey, pckg) => {
+            
+            val originalSender = sender
+            
+            // package_update removes package extras, resources, etc. if not supplied in the JSON
+            // that's why we call package_show, replace title, description, ... and then call package_update
+            (IO(Http) ? (Get(CkanConfig.namespace + s"action/package_show?id=${pckg.id}")~>addHeader("Authorization", authorizationKey)))
+            .mapTo[HttpResponse]
+            .map { response1 => 
+                    val cr = JsonParser(response1.entity.asString).convertTo[CkanResponse]
+                    (response1.status, cr.result) match {
+                        case (StatusCodes.OK, Some(pckgOld)) =>
+                            val pckgNew = new JsObject(pckgOld ++ pckg.toJson.asJsObject.fields)
+                            // TODO: Check why pckgNew is not accepted (JsObject), but it has to be sent as String. This is spray related, not CKAN API related
+                            (IO(Http) ? (Post(CkanConfig.namespace + "action/package_update", pckgNew.toString)~>addHeader("Authorization", authorizationKey)))
+                            .mapTo[HttpResponse]
+                            .map { response2 => response2.status match {
+                                    case StatusCodes.OK =>
+                                        val res = CkanGodInterface.getPackageById(pckg.id)
+                                        res match {
+                                            case Some(cp) =>
+                                                originalSender ! HttpResponse(status = StatusCodes.Created,
+                                                                              entity = HttpEntity(ContentType(`application/json`, `UTF-8`),cp.toJson.prettyPrint))
+                                            case None =>
+                                                originalSender ! HttpResponse(StatusCodes.InternalServerError, "Error reading the updated set from the database")
+                                        }
+
+                                    case _ => 
+                                        logger error s"$response2"
+                                        originalSender ! HttpResponse(response2.status, "Error updating the set")
+                                    }
+                            }
+                        case (errorCode, errorMessage) =>
+                            logger info s"$response1"
+                            originalSender ! HttpResponse(StatusCodes.OK, "Error getting set data from CKAN. The set cannot be updated")
+                    }
+            }
+        }
+        
         case response: HttpResponse =>
             println(s"Sending the response back to the requester $response")
 

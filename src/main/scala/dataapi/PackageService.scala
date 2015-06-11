@@ -23,7 +23,9 @@ import StateFilterProtocol._
 //import akka.actor.ActorRef
 import akka.pattern.ask
 import spray.http.HttpResponse
-import dataapi.CkanJsonProtocol.CkanApiPackageJsonFormat
+import dataapi.CkanJsonProtocol.CkanApiPackageCreateJsonFormat
+import dataapi.CkanJsonProtocol.CkanApiPackageUpdateJsonFormat
+import dataapi.CkanJsonProtocol.CkanApiPackageUpdateWithIdJsonFormat
 
 //import spray.json._
 //import spray.http._
@@ -64,7 +66,7 @@ class PackageService()(implicit executionContext: ExecutionContext)
             }
         }
     
-    def createPackage(pckg: CkanApiPackage) (implicit authorizationKey: String) = {
+    def createPackage(pckg: CkanApiPackageCreate) (implicit authorizationKey: String) = {
         authorize(ckan.CkanGodInterface.isDataspaceModifiableByUser(pckg.dataspaceId, authorizationKey)) {
             complete {
                 (packageActor ? CreatePackage(authorizationKey, pckg)).mapTo[HttpResponse]
@@ -72,6 +74,14 @@ class PackageService()(implicit executionContext: ExecutionContext)
         }
     }
         
+    def updatePackage(id: String, pckg: CkanApiPackageUpdate) (implicit authorizationKey: String) = {
+        authorize(ckan.CkanGodInterface.isPackageModifiableByUser(id, authorizationKey)) {
+            complete {
+                (packageActor ? UpdatePackage(authorizationKey, CkanApiPackageUpdateWithId(id, pckg.title, pckg.description, pckg.isPrivate)))
+                .mapTo[HttpResponse]
+            }
+        }
+    }
     
     val route = headerValueByName("Authorization") { implicit authorizationKey =>
         pathPrefix("sets") {
@@ -85,7 +95,10 @@ class PackageService()(implicit executionContext: ExecutionContext)
                 path(Segment) {getPackageMetadata}
             } ~
             post {
-                pathEnd { entity(as[CkanApiPackage]) { createPackage } }
+                pathEnd { entity(as[CkanApiPackageCreate]) { createPackage } }
+            } ~
+            put {
+                (path(Segment) & entity(as[CkanApiPackageUpdate])) { updatePackage }
             }
         }
     }

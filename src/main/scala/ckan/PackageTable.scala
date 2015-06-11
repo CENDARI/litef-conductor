@@ -61,7 +61,7 @@ object PackageJsonProtocol extends DefaultJsonProtocol {
                 "dataspaceId"   -> JsString(p.dataspaceId getOrElse ""),
                 "dataspaceUrl"  -> JsString(p.dataspaceId map{ s"${Config.namespace}dataspaces/" + _ } getOrElse ""),
                 "resources"     -> JsString(s"${Config.namespace}sets/${p.id}/resources"),
-                //"private"       -> JsBoolean(p.isPrivate getOrElse false),
+                //"isPrivate"       -> JsBoolean(p.isPrivate getOrElse false),
                 "state"         -> JsString(p.state getOrElse "")
             )
 
