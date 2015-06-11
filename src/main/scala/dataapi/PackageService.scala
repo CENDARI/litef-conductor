@@ -18,11 +18,14 @@ package dataapi
 import scala.concurrent.ExecutionContext
 import dataapi.PackageActor._
 import core.Core.packageActor
+import dataapi.ResourceActor._
+import core.Core.resourceActor
 import StateFilter._
 import StateFilterProtocol._
 //import akka.actor.ActorRef
 import akka.pattern.ask
 import spray.http.HttpResponse
+import spray.http.StatusCodes
 import dataapi.CkanJsonProtocol.CkanApiPackageCreateJsonFormat
 import dataapi.CkanJsonProtocol.CkanApiPackageUpdateJsonFormat
 import dataapi.CkanJsonProtocol.CkanApiPackageUpdateWithIdJsonFormat
@@ -66,6 +69,31 @@ class PackageService()(implicit executionContext: ExecutionContext)
             }
         }
     
+    def listPackageResources(id: String, since: Option[String], until: Option[String], state: StateFilter)(implicit authorizationKey: String) =
+        authorize(ckan.CkanGodInterface.isPackageAccessibleToUser(id, authorizationKey)) {
+            try {
+                val _since = stringToTimestamp(since)
+                val _until = stringToTimestamp(until)
+                    
+                complete {
+                    (resourceActor ? ListPackageResources(id, _since, _until, state))
+                    .mapTo[HttpResponse]
+                }
+            }
+            catch {
+                case e: java.text.ParseException  => complete { HttpResponse(StatusCodes.BadRequest, "Invalid date format") }
+            }
+        
+        }
+    
+    def listPackageResourcesFromIterator(id: String, iteratorData: String)(implicit authorizationKey: String) =
+        authorize(ckan.CkanGodInterface.isPackageAccessibleToUser(id, authorizationKey)) {
+            complete {
+                (resourceActor ? ListPackageResourcesFromIterator(id, iteratorData))
+                .mapTo[HttpResponse]
+            }
+        }
+    
     def createPackage(pckg: CkanApiPackageCreate) (implicit authorizationKey: String) = {
         authorize(ckan.CkanGodInterface.isDataspaceModifiableByUser(pckg.dataspaceId, authorizationKey)) {
             complete {
@@ -92,7 +120,13 @@ class PackageService()(implicit executionContext: ExecutionContext)
                     { listPackages }
                 } ~
                 path("query" / "results" / Segment) {listPackagesFromIterator} ~
-                path(Segment) {getPackageMetadata}
+                path(Segment) {getPackageMetadata} ~
+                (path(Segment / "resources" ~ PathEnd)) { id =>
+                  parameters('since.as[String] ?, 'until.as[String] ?, 'state.as[StateFilter] ? StateFilter.ACTIVE) { (since, until, state) =>
+                        listPackageResources(id, since, until, state)
+                    }
+                } ~
+                path(Segment / "resources" / "query" / "results" / Segment) { listPackageResourcesFromIterator }
             } ~
             post {
                 pathEnd { entity(as[CkanApiPackageCreate]) { createPackage } }

@@ -51,6 +51,6 @@ Example response::
       "modified_epoch": 1427724584090,
       "setId": "5038ef1a-475b-4312-b395-b63a2e2252fc",
       "state": "active"
-      "created": "2015-03-30'T'16:09:44Z",
-      "modified": "2015-03-30'T'16:09:44Z"
+      "created": "2015-03-30T16:09:44Z",
+      "modified": "2015-03-30T16:09:44Z"
     }

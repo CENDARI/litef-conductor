@@ -36,6 +36,7 @@ API Requests
     sets/get-sets-id
     sets/post-set
     sets/put-sets-id
+    sets/get-set-resources
     resources/get-resources
     resources/get-resources-id
     resources/post-resources

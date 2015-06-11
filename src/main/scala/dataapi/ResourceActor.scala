@@ -89,7 +89,7 @@ object ResourceActor {
 
     /// Gets the resources for the specified package
     case class ListPackageResources(
-            val setId: String,
+            val packageId: String,
             val since: Option[Timestamp],
             val until: Option[Timestamp],
             val state: StateFilter,
@@ -99,7 +99,7 @@ object ResourceActor {
     
     /// Gets the resources for the specified package
     case class ListPackageResourcesFromIterator(
-            val setId: String,
+            val packageId: String,
             val iterator: String
     )
     
@@ -292,7 +292,6 @@ class ResourceActor
                                       entity = HttpEntity(ContentType(`application/json`, `UTF-8`), results))
             }
 
-
         /// Gets the resources for the specified dataspace
         case ListDataspaceResourcesFromIterator(dataspaceId, iteratorData) =>
             val iterator = IteratorData.fromId(iteratorData).get
@@ -304,7 +303,43 @@ class ResourceActor
                 iterator.start,
                 iterator.count
             ))
+        
+        /// Gets the resources for the specified package
+        case ListPackageResources(packageId, since, until, state, start, count) =>
+            CkanGodInterface.database withSession { implicit session: Session =>
 
+                val (query, nextPage, currentPage) = CkanGodInterface.listPackageResourcesQuery(packageId, since, until, state, start, count)
+
+                val resources = query.list
+                val results =
+                    if (resources.size > 0)
+                        JsObject(
+                            "nextPage"    -> JsString(nextPage map (s"${Config.namespace}sets/$packageId/resources/query/results/" + _)    getOrElse ""),
+                            "currentPage" -> JsString(currentPage map (s"${Config.namespace}sets/$packageId/resources/query/results/" + _) getOrElse ""),
+                            "data"        -> resources.toJson,
+                            "end"         -> JsBoolean(false)
+                        ).prettyPrint
+                    else
+                        JsObject(
+                            "end"         -> JsBoolean(true)
+                        ).prettyPrint
+
+                sender ! HttpResponse(status = StatusCodes.OK,
+                                      entity = HttpEntity(ContentType(`application/json`, `UTF-8`), results))
+            }
+            
+        /// Gets the resources for the specified package
+        case ListPackageResourcesFromIterator(packageId, iteratorData) =>
+            val iterator = IteratorData.fromId(iteratorData).get
+            receive(ListPackageResources(
+                packageId,
+                Some(iterator.since),
+                Some(iterator.until),
+                iterator.state,
+                iterator.start,
+                iterator.count
+            ))
+        
         case CreateResource(authorizationKey, id, upload, name, format, description, package_id) => {
             val originalSender = sender
 

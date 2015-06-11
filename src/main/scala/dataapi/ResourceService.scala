@@ -48,13 +48,13 @@ class ResourceService()(implicit executionContext: ExecutionContext)
             // TODO: return 404 if the dataspace/package with the specified ids do not exist
             (dataspaceId, setId) match {
                 case (Some(did), Some(sid)) =>
-                    if(ckan.CkanGodInterface.isPackageInDataspace(sid, did))
+                    if(ckan.CkanGodInterface.isPackageInDataspace(did, sid))
                         complete {
                             (Core.resourceActor ? ListPackageResources(sid, _since, _until, state)).mapTo[HttpResponse]
                         }
                     else 
                         complete {
-                            HttpResponse(StatusCodes.NotFound, s"Package with id ${sid} does not exist in the dataspace with id ${did}")
+                            HttpResponse(StatusCodes.NotFound, s"Set with id ${sid} does not exist in the dataspace with id ${did}")
                         }
                 case (Some(did), None) =>
                     authorize(ckan.CkanGodInterface.isDataspaceAccessibleToUser(did, authorizationKey)) {

@@ -240,7 +240,6 @@ object CkanGodInterface {
         }
     }
 
-
     /**
      * @param dataspaceId UUID of the requested dataspace
      * @param _since gets only the resources newer than the specified timestamp
@@ -264,6 +263,44 @@ object CkanGodInterface {
 
         var query = DataspaceResourceTable.query
                     .filter(_.dataspaceId === dataspaceId)
+                    .filter(_.modified.between(since, until))
+
+        if(state == StateFilter.ACTIVE || state == StateFilter.DELETED) query = query.filter(_.state === state.toString.toLowerCase)
+
+        query = query.sortBy(_.modified asc)
+                .drop(start)
+                .take(count)
+
+        (
+            query,
+            Some(IteratorData(since, until, state, start + count, count).generateId), // next
+            Some(IteratorData(since, until, state, start,         count).generateId)  // current
+        )
+    }
+    
+    /**
+     * @param packageId UUID of the requested package
+     * @param _since gets only the resources newer than the specified timestamp
+     * @param _until gets only the resources older than the specified timestamp
+     * @param state
+     * @param start (aka offset) skips first 'start' results
+     * @param _count defines how many results to return
+     * @return query object for resources belonging to the specified package
+     */
+    def listPackageResourcesQuery(
+                            // already authorized // authorizationKey: String,
+                            packageId: String,
+                            _since: Option[Timestamp], _until: Option[Timestamp],
+                            state: StateFilter,
+                            start: Int, _count: Int
+                            ) = database withSession { implicit session: Session =>
+
+        val since = _since getOrElse (new Timestamp(0))
+        val until = _until getOrElse (new Timestamp(System.currentTimeMillis()))
+        val count = math.min(_count, queryResultMaximumLimit)
+
+        var query = DataspaceResourceTable.query
+                    .filter(_.packageId === packageId)
                     .filter(_.modified.between(since, until))
 
         if(state == StateFilter.ACTIVE || state == StateFilter.DELETED) query = query.filter(_.state === state.toString.toLowerCase)
