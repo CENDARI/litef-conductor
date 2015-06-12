@@ -24,6 +24,7 @@ import spray.json._
 import DefaultJsonProtocol._
 import MediaTypes._
 import HttpCharsets._
+import java.util.UUID
 
 import common.Config.{ Ckan => CkanConfig }
 import common.Config
@@ -105,8 +106,7 @@ object ResourceActor {
     
     case class CreateResource(
             val authorizationKey: String,
-            val id: String,
-            val upload: FormFile,
+            val file: FormFile,
             val name: Option[String],
             val format: Option[String],
             val description: Option[String],
@@ -136,6 +136,8 @@ class ResourceActor
     import context.system
 
     val log = Logging(context.system, this)
+    
+    lazy val logger = org.slf4j.LoggerFactory getLogger getClass
     
     def receive: Receive = {
         /// Gets the list of resources modified in the specified time range
@@ -340,25 +342,30 @@ class ResourceActor
                 iterator.count
             ))
         
-        case CreateResource(authorizationKey, id, upload, name, format, description, package_id) => {
+        case CreateResource(authorizationKey, file, name, format, description, packageId) => {
             val originalSender = sender
 
+            val id = UUID.randomUUID().toString
+            
             var fields = Seq[BodyPart]()
-
+            
             val fieldId = BodyPart(id)
             val namedFieldId = fieldId.copy(headers = `Content-Disposition`("form-data", Map("name" -> "id")) +: fieldId.headers)
             fields = fields :+ namedFieldId
 
-            val fieldUpload = BodyPart(upload.entity)
-            val namedFieldUpload = fieldUpload.copy(headers = `Content-Disposition`("form-data", Map("filename" -> upload.name.get, "name" -> "upload")) +: fieldUpload.headers)
+            val fieldUpload = BodyPart(file.entity)
+            val namedFieldUpload = fieldUpload.copy(headers = `Content-Disposition`("form-data", Map("filename" -> file.name.get, "name" -> "upload")) +: fieldUpload.headers)
             fields = fields :+ namedFieldUpload
 
-            for (n <- name) {
-                val fieldName = BodyPart(n)
-                val namedFieldName = fieldName.copy(headers = `Content-Disposition`("form-data", Map("name" -> "name")) +: fieldName.headers)
-                fields = fields :+ namedFieldName
+            val title = name match {
+                case Some(s)    => s
+                case None       => file.name.get
             }
-
+            
+            val fieldName = BodyPart(title)
+            val namedFieldName = fieldName.copy(headers = `Content-Disposition`("form-data", Map("name" -> "name")) +: fieldName.headers)
+            fields = fields :+ namedFieldName
+            
             for (f <- format) {
                 val fieldFormat = BodyPart(f)
                 val namedFieldFormat = fieldFormat.copy(headers = `Content-Disposition`("form-data", Map("name" -> "format")) +: fieldFormat.headers)
@@ -371,27 +378,35 @@ class ResourceActor
                 fields = fields :+ namedFieldDescription
             }
 
-            val fieldPackageId = BodyPart(package_id)
+            val fieldPackageId = BodyPart(packageId)
             val namedFieldPackageId = fieldPackageId.copy(headers = `Content-Disposition`("form-data", Map("name" -> "package_id")) +: fieldPackageId.headers)
             fields = fields :+ namedFieldPackageId
 
             val resource = MultipartFormData(fields)
-
+            
             (IO(Http) ? (Post(CkanConfig.namespace + "action/resource_create", resource)~>addHeader("Authorization", authorizationKey)))
             .mapTo[HttpResponse]
             .map { response => response.status match {
                     case StatusCodes.OK =>
                         // TODO: Try to read resource from (ugly) CKAN response, not from db
                         val createdResource = CkanGodInterface.getResource(id)
-                        originalSender ! HttpResponse(status = StatusCodes.Created,
-                                                      entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
-                                                                             createdResource.map { _.toJson.prettyPrint}.getOrElse {""}),
-                                                         headers = List(Location(s"${common.Config.namespace}resources/$id")))
-                    case _ => originalSender ! HttpResponse(response.status, "Error creating resource!")
+                        createdResource match {
+                            case Some(cr) =>
+                                originalSender ! HttpResponse(status = StatusCodes.Created,
+                                                              entity = HttpEntity(ContentType(`application/json`, `UTF-8`), cr.toJson.prettyPrint),
+                                                              headers = List(Location(s"${Config.namespace}resources/$id")))
+                            case None => originalSender ! HttpResponse(StatusCodes.InternalServerError, "Error reading newly created resource metadata from the database")
+                              
+                        }
+                        
+                    case _ =>
+                        logger info s"$response"
+                        originalSender ! HttpResponse(response.status, "Error creating resource!")
+                        //originalSender ! response
                     }
             }
         }
-
+        
         case UpdateResource(authorizationKey, id, upload, name, format, description) => {
             val originalSender = sender
 
@@ -405,7 +420,7 @@ class ResourceActor
             val namedFieldUpload = fieldUpload.copy(headers = `Content-Disposition`("form-data", Map("filename" -> upload.name.get, "name" -> "upload")) +: fieldUpload.headers)
             fields = fields :+ namedFieldUpload
             //fields = fields :+ BodyPart("upload", upload)
-
+            
             for (n <- name) {
                 val fieldName = BodyPart(n)
                 val namedFieldName = fieldName.copy(headers = `Content-Disposition`("form-data", Map("name" -> "name")) +: fieldName.headers)

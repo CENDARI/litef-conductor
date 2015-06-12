@@ -133,41 +133,42 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
         .mapTo[HttpResponse]
     }
 
-    def createResourceInDataspace(id: String, file: FormFile, format: Option[String], name: Option[String],
-                                  description: Option[String], setId: Option[String]) (implicit authorizationKey: String) =
-        // TODO: Check if authorization can be left to CKAN API
-        // TODO: All registered users should be allowed to add resources to public dataspaces (?)
-        authorize(ckan.CkanGodInterface.isDataspaceModifiableByUser(id, authorizationKey)) {
-
-            var set = setId.getOrElse("")
-            // check if set exists in the dataspace
-            if (set != "" && !ckan.CkanGodInterface.isPackageInDataspace(id, set)) {
-                complete { HttpResponse(StatusCodes.NotFound, s"""Set with id "$set" not found in dataspace "$id"!""")}
-            }
-            else {
-                if (set == "") {
-                    // create set
-                    set = UUID.randomUUID().toString
-
-                    // TODO: Set resource and new set name/title to file.name if name is not specified
-                    val setTitle = name.getOrElse("Unnamed API dataset")
-
-                    onSuccess((Core.dataspaceActor ? CreatePackageInDataspace(authorizationKey, PackageCreateWithId(set, id, setTitle))).mapTo[HttpResponse]) {
-                        case x if x.status != StatusCodes.OK =>
-                            complete { HttpResponse(x.status, "Error creating set for new resource!") }
-                        case _ =>
-                            complete {
-                                (Core.resourceActor ? CreateResource(authorizationKey, UUID.randomUUID().toString, file, name, format, description, set))
-                                .mapTo[HttpResponse]
-                            }
-                    }
-                }
-                else complete {
-                    (Core.resourceActor ? CreateResource(authorizationKey, UUID.randomUUID().toString, file, name, format, description, set))
-                    .mapTo[HttpResponse]
-                }
-            }
-        }
+    // Resources can now be created using POST /resources
+//    def createResourceInDataspace(id: String, file: FormFile, format: Option[String], name: Option[String],
+//                                  description: Option[String], setId: Option[String]) (implicit authorizationKey: String) =
+//        // TODO: Check if authorization can be left to CKAN API
+//        // TODO: All registered users should be allowed to add resources to public dataspaces (?)
+//        authorize(ckan.CkanGodInterface.isDataspaceModifiableByUser(id, authorizationKey)) {
+//
+//            var set = setId.getOrElse("")
+//            // check if set exists in the dataspace
+//            if (set != "" && !ckan.CkanGodInterface.isPackageInDataspace(id, set)) {
+//                complete { HttpResponse(StatusCodes.NotFound, s"""Set with id "$set" not found in dataspace "$id"!""")}
+//            }
+//            else {
+//                if (set == "") {
+//                    // create set
+//                    set = UUID.randomUUID().toString
+//
+//                    // TODO: Set resource and new set name/title to file.name if name is not specified
+//                    val setTitle = name.getOrElse("Unnamed API dataset")
+//
+//                    onSuccess((Core.dataspaceActor ? CreatePackageInDataspace(authorizationKey, PackageCreateWithId(set, id, setTitle))).mapTo[HttpResponse]) {
+//                        case x if x.status != StatusCodes.OK =>
+//                            complete { HttpResponse(x.status, "Error creating set for new resource!") }
+//                        case _ =>
+//                            complete {
+//                                (Core.resourceActor ? CreateResource(authorizationKey, UUID.randomUUID().toString, file, name, format, description, set))
+//                                .mapTo[HttpResponse]
+//                            }
+//                    }
+//                }
+//                else complete {
+//                    (Core.resourceActor ? CreateResource(authorizationKey, UUID.randomUUID().toString, file, name, format, description, set))
+//                    .mapTo[HttpResponse]
+//                }
+//            }
+//        }
 
       def deleteDataspace(id: String) (implicit authorizationKey: String) =
           authorize(ckan.CkanGodInterface.isDataspaceDeletableByUser(id, authorizationKey)) {
@@ -231,16 +232,16 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
                */
               pathEnd {
                   entity(as[DataspaceCreate]) { createDataspace }
-              } ~
-              /*
-               * Adding new resource to dataspace
-               */
-              (path(Segment / "resources")
-                    & formFields('file.as[FormFile])
-                    & formFields('format.as[Option[String]])
-                    & formFields('name.as[Option[String]])
-                    & formFields('description.as[Option[String]])
-                    & formFields('setId.as[Option[String]]))  { createResourceInDataspace }
+              } 
+//              /*
+//               * Adding new resource to dataspace
+//               */
+//              (path(Segment / "resources")
+//                    & formFields('file.as[FormFile])
+//                    & formFields('format.as[Option[String]])
+//                    & formFields('name.as[Option[String]])
+//                    & formFields('description.as[Option[String]])
+//                    & formFields('setId.as[Option[String]]))  { createResourceInDataspace }
             }~
             put {
               /*

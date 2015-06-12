@@ -24,6 +24,7 @@ import spray.routing._
 import dataapi.ResourceActor._
 import spray.http.HttpResponse
 import spray.http.StatusCodes
+import spray.http.FormFile
 import java.sql.Timestamp
 import core.Core
 import slick.driver.PostgresDriver.simple._
@@ -111,6 +112,16 @@ class ResourceService()(implicit executionContext: ExecutionContext)
             }
         }
 
+    def createResource(file: FormFile, format: Option[String], name: Option[String],
+                       description: Option[String], packageId: String) (implicit authorizationKey: String) =
+        // TODO: What if a user tries to create a resource in the set whose state is 'deleted'
+        authorize(ckan.CkanGodInterface.isPackageModifiableByUser(packageId, authorizationKey)) {
+            complete {
+                (Core.resourceActor ? CreateResource(authorizationKey, file, name, format, description, packageId))
+                .mapTo[HttpResponse]
+            }
+        }
+        
     def deleteResource(id: String)(implicit authorizationKey: String) = {
         authorize(ckan.CkanGodInterface.isResourceDeletableByUser(id, authorizationKey)) {
           complete {
@@ -164,6 +175,13 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                         }
                     }
                 }
+            } ~
+            post {
+               (pathEnd & formFields('file.as[FormFile])
+                    & formFields('format.as[Option[String]])
+                    & formFields('name.as[Option[String]])
+                    & formFields('description.as[Option[String]])
+                    & formFields('setId.as[String]))  { createResource } 
             } ~
             put {
                 complete { s"What to put?" }
