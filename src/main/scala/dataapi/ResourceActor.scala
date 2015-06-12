@@ -407,7 +407,7 @@ class ResourceActor
             }
         }
         
-        case UpdateResource(authorizationKey, id, upload, name, format, description) => {
+        case UpdateResource(authorizationKey, id, file, name, format, description) => {
             val originalSender = sender
 
             var fields = Seq[BodyPart]()
@@ -416,17 +416,19 @@ class ResourceActor
             val namedFieldId = fieldId.copy(headers = `Content-Disposition`("form-data", Map("name" -> "id")) +: fieldId.headers)
             fields = fields :+ namedFieldId
 
-            val fieldUpload = BodyPart(upload.entity)
-            val namedFieldUpload = fieldUpload.copy(headers = `Content-Disposition`("form-data", Map("filename" -> upload.name.get, "name" -> "upload")) +: fieldUpload.headers)
+            val fieldUpload = BodyPart(file.entity)
+            val namedFieldUpload = fieldUpload.copy(headers = `Content-Disposition`("form-data", Map("filename" -> file.name.get, "name" -> "upload")) +: fieldUpload.headers)
             fields = fields :+ namedFieldUpload
             //fields = fields :+ BodyPart("upload", upload)
             
-            for (n <- name) {
-                val fieldName = BodyPart(n)
-                val namedFieldName = fieldName.copy(headers = `Content-Disposition`("form-data", Map("name" -> "name")) +: fieldName.headers)
-                fields = fields :+ namedFieldName
+            val title = name match {
+                case Some(s)    => s
+                case None       => file.name.get        
             }
-
+            val fieldName = BodyPart(title)
+            val namedFieldName = fieldName.copy(headers = `Content-Disposition`("form-data", Map("name" -> "name")) +: fieldName.headers)
+            fields = fields :+ namedFieldName
+            
             for (f <- format) {
                 val fieldFormat = BodyPart(f)
                 val namedFieldFormat = fieldFormat.copy(headers = `Content-Disposition`("form-data", Map("name" -> "format")) +: fieldFormat.headers)
@@ -447,10 +449,17 @@ class ResourceActor
                 case StatusCodes.OK =>
                     // TODO: Try to read resource from (ugly) CKAN response, not from db
                     val updatedResource = CkanGodInterface.getResource(id)
-                    originalSender ! HttpResponse(status = StatusCodes.OK,
-                                                  entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
-                                                                         updatedResource.map { _.toJson.prettyPrint}.getOrElse {""}))
-                case _ => originalSender ! HttpResponse(response.status, s"""Error updating resource "$id"!""")}
+                    
+                    updatedResource match {
+                        case Some(ur)   => originalSender ! HttpResponse(status = StatusCodes.OK,
+                                                                         entity = HttpEntity(ContentType(`application/json`, `UTF-8`), ur.toJson.prettyPrint))
+                        case None       => originalSender ! HttpResponse(StatusCodes.InternalServerError, "The resources is updated, but its metadata cannot be read from the database")
+                    }
+                            
+                case _ => 
+                    logger info s"$response"
+                    originalSender ! HttpResponse(response.status, s"""Error updating resource with id "$id"!""")
+                }
             }
         }
 

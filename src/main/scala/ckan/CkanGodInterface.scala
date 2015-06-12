@@ -399,9 +399,9 @@ object CkanGodInterface {
      /**
      * @param id resource UUID
      * @param authorizationKey CKAN user authorization id
-     * @return whether the resource can be deleted by user
+     * @return whether the resource can be modifiable by user
      */
-    def isResourceDeletableByUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
+    def isResourceModifiableByUser(id: String, authorizationKey: String): Boolean = database withSession { implicit session: Session =>
         if(isSysadmin(authorizationKey))
             true
         else
@@ -417,7 +417,7 @@ object CkanGodInterface {
             .list
             .size > 0
     }
-
+    
     /**
      * @param id resource UUID
      * @param authorizationKey CKAN user authorization id

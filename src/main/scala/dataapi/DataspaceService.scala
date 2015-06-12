@@ -133,7 +133,7 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
         .mapTo[HttpResponse]
     }
 
-    // Resources can now be created using POST /resources
+    // Resources are created using POST /resources
 //    def createResourceInDataspace(id: String, file: FormFile, format: Option[String], name: Option[String],
 //                                  description: Option[String], setId: Option[String]) (implicit authorizationKey: String) =
 //        // TODO: Check if authorization can be left to CKAN API
@@ -170,13 +170,13 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
 //            }
 //        }
 
-      def deleteDataspace(id: String) (implicit authorizationKey: String) =
-          authorize(ckan.CkanGodInterface.isDataspaceDeletableByUser(id, authorizationKey)) {
-          complete {
-              (Core.dataspaceActor ? DeleteDataspace(authorizationKey, id))
-              .mapTo[HttpResponse]
-          }
-      }
+    def deleteDataspace(id: String) (implicit authorizationKey: String) =
+        authorize(ckan.CkanGodInterface.isDataspaceDeletableByUser(id, authorizationKey)) {
+            complete {
+                (Core.dataspaceActor ? DeleteDataspace(authorizationKey, id))
+                .mapTo[HttpResponse]
+            }
+    }
 //    def normalizeText(text: String)= {
 //        Normalizer.normalize(text, Form.NFD)
 //            .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
@@ -185,13 +185,14 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
 //            .toLowerCase()
 //    }
 
-    def updateResourceInDataspace(id: String, resourceId: String, file: FormFile, format: Option[String], name: Option[String], description: Option[String]) (implicit authorizationKey: String) =
-        authorize(ckan.CkanGodInterface.isDataspaceModifiableByUser(id, authorizationKey)) {
-            complete {
-                (Core.resourceActor ? UpdateResource(authorizationKey, resourceId, file, name, format, description))
-                .mapTo[HttpResponse]
-            }
-        }
+    // Resources are updated using PUT /resources
+//    def updateResourceInDataspace(id: String, resourceId: String, file: FormFile, format: Option[String], name: Option[String], description: Option[String]) (implicit authorizationKey: String) =
+//        authorize(ckan.CkanGodInterface.isDataspaceModifiableByUser(id, authorizationKey)) {
+//            complete {
+//                (Core.resourceActor ? UpdateResource(authorizationKey, resourceId, file, name, format, description))
+//                .mapTo[HttpResponse]
+//            }
+//        }
 
     val route = headerValueByName("Authorization") { implicit authorizationKey =>
         pathPrefix("dataspaces") {
@@ -250,14 +251,15 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
                * TODO: Find a workaround
                */
               //(path(Segment) & entity(as[DataspaceUpdate])) { updateDataspace } ~
-              /*
-               * Updating resource
-               */
-              (path(Segment/"resources"/Segment)
-                    & formFields('file.as[FormFile])
-                    & formFields('format.as[Option[String]])
-                    & formFields('name.as[Option[String]])
-                    & formFields('description.as[Option[String]])) { updateResourceInDataspace }
+              complete { "Method temporarily disabled" }
+//              /*
+//               * Updating resource
+//               */
+//              (path(Segment/"resources"/Segment)
+//                    & formFields('file.as[FormFile])
+//                    & formFields('format.as[Option[String]])
+//                    & formFields('name.as[Option[String]])
+//                    & formFields('description.as[Option[String]])) { updateResourceInDataspace }
             } ~
             delete {
                 path(Segment)   { deleteDataspace }

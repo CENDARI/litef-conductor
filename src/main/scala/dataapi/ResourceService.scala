@@ -121,9 +121,17 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                 .mapTo[HttpResponse]
             }
         }
-        
+       
+    def updateResource(id: String, file: FormFile, format: Option[String], name: Option[String], description: Option[String]) (implicit authorizationKey: String) =
+        authorize(ckan.CkanGodInterface.isResourceModifiableByUser(id, authorizationKey)) {
+            complete {
+                (Core.resourceActor ? UpdateResource(authorizationKey, id, file, name, format, description))
+                .mapTo[HttpResponse]
+            }
+    }
+
     def deleteResource(id: String)(implicit authorizationKey: String) = {
-        authorize(ckan.CkanGodInterface.isResourceDeletableByUser(id, authorizationKey)) {
+        authorize(ckan.CkanGodInterface.isResourceModifiableByUser(id, authorizationKey)) {
           complete {
               (Core.resourceActor ? DeleteResource(authorizationKey, id))
               .mapTo[HttpResponse]
@@ -184,7 +192,11 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                     & formFields('setId.as[String]))  { createResource } 
             } ~
             put {
-                complete { s"What to put?" }
+                (path(Segment)
+                    & formFields('file.as[FormFile])
+                    & formFields('format.as[Option[String]])
+                    & formFields('name.as[Option[String]])
+                    & formFields('description.as[Option[String]])) { updateResource }
             } ~
             delete {
                 path(Segment)   { deleteResource }
