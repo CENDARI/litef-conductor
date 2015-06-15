@@ -38,6 +38,7 @@ Attribute       Type    Description
 id              String  Unique id of the resource object
 url             String  Resource object URL
 dataUrl         String  Resource file URL
+viewDataUrl     String  URL for CKAN resource preview
 name            String  Resource title
 description     String  Additional information about the resource
 format          String  Resource file format
@@ -64,6 +65,7 @@ Example response::
         "id": "fee6284a-154d-4a33-832c-1836c5561658",
         "url": "http://localhost:42042/v1/resources/fee6284a-154d-4a33-832c-1836c5561658",
         "dataUrl": "http://localhost:42042/v1/resources/fee6284a-154d-4a33-832c-1836c5561658/data",
+        "viewDataUrl": "https://int2.cendari.dariah.eu/ckan/dataset/5038ef1a-475b-4312-b395-b63a2e2252fc/resource/fee6284a-154d-4a33-832c-1836c5561658",
         "name": "CENDARI-logo.jpg",
         "description": "Updated resource: CENDARI logo 150x150 without text",
         "format": "JPG",
@@ -87,4 +89,4 @@ Example response (when there are no more resources to return)::
 
 Example request (with filter parameters ``since`` and ``until``)::
 
-    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/dataspaces/2bba037f-d5c3-482a-965c-89f057582b37/resources?since=2015-05-20\&until=2015-06-01
+    curl -H "Authorization: your-apikey"  http://localhost:42042/v1/sets/5038ef1a-475b-4312-b395-b63a2e2252fc/resources?since=2015-03-01\&until=2015-04-01

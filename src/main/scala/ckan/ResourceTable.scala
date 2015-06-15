@@ -72,11 +72,18 @@ abstract class ResourceData {
         df.format(new java.util.Date(v.getTime()))
     }
   }
-  
+    private def viewDataUrl = {
+        val encodedId = java.net.URLEncoder.encode(id, "utf-8")
+        val encodedPackageId = java.net.URLEncoder.encode(packageId.getOrElse(""), "utf-8")
+        
+        s"${Config.Ckan.home}dataset/$encodedPackageId/resource/$encodedId"
+    }
+    
     def toJson = JsObject(
             "id"             -> JsString(id),
             "url"            -> JsString(s"${Config.namespace}resources/${id}"),
             "dataUrl"        -> JsString(s"${Config.namespace}resources/${id}/data"),
+            "viewDataUrl"    -> JsString(viewDataUrl),
             "name"           -> JsString(name        getOrElse ""),
             "description"    -> JsString(description getOrElse ""),
             "format"         -> JsString(format      getOrElse ""),
