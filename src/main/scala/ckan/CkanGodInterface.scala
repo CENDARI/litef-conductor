@@ -24,9 +24,9 @@ import common.Config.Ckan.{Database => CkanDatabaseConfig}
 import scala.slick.model.Table
 import scala.util.Try
 import dataapi.StateFilter
-import dataapi.StateFilter.StateFilter
-//import dataapi.VisibilityFilter
-//import dataapi.VisibilityFilter.VisibilityFilter
+import dataapi.StateFilter._
+import dataapi.Visibility
+import dataapi.Visibility._
 import scala.slick.lifted.CanBeQueryCondition
 
 // optionally filter on a column with a supplied predicate https://gist.github.com/cvogt/9193220
@@ -194,13 +194,14 @@ object CkanGodInterface {
      * @param _since gets only the dataspaces newer than the specified timestamp
      * @param _until gets only the dataspaces older than the specified timestamp
      * @param state
+     * @param visibility
      * @param start (aka offset) skips first 'start' results
      * @param _count defines how many results to return
      * @return the query object against the collection of dataspaces
      */
     def listDataspacesQuery(authorizationKey: String,
                             _since: Option[Timestamp], _until: Option[Timestamp],
-                            state: StateFilter,
+                            state: StateFilter, visibility: Option[Visibility],
                             start: Int, _count: Int
                             ) = database withSession { implicit session: Session =>
 
@@ -214,18 +215,43 @@ object CkanGodInterface {
 
         if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) q = q.filter(_.state === state.toString.toLowerCase)
         
-        if (!isSysadmin(authorizationKey)) {
-            val queryDataspacesWithPrivileges = q.filter(_.id in UserDataspaceRoleTable.query
-                                                                .filter(_.userApiKey === authorizationKey)
-                                                                .filter(_.state === "active")
-                                                                .map(_.dataspaceId))
-            val queryDataspacesPublic = q.filter(_.id in DataspaceExtraTable.query
-                                                            .filter(_.key === "visibility")
-                                                            .filter(_.value === "public")
-                                                            .filter(_.state === "active")
-                                                            .map(_.dataspaceId))
-            q = queryDataspacesWithPrivileges union queryDataspacesPublic
+        val isAdmin = isSysadmin(authorizationKey)
+        
+        visibility match {
+            case Some(Visibility.PRIVATE) =>
+                q = q.filterNot(_.id in DataspaceExtraTable.query
+                                        .filter(_.key === "visibility")
+                                        .filter(_.value === "public")
+                                        .filter(_.state === "active")
+                                        .map(_.dataspaceId))
+                if(!isAdmin) {
+                    q = q.filter(_.id in UserDataspaceRoleTable.query
+                                            .filter(_.userApiKey === authorizationKey)
+                                            .filter(_.state === "active")
+                                            .map(_.dataspaceId))
+                }
+            case Some(Visibility.PUBLIC) =>
+                q = q.filter(_.id in DataspaceExtraTable.query
+                                        .filter(_.key === "visibility")
+                                        .filter(_.value === "public")
+                                        .filter(_.state === "active")
+                                        .map(_.dataspaceId))
+            case _ =>
+                if (!isAdmin) {
+                    val queryDataspacesWithPrivileges = q.filter(_.id in UserDataspaceRoleTable.query
+                                                                        .filter(_.userApiKey === authorizationKey)
+                                                                        .filter(_.state === "active")
+                                                                        .map(_.dataspaceId))
+                    val queryDataspacesPublic = q.filter(_.id in DataspaceExtraTable.query
+                                                                    .filter(_.key === "visibility")
+                                                                    .filter(_.value === "public")
+                                                                    .filter(_.state === "active")
+                                                                    .map(_.dataspaceId))
+                    q = queryDataspacesWithPrivileges union queryDataspacesPublic
+                }
+            
         }
+        
         q = q.sortBy(_.title asc)
         
         (

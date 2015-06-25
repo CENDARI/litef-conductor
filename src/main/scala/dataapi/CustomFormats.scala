@@ -17,7 +17,7 @@ package dataapi
 import spray.json._
 import ckan.DataspaceJsonProtocol._
 import java.lang.String
-import spray.httpx.unmarshalling.{MalformedContent, FromStringDeserializer}
+import spray.httpx.unmarshalling.{MalformedContent, FromStringDeserializer, FromStringOptionDeserializer}
 
 object StateFilter extends Enumeration {
     type StateFilter = Value
@@ -26,7 +26,8 @@ object StateFilter extends Enumeration {
 
 object Visibility extends Enumeration {
     type Visibility = Value
-    val public, `private` = Value 
+    val PUBLIC = Value("public")
+    val PRIVATE = Value("private") 
 }
 
 case class DataspaceCreate (name: String, title: Option[String], description: Option[String], visibility: Option[Visibility.Visibility]){
@@ -148,7 +149,7 @@ object CkanJsonProtocol extends DefaultJsonProtocol {
     }
 }
 
-object StateFilterProtocol {
+object FilterStringProtocol {
     implicit val stringToStateFilter = new FromStringDeserializer[StateFilter.StateFilter] {
         def apply(value: String) = {
             val name = value.toUpperCase
@@ -156,6 +157,16 @@ object StateFilterProtocol {
             else if (name == StateFilter.DELETED.toString) { Right(StateFilter.DELETED) }
             else if (name == StateFilter.ALL.toString) { Right(StateFilter.ALL) }
             else Left(MalformedContent(s"Invalid value '$value'. Valid values are 'active', 'deleted', and 'all'"))
+        }
+    }
+    
+    implicit val stringToVisibilityFilter = new FromStringOptionDeserializer[Option[Visibility.Visibility]] {
+        def apply(value: Option[String]) = {
+            if (value.isEmpty) { Right(None) }
+            else if (value == Some(Visibility.PUBLIC.toString)) { Right(Some(Visibility.PUBLIC)) }
+            else if (value == Some(Visibility.PRIVATE.toString)) { Right(Some(Visibility.PRIVATE)) }
+            else if (value == Some("all")) { Right(None) }
+            else Left(MalformedContent(s"Invalid value '$value'. Valid values are 'private', 'public', and 'all'"))
         }
     }
 }

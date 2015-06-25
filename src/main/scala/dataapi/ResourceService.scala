@@ -29,7 +29,7 @@ import java.sql.Timestamp
 import core.Core
 import slick.driver.PostgresDriver.simple._
 import StateFilter._
-import StateFilterProtocol._
+import FilterStringProtocol._
 
 // Needed for implicit conversions, not unused:
 import scala.concurrent.ExecutionContext.Implicits.global

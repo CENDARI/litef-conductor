@@ -43,19 +43,20 @@ import spray.httpx.marshalling._
 import java.text.Normalizer
 import java.text.Normalizer.Form
 import StateFilter._
-import StateFilterProtocol._
+import Visibility._
+import FilterStringProtocol._
 
 class DataspaceService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
 {
     // Dataspaces and metadata
-    def listDataspaces(since: Option[String], until: Option[String], state: StateFilter)(implicit authorizationKey: String) = {
+    def listDataspaces(since: Option[String], until: Option[String], state: StateFilter, visibility: Option[Visibility])(implicit authorizationKey: String) = {
         try
         {
           val _since = stringToTimestamp(since)
           val _until = stringToTimestamp(until)
           complete {
-          (Core.dataspaceActor ? ListDataspaces(authorizationKey, _since, _until, state))
+          (Core.dataspaceActor ? ListDataspaces(authorizationKey, _since, _until, state, visibility))
               .mapTo[HttpResponse]
           }
         }
@@ -208,7 +209,7 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
                  * Getting the list of dataspaces
                  */
                 pathEndOrSingleSlash {
-                    parameters('since.as[String] ?, 'until.as[String] ?, 'state.as[StateFilter] ? StateFilter.ACTIVE) { listDataspaces }
+                    parameters('since.as[String] ?, 'until.as[String] ?, 'state.as[StateFilter] ? StateFilter.ACTIVE, 'visibility.as[Option[Visibility]]) { listDataspaces }
                 } ~
                 //path("query" / "results" / Segment) { listDataspacesFromIterator } ~
                 /*

@@ -21,7 +21,7 @@ import core.Core.packageActor
 import dataapi.ResourceActor._
 import core.Core.resourceActor
 import StateFilter._
-import StateFilterProtocol._
+import FilterStringProtocol._
 //import akka.actor.ActorRef
 import akka.pattern.ask
 import spray.http.HttpResponse

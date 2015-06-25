@@ -30,6 +30,7 @@ import HttpCharsets._
 import HttpMethods._
 import HttpHeaders._
 import StateFilter._
+import Visibility._
 import common.Config.{ Ckan => CkanConfig }
 import common.Config
 
@@ -53,15 +54,16 @@ object DataspaceActor {
             val since: Option[Timestamp],
             val until: Option[Timestamp],
             val state: StateFilter,
+            val visibility: Option[Visibility],
             val start: Int = 0,
             val count: Int = CkanGodInterface.queryResultDefaultLimit
         )
 
-    /// Gets the next results for the iterator
-    case class ListDataspacesFromIterator(
-            val authorizationKey: String,
-            val iterator: String
-        )
+//    /// Gets the next results for the iterator
+//    case class ListDataspacesFromIterator(
+//            val authorizationKey: String,
+//            val iterator: String
+//        )
 
     /// Gets the meta data for the the specified resource
     case class GetDataspaceMetadata(
@@ -115,10 +117,10 @@ class DataspaceActor
     
     def receive: Receive = {
         /// Gets the list of resources modified in the specified time range
-        case ListDataspaces(authorizationKey, since, until, state, start, count) =>
+        case ListDataspaces(authorizationKey, since, until, state, visibility, start, count) =>
             CkanGodInterface.database withSession { implicit session: Session =>
                 val (dataspacesQuery, nextPage, currentPage) =
-                    CkanGodInterface.listDataspacesQuery(authorizationKey, since, until, state, start, count)
+                    CkanGodInterface.listDataspacesQuery(authorizationKey, since, until, state, visibility, start, count)
 
                 val dataspacesList = dataspacesQuery.list
                 

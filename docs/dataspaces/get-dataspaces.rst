@@ -6,6 +6,7 @@ Request filter parameters:
 ==========================  =================== ======================================================================
 Parameter                   Type                Description
 ==========================  =================== ======================================================================
+visibility (optional)       String              Valid values are: ``public``, ``private``, and ``all``. Default is ``all``.
 state (optional)            String              Valid values are: "active", "deleted", and "all". Default is "active".
 since (optional)            DateTime (ISO 8601) If specified, only the resources created or modified after the specified date/time will be included
 until (optional)            DateTime (ISO 8601) If specified, only the resources created or modified before the specified date/time will be includeds
