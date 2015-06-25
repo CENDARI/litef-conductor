@@ -31,6 +31,7 @@ sets            String  URL for the dataspace's sets
 name            String  Dataspace unique name
 title           String  Dataspace title
 description     String  Additional information about the dataspace
+visibility      String  Visibility can be ``private`` or ``public``
 state           String  State can be "active" or "deleted"
 ==============  ======= ==========================================
 
@@ -49,6 +50,7 @@ Example response::
         "name": "cendari-dataspace",
         "title": "CENDARI dataspace",
         "description": "Content of this dataspaces is created within the CENDARI project",
+        "visibility": "private",
         "state": "active"
       }, ...]
     } 

@@ -36,6 +36,11 @@ case class Dataspace(
     imageUrl       : Option[String]    = None
 )
 
+case class DataspaceWithExtras(
+    dataspace       : Dataspace,
+    extras          : Map[String, String]    = Map()
+)
+
 class DataspaceTable(tag: Tag)
     extends Table[Dataspace](tag, "group")
 {
@@ -50,7 +55,7 @@ class DataspaceTable(tag: Tag)
     val revisionId     = column[ Option[String]    ] ("revision_id")
     val approvalStatus = column[ Option[String]    ] ("approval_status")
     val imageUrl       = column[ Option[String]    ] ("image_url")
-
+    
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
         id             ,
@@ -101,5 +106,36 @@ object DataspaceJsonProtocol extends DefaultJsonProtocol {
         def read(value: JsValue) =
             throw new DeserializationException("Dataspace can not be read from JSON")
     }
-}
 
+    implicit object DataspaceWithExtrasJsonFormat extends RootJsonFormat[DataspaceWithExtras] {
+        def write(ds: DataspaceWithExtras) =
+            JsObject(
+                "id"             -> JsString(ds.dataspace.id),
+                "url"            -> JsString(s"${Config.namespace}dataspaces/${ds.dataspace.id}"),
+                "resources"      -> JsString(s"${Config.namespace}dataspaces/${ds.dataspace.id}/resources"),
+                "sets"           -> JsString(s"${Config.namespace}dataspaces/${ds.dataspace.id}/sets"),
+                "name"           -> JsString(ds.dataspace.name),
+                "title"          -> JsString(ds.dataspace.title       getOrElse ""),
+                "description"    -> JsString(ds.dataspace.description getOrElse ""),
+                // "image"          -> JsString(ds.imageUrl getOrElse ""),
+
+                // "isOrganization" -> JsBoolean(ds.isOrganization),
+                // "type"           -> JsString(ds.dsType),
+                "visibility"     -> JsString(ds.extras.getOrElse("visibility", "private")),
+                
+                "state"          -> JsString(ds.dataspace.state getOrElse "")
+            )
+
+        def read(value: JsValue) = {
+            throw new DeserializationException("Dataspace can not be read from JSON")
+        }
+    }
+
+    implicit object DataspaceWithExtrasSeqJsonFormat extends RootJsonFormat[List[DataspaceWithExtras]] {
+        def write(ds: List[DataspaceWithExtras]) =
+            JsArray(ds.map{ _.toJson })
+
+        def read(value: JsValue) =
+            throw new DeserializationException("Dataspace can not be read from JSON")
+    }
+}

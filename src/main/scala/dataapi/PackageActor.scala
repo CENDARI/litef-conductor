@@ -211,7 +211,7 @@ class PackageActor extends Actor with dataapi.DefaultValues {
                                         val res = CkanGodInterface.getPackageById(pckg.id)
                                         res match {
                                             case Some(cp) =>
-                                                originalSender ! HttpResponse(status = StatusCodes.Created,
+                                                originalSender ! HttpResponse(status = StatusCodes.OK,
                                                                               entity = HttpEntity(ContentType(`application/json`, `UTF-8`),cp.toJson.prettyPrint))
                                             case None =>
                                                 originalSender ! HttpResponse(StatusCodes.InternalServerError, "Error reading the updated set from the database")
@@ -224,7 +224,7 @@ class PackageActor extends Actor with dataapi.DefaultValues {
                             }
                         case (errorCode, errorMessage) =>
                             logger info s"$response1"
-                            originalSender ! HttpResponse(StatusCodes.OK, "Error getting set data from CKAN. The set cannot be updated")
+                            originalSender ! HttpResponse(errorCode, "Error getting set data from CKAN. The set cannot be updated")
                     }
             }
         }

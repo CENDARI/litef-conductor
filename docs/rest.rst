@@ -29,6 +29,7 @@ API Requests
     dataspaces/get-dataspaces
     dataspaces/get-dataspaces-id
     dataspaces/post-dataspaces
+    dataspaces/put-dataspaces-id
     dataspaces/delete-dataspaces
     dataspaces/get-dataspace-resources
     dataspaces/get-dataspace-sets

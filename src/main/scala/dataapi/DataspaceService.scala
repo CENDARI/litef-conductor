@@ -66,15 +66,18 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
         
     }
 
-    def listDataspacesFromIterator(iteratorData: String)(implicit authorizationKey: String) = complete {
-        (Core.dataspaceActor ? ListDataspacesFromIterator(authorizationKey, iteratorData))
-            .mapTo[HttpResponse]
-    }
+//    def listDataspacesFromIterator(iteratorData: String)(implicit authorizationKey: String) = complete {
+//        (Core.dataspaceActor ? ListDataspacesFromIterator(authorizationKey, iteratorData))
+//            .mapTo[HttpResponse]
+//    }
 
-    def getDataspaceMetadata(id: String)(implicit authorizationKey: String) = complete {
-        (Core.dataspaceActor ? GetDataspaceMetadata(authorizationKey, id))
-            .mapTo[HttpResponse]
-    }
+    def getDataspaceMetadata(id: String)(implicit authorizationKey: String) = 
+        authorize(ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
+            complete {
+                (Core.dataspaceActor ? GetDataspaceMetadata(id))
+                .mapTo[HttpResponse]
+            }
+        }
 
      def listDataspaceResources(id: String, since: Option[String], until: Option[String], state: StateFilter)(implicit authorizationKey: String) =
         authorize(ckan.CkanGodInterface.isDataspaceAccessibleToUser(id, authorizationKey)) {
@@ -124,14 +127,18 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
                                                new DataspaceCreateWithId(UUID.randomUUID.toString
                                                                          ,dataspace.name
                                                                          ,dataspace.title
-                                                                         ,dataspace.description)))
+                                                                         ,dataspace.description
+                                                                         ,dataspace.visibility)))
         .mapTo[HttpResponse]
     }
 
-    def updateDataspace(id: String, dataspace: DataspaceUpdate) (implicit authorizationKey: String) = complete {
-        (Core.dataspaceActor ? UpdateDataspace(authorizationKey, DataspaceUpdateWithId(id, dataspace.title, dataspace.description)))
-        .mapTo[HttpResponse]
-    }
+    def updateDataspace(id: String, dataspace: DataspaceUpdate) (implicit authorizationKey: String) = 
+        authorize(ckan.CkanGodInterface.isDataspaceDeletableByUser(id, authorizationKey)) {
+            complete {
+                (Core.dataspaceActor ? UpdateDataspace(authorizationKey, DataspaceUpdateWithId(id, dataspace.title, dataspace.description, dataspace.visibility)))
+                .mapTo[HttpResponse]
+            }
+        }
 
     // Resources are created using POST /resources
 //    def createResourceInDataspace(id: String, file: FormFile, format: Option[String], name: Option[String],
@@ -203,7 +210,7 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
                 pathEndOrSingleSlash {
                     parameters('since.as[String] ?, 'until.as[String] ?, 'state.as[StateFilter] ? StateFilter.ACTIVE) { listDataspaces }
                 } ~
-                path("query" / "results" / Segment) { listDataspacesFromIterator } ~
+                //path("query" / "results" / Segment) { listDataspacesFromIterator } ~
                 /*
                  * Getting the dataspace meta data
                  */
@@ -247,11 +254,8 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
             put {
               /*
                * Updating dataspace
-               * Currently disabled. CKAN 2.2 API removes all members from dataspace when dataspace is updated
-               * TODO: Find a workaround
                */
-              //(path(Segment) & entity(as[DataspaceUpdate])) { updateDataspace } ~
-              complete { "Method temporarily disabled" }
+              (path(Segment) & entity(as[DataspaceUpdate])) { updateDataspace }
 //              /*
 //               * Updating resource
 //               */
