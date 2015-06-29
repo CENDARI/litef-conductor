@@ -30,12 +30,12 @@ object Visibility extends Enumeration {
     val PRIVATE = Value("private") 
 }
 
-case class DataspaceCreate (name: String, title: Option[String], description: Option[String], visibility: Option[Visibility.Visibility]){
+case class DataspaceCreate (name: String, title: Option[String], description: Option[String], visibility: Option[Visibility.Visibility], origin: Option[String]){
     require(name matches "[a-z0-9_-]{2,100}")
 }
-case class DataspaceCreateWithId (id: String, name: String, title: Option[String], description: Option[String], visibility: Option[Visibility.Visibility])
-case class DataspaceUpdate (title: Option[String], description: Option[String], visibility: Option[Visibility.Visibility])
-case class DataspaceUpdateWithId (id: String, title: Option[String], description: Option[String], visibility: Option[Visibility.Visibility])
+case class DataspaceCreateWithId (id: String, name: String, title: Option[String], description: Option[String], visibility: Option[Visibility.Visibility], origin: Option[String])
+case class DataspaceUpdate (title: Option[String], description: Option[String], visibility: Option[Visibility.Visibility], origin: Option[String])
+case class DataspaceUpdateWithId (id: String, title: Option[String], description: Option[String], visibility: Option[Visibility.Visibility], origin: Option[String])
 //case class Resource(id: String, name: Option[String], description: Option[String], format: Option[String], package_id: String, upload: String )
 case class PackageCreateWithId(name: String, owner_org: String, title: String, `private`: Boolean = true) 
 
@@ -68,43 +68,90 @@ object CkanJsonProtocol extends DefaultJsonProtocol {
         }
     }
     implicit val ckanApiExtrasJsonFormat = jsonFormat6(CkanApiExtras)
-    implicit val dataspaceCreateFormat = jsonFormat4(DataspaceCreate)
+    implicit val dataspaceCreateFormat = jsonFormat5(DataspaceCreate)
     //implicit val dataspaceCreateWithIdFormat = jsonFormat4(DataspaceCreateWithId)
     implicit object DataspaceCreateWithIdJsonFormat extends RootJsonFormat[DataspaceCreateWithId] {
         def write(d: DataspaceCreateWithId) = 
-            JsObject(
-                "id"    -> JsString(d.id),
-                "name"  -> JsString(d.name),
-                "title" -> JsString(d.title.getOrElse("")),
-                "description" -> JsString(d.description.getOrElse("")),
-                "extras" -> JsArray(
-                    d.visibility match {
-                        case Some(v) => JsObject("key" -> JsString("visibility"), "value" -> JsString(v.toString))
-                        case None => JsObject("key" -> JsString("visibility"), "value" -> JsString("private"))
-                    }
-                )
-            )
+            (d.visibility, d.origin) match {
+                case (None, None) => 
+                    JsObject(
+                        "id"    -> JsString(d.id),
+                        "name"  -> JsString(d.name),
+                        "title" -> JsString(d.title.getOrElse("")),
+                        "description" -> JsString(d.description.getOrElse(""))
+                    )
+                case (Some(v), None) =>
+                    JsObject(
+                        "id"    -> JsString(d.id),
+                        "name"  -> JsString(d.name),
+                        "title" -> JsString(d.title.getOrElse("")),
+                        "description" -> JsString(d.description.getOrElse("")),
+                        "extras" -> JsArray(JsObject("key" -> JsString("visibility"), "value" -> JsString(v.toString)))
+                    )
+                case (None, Some(o)) =>
+                    JsObject(
+                        "id"    -> JsString(d.id),
+                        "name"  -> JsString(d.name),
+                        "title" -> JsString(d.title.getOrElse("")),
+                        "description" -> JsString(d.description.getOrElse("")),
+                        "extras" -> JsArray(
+                                        JsObject("key" -> JsString("visibility"), "value" -> JsString("private")),
+                                        JsObject("key" -> JsString("origin"), "value" -> JsString(o))
+                                    )
+                    )
+                case (Some(v), Some(o)) =>
+                    JsObject(
+                        "id"    -> JsString(d.id),
+                        "name"  -> JsString(d.name),
+                        "title" -> JsString(d.title.getOrElse("")),
+                        "description" -> JsString(d.description.getOrElse("")),
+                        "extras" -> JsArray(
+                                        JsObject("key" -> JsString("visibility"), "value" -> JsString(v.toString)),
+                                        JsObject("key" -> JsString("origin"), "value" -> JsString(o))
+                                    )
+                    )
+        }
+        
         def read(v: JsValue) =
             throw new DeserializationException("DataspaceCreateWithId cannot be read from JSON")
     }
     
-    implicit val dataspaceUpdateFormat = jsonFormat3(DataspaceUpdate)
+    implicit val dataspaceUpdateFormat = jsonFormat4(DataspaceUpdate)
     //implicit val dataspaceUpdateWithIdFormat = jsonFormat4(DataspaceUpdateWithId)
     implicit object DataspaceUpdateWithIdJsonFormat extends RootJsonFormat[DataspaceUpdateWithId] {
-        def write(d: DataspaceUpdateWithId) = {
+        def write(d: DataspaceUpdateWithId) = 
             // TODO: omit field (title/description) if None
-            val fields = Map(
-                "id"    -> JsString(d.id),
-                //"name"  -> JsString(d.name),
-                "title" -> d.title.map(JsString(_)).getOrElse(JsNull),
-                "description" -> d.description.map(JsString(_)).getOrElse(JsNull)
-            )
-        
-            d.visibility match {
-                case Some(v) => JsObject(fields ++ Map("extras" -> JsArray(JsObject("key" -> JsString("visibility"), "value" -> JsString(v.toString)))))
-                case None => JsObject(fields)
+            (d.visibility, d.origin) match {
+                case (None, None) => 
+                    JsObject(
+                        "title" -> d.title.map(JsString(_)).getOrElse(JsNull),
+                        "description" -> d.description.map(JsString(_)).getOrElse(JsNull)
+                    )
+                case (Some(v), None) =>
+                    JsObject(
+                        "title" -> d.title.map(JsString(_)).getOrElse(JsNull),
+                        "description" -> d.description.map(JsString(_)).getOrElse(JsNull),
+                        "extras" -> JsArray(JsObject("key" -> JsString("visibility"), "value" -> JsString(v.toString)))
+                    )
+                case (None, Some(o)) =>
+                    JsObject(
+                        "title" -> d.title.map(JsString(_)).getOrElse(JsNull),
+                        "description" -> d.description.map(JsString(_)).getOrElse(JsNull),
+                        "extras" -> JsArray(
+                                        JsObject("key" -> JsString("origin"), "value" -> JsString(o))
+                                    )
+                    )
+                case (Some(v), Some(o)) =>
+                    JsObject(
+                        "title" -> d.title.map(JsString(_)).getOrElse(JsNull),
+                        "description" -> d.description.map(JsString(_)).getOrElse(JsNull),
+                        "extras" -> JsArray(
+                                        JsObject("key" -> JsString("visibility"), "value" -> JsString(v.toString)),
+                                        JsObject("key" -> JsString("origin"), "value" -> JsString(o))
+                                    )
+                    )
             }
-        }
+        
         def read(v: JsValue) =
             throw new DeserializationException("DataspaceUpdateWithId cannot be read from JSON")
     }

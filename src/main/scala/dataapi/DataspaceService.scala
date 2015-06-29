@@ -50,13 +50,13 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
 {
     // Dataspaces and metadata
-    def listDataspaces(since: Option[String], until: Option[String], state: StateFilter, visibility: Option[Visibility])(implicit authorizationKey: String) = {
+    def listDataspaces(since: Option[String], until: Option[String], state: StateFilter, visibility: Option[Visibility], origin: Option[String])(implicit authorizationKey: String) = {
         try
         {
           val _since = stringToTimestamp(since)
           val _until = stringToTimestamp(until)
           complete {
-          (Core.dataspaceActor ? ListDataspaces(authorizationKey, _since, _until, state, visibility))
+          (Core.dataspaceActor ? ListDataspaces(authorizationKey, _since, _until, state, visibility, origin))
               .mapTo[HttpResponse]
           }
         }
@@ -129,14 +129,15 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
                                                                          ,dataspace.name
                                                                          ,dataspace.title
                                                                          ,dataspace.description
-                                                                         ,dataspace.visibility)))
+                                                                         ,dataspace.visibility
+                                                                         ,dataspace.origin)))
         .mapTo[HttpResponse]
     }
 
     def updateDataspace(id: String, dataspace: DataspaceUpdate) (implicit authorizationKey: String) = 
         authorize(ckan.CkanGodInterface.isDataspaceDeletableByUser(id, authorizationKey)) {
             complete {
-                (Core.dataspaceActor ? UpdateDataspace(authorizationKey, DataspaceUpdateWithId(id, dataspace.title, dataspace.description, dataspace.visibility)))
+                (Core.dataspaceActor ? UpdateDataspace(authorizationKey, DataspaceUpdateWithId(id, dataspace.title, dataspace.description, dataspace.visibility, dataspace.origin)))
                 .mapTo[HttpResponse]
             }
         }
@@ -209,7 +210,7 @@ class DataspaceService()(implicit executionContext: ExecutionContext)
                  * Getting the list of dataspaces
                  */
                 pathEndOrSingleSlash {
-                    parameters('since.as[String] ?, 'until.as[String] ?, 'state.as[StateFilter] ? StateFilter.ACTIVE, 'visibility.as[Option[Visibility]]) { listDataspaces }
+                    parameters('since.as[String] ?, 'until.as[String] ?, 'state.as[StateFilter] ? StateFilter.ACTIVE, 'visibility.as[Option[Visibility]], 'origin.as[String] ?) { listDataspaces }
                 } ~
                 //path("query" / "results" / Segment) { listDataspacesFromIterator } ~
                 /*

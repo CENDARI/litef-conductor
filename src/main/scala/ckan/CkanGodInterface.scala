@@ -195,13 +195,14 @@ object CkanGodInterface {
      * @param _until gets only the dataspaces older than the specified timestamp
      * @param state
      * @param visibility
+     * @param origin
      * @param start (aka offset) skips first 'start' results
      * @param _count defines how many results to return
      * @return the query object against the collection of dataspaces
      */
     def listDataspacesQuery(authorizationKey: String,
                             _since: Option[Timestamp], _until: Option[Timestamp],
-                            state: StateFilter, visibility: Option[Visibility],
+                            state: StateFilter, visibility: Option[Visibility], origin: Option[String],
                             start: Int, _count: Int
                             ) = database withSession { implicit session: Session =>
 
@@ -214,6 +215,23 @@ object CkanGodInterface {
                 .filter(_.created.between(since, until))
 
         if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) q = q.filter(_.state === state.toString.toLowerCase)
+        
+        origin match {
+            case None  =>
+            case Some("") =>
+                q = q.filterNot(_.id in DataspaceExtraTable.query
+                                        .filter(_.key === "origin")
+                                        //.filter(_.value.isDefined)
+                                        .filter(_.value =!= "")
+                                        .filter(_.state === "active")
+                                        .map(_.dataspaceId))
+            case Some(o) => 
+                q = q.filter(_.id in DataspaceExtraTable.query
+                                        .filter(_.key === "origin")
+                                        .filter(_.value === o)
+                                        .filter(_.state === "active")
+                                        .map(_.dataspaceId))
+        }
         
         val isAdmin = isSysadmin(authorizationKey)
         

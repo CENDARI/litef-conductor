@@ -55,6 +55,7 @@ object DataspaceActor {
             val until: Option[Timestamp],
             val state: StateFilter,
             val visibility: Option[Visibility],
+            val origin: Option[String] = None,
             val start: Int = 0,
             val count: Int = CkanGodInterface.queryResultDefaultLimit
         )
@@ -117,10 +118,10 @@ class DataspaceActor
     
     def receive: Receive = {
         /// Gets the list of resources modified in the specified time range
-        case ListDataspaces(authorizationKey, since, until, state, visibility, start, count) =>
+        case ListDataspaces(authorizationKey, since, until, state, visibility, origin, start, count) =>
             CkanGodInterface.database withSession { implicit session: Session =>
                 val (dataspacesQuery, nextPage, currentPage) =
-                    CkanGodInterface.listDataspacesQuery(authorizationKey, since, until, state, visibility, start, count)
+                    CkanGodInterface.listDataspacesQuery(authorizationKey, since, until, state, visibility, origin, start, count)
 
                 val dataspacesList = dataspacesQuery.list
                 
@@ -217,17 +218,17 @@ class DataspaceActor
                     val cr = JsonParser(response1.entity.asString).convertTo[CkanResponse]
                     (response1.status, cr.result) match {
                         case (StatusCodes.OK, Some(dsOld)) =>
-                            val dsNew = dataspace.visibility match {
-                                case None => new JsObject(dsOld ++ dataspace.toJson.asJsObject.fields)
-                                case Some(v) =>
-                                    val caeVisibility = CkanApiExtras(key = "visibility", value = v.toString)
-                                    val extrasOld = dsOld get "extras"
-                                    val l = extrasOld match {
-                                        case Some(x: JsArray) =>  x.convertTo[List[CkanApiExtras]] :+ caeVisibility
-                                        case _ => List(caeVisibility)
-                                    }
-                                    new JsObject(dsOld ++ dataspace.toJson.asJsObject.fields ++ JsObject("extras" -> l.toJson).fields)
+                            val extrasOldList = dsOld get "extras" match {
+                                case Some(x: JsArray) =>  x.convertTo[List[CkanApiExtras]]
+                                case _ => List()
                             }
+                            val extrasNewList = dataspace.toJson.asJsObject.fields get "extras" match {
+                                case Some(x: JsArray) =>  x.convertTo[List[CkanApiExtras]]
+                                case _ => List()
+                            }
+                            val extras = extrasOldList ::: extrasNewList
+                            val dsNew = JsObject(dsOld ++ dataspace.toJson.asJsObject.fields ++ JsObject("extras" -> extras.toJson).fields)
+                            
                             // TODO: Check why dsNew is not accepted (JsObject), but it has to be sent as String. This is spray related, not CKAN API related
                             (IO(Http) ? (Post(CkanConfig.namespace + "action/organization_update", dsNew.toString)~>addHeader("Authorization", authorizationKey)))
                             .mapTo[HttpResponse]

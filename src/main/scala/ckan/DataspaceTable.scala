@@ -122,7 +122,7 @@ object DataspaceJsonProtocol extends DefaultJsonProtocol {
                 // "isOrganization" -> JsBoolean(ds.isOrganization),
                 // "type"           -> JsString(ds.dsType),
                 "visibility"     -> JsString(ds.extras.getOrElse("visibility", "private")),
-                
+                "origin"         -> JsString(ds.extras.getOrElse("origin", "")),
                 "state"          -> JsString(ds.dataspace.state getOrElse "")
             )
 

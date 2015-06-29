@@ -6,10 +6,11 @@ Request filter parameters:
 ==========================  =================== ======================================================================
 Parameter                   Type                Description
 ==========================  =================== ======================================================================
-visibility (optional)       String              Valid values are: ``public``, ``private``, and ``all``. Default is ``all``.
-state (optional)            String              Valid values are: "active", "deleted", and "all". Default is "active".
+visibility (optional)       String              Valid values are: ``public``, ``private``, and ``all``. Default is ``all``
+origin (optional)           String              If specified, only the resources that have the specified origin will be included
+state (optional)            String              Valid values are: "active", "deleted", and "all". Default is "active"
 since (optional)            DateTime (ISO 8601) If specified, only the resources created or modified after the specified date/time will be included
-until (optional)            DateTime (ISO 8601) If specified, only the resources created or modified before the specified date/time will be includeds
+until (optional)            DateTime (ISO 8601) If specified, only the resources created or modified before the specified date/time will be included
 ==========================  =================== ======================================================================
 
 Response JSON object:
@@ -33,6 +34,7 @@ name            String  Dataspace unique name
 title           String  Dataspace title
 description     String  Additional information about the dataspace
 visibility      String  Visibility can be ``private`` or ``public``
+origin          String  Information about origin of the dataspace (NTE, AtoM, ...)
 state           String  State can be "active" or "deleted"
 ==============  ======= ==========================================
 
@@ -52,6 +54,7 @@ Example response::
         "title": "CENDARI dataspace",
         "description": "Content of this dataspaces is created within the CENDARI project",
         "visibility": "private",
+        "origin": "",
         "state": "active"
       }, ...]
     } 
