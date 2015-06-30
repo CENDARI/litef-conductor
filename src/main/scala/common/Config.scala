@@ -60,4 +60,8 @@ object Config {
     object Indexer {
         lazy val localStoragePrefix = config getString "indexer.localStoragePrefix"
     }
+
+    object Elastic {
+        lazy val namespace = config getString "elastic.namespace"
+    }
 }
