@@ -14,49 +14,189 @@
  */
 package dataapi
 
-import spray.json.DefaultJsonProtocol
+import spray.json._
 import ckan.DataspaceJsonProtocol._
 import java.lang.String
-import spray.json.JsonFormat
-import spray.httpx.unmarshalling.{MalformedContent, FromStringDeserializer}
-
-case class DataspaceCreate (name: String, title: Option[String], description: Option[String]){
-    require(name matches "[a-z0-9_-]+")
-}
-case class DataspaceCreateWithId (id: String, name: String, title: Option[String], description: Option[String])
-case class DataspaceUpdate (title: Option[String], description: Option[String])
-case class DataspaceUpdateWithId (id: String, title: Option[String], description: Option[String])
-//case class Resource(id: String, name: Option[String], description: Option[String], format: Option[String], package_id: String, upload: String )
-case class PackageCreateWithId(name: String, owner_org: String, title: String, `private`: Boolean = true)
-case class CkanOrganizationMember(id: String, username: String, role: String) {
-    require(role == "admin" || role == "editor" || role == "member")
-}
-
-case class ShibData(mail: String, eppn: String, cn: String)
-case class CkanUser(name: String, email: String, password: String, id: String, fullname: String, openid: String)
-
-case class CkanErrorMsg (message: String, __type: String)
-case class CkanResponse[T](help: String, success: Boolean, result: Option[T], error: Option[CkanErrorMsg])
+import spray.httpx.unmarshalling.{MalformedContent, FromStringDeserializer, FromStringOptionDeserializer}
 
 object StateFilter extends Enumeration {
     type StateFilter = Value
     val ACTIVE, DELETED, ALL = Value
 }
 
+object Visibility extends Enumeration {
+    type Visibility = Value
+    val PUBLIC = Value("public")
+    val PRIVATE = Value("private") 
+}
+
+case class DataspaceCreate (name: String, title: Option[String], description: Option[String], visibility: Option[Visibility.Visibility], origin: Option[String]){
+    require(name matches "[a-z0-9_-]{2,100}")
+}
+case class DataspaceCreateWithId (id: String, name: String, title: Option[String], description: Option[String], visibility: Option[Visibility.Visibility], origin: Option[String])
+case class DataspaceUpdate (title: Option[String], description: Option[String], visibility: Option[Visibility.Visibility], origin: Option[String])
+case class DataspaceUpdateWithId (id: String, title: Option[String], description: Option[String], visibility: Option[Visibility.Visibility], origin: Option[String])
+//case class Resource(id: String, name: Option[String], description: Option[String], format: Option[String], package_id: String, upload: String )
+case class PackageCreateWithId(name: String, owner_org: String, title: String, `private`: Boolean = true) 
+
+case class CkanApiPackageCreate(val name: String, val title: Option[String], val description: Option[String], val dataspaceId: String, val isPrivate: Option[Boolean]){
+    require(name matches "[a-z0-9_-]{2,100}")
+}
+
+case class CkanApiPackageUpdate(val title: Option[String], val description: Option[String], val isPrivate: Option[Boolean])
+case class CkanApiPackageUpdateWithId(val id: String, val title: Option[String], val notes: Option[String], val `private`: Option[Boolean])
+
+case class CkanOrganizationMember(id: String, username: String, role: String) {
+    require(role == "admin" || role == "editor" || role == "member")
+}
+
+case class CkanApiExtras(id: Option[String] = None, key: String, value: String, state: Option[String] = None, revision_id: Option[String] = None, group_id: Option[String] = None)
+case class ShibData(mail: String, eppn: String, cn: String)
+case class CkanUser(name: String, email: String, password: String, id: String, fullname: String, openid: String)
+
+case class CkanErrorMsg (message: String, __type: String)
+//case class CkanResponse[T](help: String, success: Boolean, result: Option[T], error: Option[CkanErrorMsg])
+case class CkanResponse(help: String, success: Boolean, result: Option[Map[String, JsValue]], error: Option[CkanErrorMsg])
+
 object CkanJsonProtocol extends DefaultJsonProtocol {
-    implicit val dataspaceCreateFormat = jsonFormat3(DataspaceCreate)
-    implicit val dataspaceCreateWithIdFormat = jsonFormat4(DataspaceCreateWithId)
-    implicit val dataspaceUpdateFormat = jsonFormat2(DataspaceUpdate)
-    implicit val dataspaceUpdateWithIdFormat = jsonFormat3(DataspaceUpdateWithId)
+    implicit object VisibilityJsonFormat extends RootJsonFormat[Visibility.Visibility] {
+        def write(v: Visibility.Visibility) = JsString(v.toString)
+        
+        def read(value: JsValue) = value match {
+            case JsString(s) => Visibility.withName(s)
+            case _ => throw new DeserializationException(s"Invalid value '$value'. Valid values are 'public' and 'private'")
+        }
+    }
+    implicit val ckanApiExtrasJsonFormat = jsonFormat6(CkanApiExtras)
+    implicit val dataspaceCreateFormat = jsonFormat5(DataspaceCreate)
+    //implicit val dataspaceCreateWithIdFormat = jsonFormat4(DataspaceCreateWithId)
+    implicit object DataspaceCreateWithIdJsonFormat extends RootJsonFormat[DataspaceCreateWithId] {
+        def write(d: DataspaceCreateWithId) = 
+            (d.visibility, d.origin) match {
+                case (None, None) => 
+                    JsObject(
+                        "id"    -> JsString(d.id),
+                        "name"  -> JsString(d.name),
+                        "title" -> JsString(d.title.getOrElse("")),
+                        "description" -> JsString(d.description.getOrElse(""))
+                    )
+                case (Some(v), None) =>
+                    JsObject(
+                        "id"    -> JsString(d.id),
+                        "name"  -> JsString(d.name),
+                        "title" -> JsString(d.title.getOrElse("")),
+                        "description" -> JsString(d.description.getOrElse("")),
+                        "extras" -> JsArray(JsObject("key" -> JsString("visibility"), "value" -> JsString(v.toString)))
+                    )
+                case (None, Some(o)) =>
+                    JsObject(
+                        "id"    -> JsString(d.id),
+                        "name"  -> JsString(d.name),
+                        "title" -> JsString(d.title.getOrElse("")),
+                        "description" -> JsString(d.description.getOrElse("")),
+                        "extras" -> JsArray(
+                                        JsObject("key" -> JsString("visibility"), "value" -> JsString("private")),
+                                        JsObject("key" -> JsString("origin"), "value" -> JsString(o))
+                                    )
+                    )
+                case (Some(v), Some(o)) =>
+                    JsObject(
+                        "id"    -> JsString(d.id),
+                        "name"  -> JsString(d.name),
+                        "title" -> JsString(d.title.getOrElse("")),
+                        "description" -> JsString(d.description.getOrElse("")),
+                        "extras" -> JsArray(
+                                        JsObject("key" -> JsString("visibility"), "value" -> JsString(v.toString)),
+                                        JsObject("key" -> JsString("origin"), "value" -> JsString(o))
+                                    )
+                    )
+        }
+        
+        def read(v: JsValue) =
+            throw new DeserializationException("DataspaceCreateWithId cannot be read from JSON")
+    }
+    
+    implicit val dataspaceUpdateFormat = jsonFormat4(DataspaceUpdate)
+    //implicit val dataspaceUpdateWithIdFormat = jsonFormat4(DataspaceUpdateWithId)
+    implicit object DataspaceUpdateWithIdJsonFormat extends RootJsonFormat[DataspaceUpdateWithId] {
+        def write(d: DataspaceUpdateWithId) = 
+            // TODO: omit field (title/description) if None
+            (d.visibility, d.origin) match {
+                case (None, None) => 
+                    JsObject(
+                        "title" -> d.title.map(JsString(_)).getOrElse(JsNull),
+                        "description" -> d.description.map(JsString(_)).getOrElse(JsNull)
+                    )
+                case (Some(v), None) =>
+                    JsObject(
+                        "title" -> d.title.map(JsString(_)).getOrElse(JsNull),
+                        "description" -> d.description.map(JsString(_)).getOrElse(JsNull),
+                        "extras" -> JsArray(JsObject("key" -> JsString("visibility"), "value" -> JsString(v.toString)))
+                    )
+                case (None, Some(o)) =>
+                    JsObject(
+                        "title" -> d.title.map(JsString(_)).getOrElse(JsNull),
+                        "description" -> d.description.map(JsString(_)).getOrElse(JsNull),
+                        "extras" -> JsArray(
+                                        JsObject("key" -> JsString("origin"), "value" -> JsString(o))
+                                    )
+                    )
+                case (Some(v), Some(o)) =>
+                    JsObject(
+                        "title" -> d.title.map(JsString(_)).getOrElse(JsNull),
+                        "description" -> d.description.map(JsString(_)).getOrElse(JsNull),
+                        "extras" -> JsArray(
+                                        JsObject("key" -> JsString("visibility"), "value" -> JsString(v.toString)),
+                                        JsObject("key" -> JsString("origin"), "value" -> JsString(o))
+                                    )
+                    )
+            }
+        
+        def read(v: JsValue) =
+            throw new DeserializationException("DataspaceUpdateWithId cannot be read from JSON")
+    }
     implicit val packageCreateWithIdFormat = jsonFormat4(PackageCreateWithId)
     implicit val shibDataFormat = jsonFormat3(ShibData)
     implicit val ckanUserFormat = jsonFormat6(CkanUser)
     implicit val ckanErrorMsgFormat = jsonFormat2(CkanErrorMsg)
-    implicit def ckanResponseFormat[T: JsonFormat] = lazyFormat(jsonFormat4(CkanResponse.apply[T]))
+    //implicit def ckanResponseFormat[T: JsonFormat] = lazyFormat(jsonFormat4(CkanResponse.apply[T]))
+    implicit def ckanResponseFormat = jsonFormat4(CkanResponse)
     implicit val ckanOrganizationMember = jsonFormat3(CkanOrganizationMember)
+    
+    implicit object CkanApiPackageCreateJsonFormat extends RootJsonFormat[CkanApiPackageCreate] {
+        def write(p: CkanApiPackageCreate) =
+            JsObject(
+                "name"          -> JsString(p.name),
+                "title"         -> JsString(p.title getOrElse ""),
+                "notes"         -> JsString(p.description getOrElse ""),
+                "owner_org"     -> JsString(p.dataspaceId),
+                "private"       -> JsBoolean(p.isPrivate getOrElse true)
+            )
+
+        def read(value: JsValue) = {
+            jsonFormat5(CkanApiPackageCreate).read(value)
+        }
+    }
+    
+    implicit object CkanApiPackageUpdateJsonFormat extends RootJsonFormat[CkanApiPackageUpdate] {
+        def write(p: CkanApiPackageUpdate) = {
+            throw new DeserializationException("CkanApiPackageUpdate cannot be transformed to JSON")
+        }
+        def read(value: JsValue) = 
+            jsonFormat3(CkanApiPackageUpdate).read(value)
+    }
+    
+    implicit object CkanApiPackageUpdateWithIdJsonFormat extends RootJsonFormat[CkanApiPackageUpdateWithId] {
+        def write(p: CkanApiPackageUpdateWithId) = {
+            jsonFormat4(CkanApiPackageUpdateWithId).write(p)
+            
+        }
+        def read(value: JsValue) = 
+            throw new DeserializationException("CkanApiPackageUpdateWithId cannot be read from JSON")
+    }
 }
 
-object StateFilterProtocol {
+object FilterStringProtocol {
     implicit val stringToStateFilter = new FromStringDeserializer[StateFilter.StateFilter] {
         def apply(value: String) = {
             val name = value.toUpperCase
@@ -64,6 +204,16 @@ object StateFilterProtocol {
             else if (name == StateFilter.DELETED.toString) { Right(StateFilter.DELETED) }
             else if (name == StateFilter.ALL.toString) { Right(StateFilter.ALL) }
             else Left(MalformedContent(s"Invalid value '$value'. Valid values are 'active', 'deleted', and 'all'"))
+        }
+    }
+    
+    implicit val stringToVisibilityFilter = new FromStringOptionDeserializer[Option[Visibility.Visibility]] {
+        def apply(value: Option[String]) = {
+            if (value.isEmpty) { Right(None) }
+            else if (value == Some(Visibility.PUBLIC.toString)) { Right(Some(Visibility.PUBLIC)) }
+            else if (value == Some(Visibility.PRIVATE.toString)) { Right(Some(Visibility.PRIVATE)) }
+            else if (value == Some("all")) { Right(None) }
+            else Left(MalformedContent(s"Invalid value '$value'. Valid values are 'private', 'public', and 'all'"))
         }
     }
 }

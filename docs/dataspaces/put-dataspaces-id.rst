@@ -1,21 +1,18 @@
-POST /dataspaces
-================
+PUT /dataspaces/$id
+===================
 
 Request JSON object:
 
 =============== ======= ===========
 Attribute       Type    Description
 =============== ======= ===========
-name            String  Unique name of the dataspace 
-                        (a string between 2 and 100 characters long, 
-                        containing only lowercase alphanumeric characters, ``-`` and ``_``)
 title           String  Dataspace title
 description     String  Additional information about the dataspace
-visibility      String  Visibility can be ``private`` or ``public``. Default value is ``private``.
+visibility      String  Visibility can be ``private`` or ``public``.
                         If a dataspace is ``public``, all registered users have
                         read-only access to it. If a dataspace is ``private``, only 
                         users with privileges can access it.
-origin          String  Information about origin of the dataspace (NTE, AtoM, ...) 
+origin          String  Information about origin of the dataspace (NTE, AtoM, ...)
 =============== ======= ===========
 
 Response JSON object:
@@ -37,9 +34,9 @@ state           String  State can be "active" or "deleted"
 
 Example request::
 
-    curl -H "Authorization: your-apikey" -H "Content-Type: application/json" \
-        -d '{"name":"cendari-dataspace", "title":"CENDARI dataspace", "description":"Content of this dataspaces is created within the CENDARI project"}' \
-        http://localhost:42042/v1/dataspaces
+    curl -X PUT -H "Authorization: your-apikey" -H "Content-Type: application/json" \
+        -d '{"title":"CENDARI dataspace", "description":"Content of this dataspaces is created within the CENDARI project", "visibility":"public", "origin": ""}' \
+        http://localhost:42042/v1/dataspaces/c5633d7f-8bb8-4b77-be22-6ee722ff4705
 
 Example response::
 
@@ -51,7 +48,7 @@ Example response::
       "name": "cendari-dataspace",
       "title": "CENDARI dataspace",
       "description": "Content of this dataspaces is created within the CENDARI project",
-      "visibility": "private",
+      "visibility": "public",
       "origin": "",
       "state": "active"
     }

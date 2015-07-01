@@ -46,6 +46,13 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
         // all the data from Virtuoso that we used to have
         clearGraph(resourceGraph)
 
+        for (group <- resource.group) {
+            execute(s"""|SPARQL INSERT IN GRAPH <litef://dataspaces> {
+                        |<litef://dataspaces/${group}> a <http://www.w3.org/2004/03/trix/rdfg-1/Graph> .
+                        |<${resourceGraph}> rdfs:member <litef://dataspaces/${group}> .
+                        |}""".stripMargin)
+        }
+
         // Loading the file, if it is a RDF
         if (resource.localMimetype == "application/rdf+xml") {
             logger info s"Loading the file into Virtuoso: ${resource.localPath}"

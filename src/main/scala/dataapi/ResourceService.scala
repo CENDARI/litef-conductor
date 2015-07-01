@@ -23,8 +23,13 @@ import scala.concurrent.ExecutionContext
 import spray.routing._
 import dataapi.ResourceActor._
 import spray.http.HttpResponse
+import spray.http.StatusCodes
+import spray.http.FormFile
 import java.sql.Timestamp
 import core.Core
+import slick.driver.PostgresDriver.simple._
+import StateFilter._
+import FilterStringProtocol._
 
 // Needed for implicit conversions, not unused:
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -34,16 +39,54 @@ import reflect.ClassTag
 class ResourceService()(implicit executionContext: ExecutionContext)
     extends CommonDirectives
 {
-    // Resources and metadata
-    // def listResources(since: Option[Timestamp], until: Option[Timestamp])(implicit authorizationKey: String) =
-    //     complete {
-    //         (Core.resourceActor ? ListResources(since, until)).mapTo[String]
-    //     }
-    //
-    // def listResourcesFromIterator(iteratorData: String)(implicit authorizationKey: String) =
-    //     complete {
-    //         (Core.resourceActor ? ListResourcesFromIterator(iteratorData)).mapTo[String]
-    //     }
+      //Resources and metadata
+      def listResources(dataspaceId: Option[String], setId: Option[String], since: Option[String], until: Option[String], state: StateFilter)(implicit authorizationKey: String) =
+        try
+        {
+            val _since = stringToTimestamp(since)
+            val _until = stringToTimestamp(until)
+            
+            // TODO: return 404 if the dataspace/package with the specified ids do not exist
+            (dataspaceId, setId) match {
+                case (Some(did), Some(sid)) =>
+                    if(ckan.CkanGodInterface.isPackageInDataspace(did, sid))
+                        complete {
+                            (Core.resourceActor ? ListPackageResources(sid, _since, _until, state)).mapTo[HttpResponse]
+                        }
+                    else 
+                        complete {
+                            HttpResponse(StatusCodes.NotFound, s"Set with id ${sid} does not exist in the dataspace with id ${did}")
+                        }
+                case (Some(did), None) =>
+                    authorize(ckan.CkanGodInterface.isDataspaceAccessibleToUser(did, authorizationKey)) {
+                        complete {
+                            (Core.resourceActor ? ListDataspaceResources(did, _since, _until, state)).mapTo[HttpResponse]
+                        }   
+                    }
+                case (None, Some(sid)) =>
+                    authorize(ckan.CkanGodInterface.isPackageAccessibleToUser(sid, authorizationKey)) {
+                        complete {
+                            (Core.resourceActor ? ListPackageResources(sid, _since, _until, state)).mapTo[HttpResponse]
+                        }
+                    }
+                case (None, None) =>
+                    authorize(ckan.CkanGodInterface.isRegisteredUser(authorizationKey)) {
+                        complete {
+                            (Core.resourceActor ? ListResources(authorizationKey, _since, _until, state)).mapTo[HttpResponse]
+                        }
+                    }
+            }
+            
+        }
+        catch
+        {
+          case e: java.text.ParseException  => complete { HttpResponse(StatusCodes.BadRequest, "Invalid date format") }
+        }
+    
+      def listResourcesFromIterator(iteratorData: String)(implicit authorizationKey: String) =
+          complete {
+              (Core.resourceActor ? ListResourcesFromIterator(authorizationKey, iteratorData)).mapTo[HttpResponse]
+          }
 
     def getResourceMetadata(id: String)(implicit authorizationKey: String) =
         authorize(ckan.CkanGodInterface.isResourceAccessibleToUser(id.split('.').head, authorizationKey)) {
@@ -68,36 +111,92 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                 (Core.resourceActor ? GetResourceData(id)).mapTo[HttpResponse]
             }
         }
-      
+
+    def createResource(file: FormFile, format: Option[String], name: Option[String],
+                       description: Option[String], packageId: String) (implicit authorizationKey: String) =
+        // TODO: What if a user tries to create a resource in the set whose state is 'deleted'
+        authorize(ckan.CkanGodInterface.isPackageModifiableByUser(packageId, authorizationKey)) {
+            complete {
+                (Core.resourceActor ? CreateResource(authorizationKey, file, name, format, description, packageId))
+                .mapTo[HttpResponse]
+            }
+        }
+       
+    def updateResource(id: String, file: FormFile, format: Option[String], name: Option[String], description: Option[String]) (implicit authorizationKey: String) =
+        authorize(ckan.CkanGodInterface.isResourceModifiableByUser(id, authorizationKey)) {
+            complete {
+                (Core.resourceActor ? UpdateResource(authorizationKey, id, file, name, format, description))
+                .mapTo[HttpResponse]
+            }
+    }
+
     def deleteResource(id: String)(implicit authorizationKey: String) = {
-        authorize(ckan.CkanGodInterface.isResourceDeletableByUser(id, authorizationKey)) { //TODO: dodaj isResourceDeletableByUser
+        authorize(ckan.CkanGodInterface.isResourceModifiableByUser(id, authorizationKey)) {
           complete {
               (Core.resourceActor ? DeleteResource(authorizationKey, id))
               .mapTo[HttpResponse]
           }
        }
     }
-    
+
     // def getResourceMetadataItem(id: String, item: String)(implicit authorizationKey: String) =
     //     if (item == "data")
     //         getResourceData(id)
     //     else complete {
     //         (Core.resourceActor ? GetResourceMetadataItem(id, item)).mapTo[String]
     //     }
+    //
+    implicit def actorRefFactory = core.Core.system
+    implicit def settings = spray.routing.RoutingSettings.default
+
+    lazy val logger = org.slf4j.LoggerFactory getLogger getClass
 
     // Defining the routes for different methods of the service
     val route = headerValueByName("Authorization") { implicit authorizationKey =>
         pathPrefix("resources") {
             get {
+                pathEnd {
+                    parameters('dataspaceId.as[String] ?,
+                               'setId.as[String] ?,
+                               'since.as[String] ?, 
+                               'until.as[String] ?, 
+                               'state.as[StateFilter] ? StateFilter.ACTIVE) 
+                    { listResources }
+                } ~
+                path("query" / "results" / Segment) { listResourcesFromIterator } ~
                 path(Segment)                       { getResourceMetadata } ~
-                path(Segment / "data")              { getResourceData } ~
+                path(Segment / "OLDDATA")           { getResourceData } ~
                 path(Segment / "format" / Rest)     { getResourceAttachment } ~
                 path(Segment / "rdf" / Segment)     { getResourceAttachmentRDF } ~
                 path(Segment / "rdf")               { getResourceAttachmentRDF(_, "n3") } ~
-                path(Segment / "text")              { getResourceAttachment(_, "text/plain") }
+                path(Segment / "text")              { getResourceAttachment(_, "text/plain") } ~
+                path(Segment / "data")              { id =>
+                    authorize(ckan.CkanGodInterface.isResourceAccessibleToUser(id, authorizationKey)) {
+                        val resource = ckan.CkanGodInterface.getResource(id)
+                        
+                        resource map { resource => 
+                            logger info s"REQ RES ${resource.id} -> ${resource.localPath}"
+                            getFromFile(resource.localPath)
+                        } getOrElse {
+                            // TODO: Make this work properly 
+                            getFromFile("/error505")
+                        }
+                    }
+                }
+            } ~
+            post {
+               (pathEnd & formFields('file.as[FormFile])
+                    & formFields('format.as[Option[String]])
+                    & formFields('name.as[Option[String]])
+                    & formFields('description.as[Option[String]])
+                    & formFields('setId.as[String]))  { createResource } 
             } ~
             put {
-                complete { s"What to put?" }
+                (path(Segment)
+                    & formFields('file.as[FormFile])
+                    & formFields('format.as[Option[String]])
+                    & formFields('name.as[Option[String]])
+                    & formFields('description.as[Option[String]])) { updateResource }
             } ~
             delete {
                 path(Segment)   { deleteResource }

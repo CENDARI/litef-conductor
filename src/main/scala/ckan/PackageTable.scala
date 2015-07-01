@@ -17,26 +17,64 @@
 package ckan
 
 import slick.driver.PostgresDriver.simple._
+import java.sql.Timestamp
+import spray.json._
+import common.Config
 
 case class Package(
-    id: String,
-    name: String,
-    title: Option[String],
-    state: Option[String],
-    `type`: Option[String],
-    ownerOrg: Option[String],
-    `private`: Option[Boolean]=Some(false))
+    id          : String,
+    name        : String,
+    title       : Option[String]    = None,
+    description : Option[String]    = None,
+    state       : Option[String]    = None,
+    dataspaceId : Option[String]    = None,
+    modified    : Option[Timestamp] = None,
+    isPrivate   : Option[Boolean]   = Some(false)
+)
 
 class PackageTable(tag: Tag) extends Table[Package](tag, "package") {
-    def * = (id, name, title, state, `type`, ownerOrg, `private`) <> (Package.tupled, Package.unapply)
-
-    val id: Column[String] = column[String]("id", O.PrimaryKey)
-    val name: Column[String] = column[String]("name")
-    val title: Column[Option[String]] = column[Option[String]]("title")
-    val state: Column[Option[String]] = column[Option[String]]("state")
-    val `type`: Column[Option[String]] = column[Option[String]]("type")
-    val ownerOrg: Column[Option[String]] = column[Option[String]]("owner_org")
-    val `private`: Column[Option[Boolean]] = column[Option[Boolean]]("private")
+    val id          = column[String]("id", O.PrimaryKey)
+    val name        = column[String]("name")
+    val title       = column[Option[String]]("title")
+    val description = column[Option[String]]("notes")
+    val state       = column[Option[String]]("state")
+    val dataspaceId = column[Option[String]]("owner_org")
+    val modified    = column[Option[Timestamp]]("metadata_modified")
+    val isPrivate   = column[Option[Boolean]]("private", O.Default(Some(false)))
+    
+    def * = (id, name, title, description, state, dataspaceId, modified, isPrivate) <> (Package.tupled, Package.unapply)
+    
+    def justIds = (dataspaceId,id)
 }
 
 object PackageTable { val query = TableQuery[PackageTable] }
+
+object PackageJsonProtocol extends DefaultJsonProtocol {
+    implicit object PackageJsonFormat extends RootJsonFormat[Package] {
+        def write(p: Package) =
+            JsObject(
+                "id"            -> JsString(p.id),
+                "url"           -> JsString(s"${Config.namespace}sets/${p.id}"),
+                "name"          -> JsString(p.name),
+                "title"         -> JsString(p.title getOrElse ""),
+                "description"   -> JsString(p.description getOrElse ""),
+                "dataspaceId"   -> JsString(p.dataspaceId getOrElse ""),
+                "dataspaceUrl"  -> JsString(p.dataspaceId map{ s"${Config.namespace}dataspaces/" + _ } getOrElse ""),
+                "resources"     -> JsString(s"${Config.namespace}sets/${p.id}/resources"),
+                //"isPrivate"       -> JsBoolean(p.isPrivate getOrElse false),
+                "state"         -> JsString(p.state getOrElse "")
+            )
+
+        def read(value: JsValue) = {
+            throw new DeserializationException("Package can not be read from JSON")
+        }
+    }
+
+    implicit object PackageSeqJsonFormat extends RootJsonFormat[List[Package]] {
+        def write(p: List[Package]) =
+            JsArray(p.map{ _.toJson })
+
+        def read(value: JsValue) =
+            throw new DeserializationException("Package can not be read from JSON")
+    }
+}

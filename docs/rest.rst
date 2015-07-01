@@ -29,7 +29,15 @@ API Requests
     dataspaces/get-dataspaces
     dataspaces/get-dataspaces-id
     dataspaces/post-dataspaces
+    dataspaces/put-dataspaces-id
     dataspaces/delete-dataspaces
+    dataspaces/get-dataspace-resources
+    dataspaces/get-dataspace-sets
+    sets/get-sets
+    sets/get-sets-id
+    sets/post-set
+    sets/put-sets-id
+    sets/get-set-resources
     resources/get-resources
     resources/get-resources-id
     resources/post-resources
@@ -41,3 +49,4 @@ API Requests
     privileges/get-privileges-id
     privileges/post-privileges
     privileges/delete-privileges-id
+

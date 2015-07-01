@@ -34,19 +34,67 @@ abstract class ResourceData {
     def packageId     : Option[String]
     def state         : Option[String]
 
+    private def getMime = 
+    {
+      val tmp = java.nio.file.Paths.get(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6))
+      (mimetype getOrElse (
+        if(java.nio.file.Files.probeContentType(tmp) == null)
+          ""
+        else
+          java.nio.file.Files.probeContentType(tmp)
+        )
+      )
+    }
+    
+//returns file size in KB
+    private def fileSize = 
+    {
+      val file = new java.io.File(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6) );
+      if(!file.exists())
+        0L
+      else
+      {
+        val sz = file.length()/1024.0;
+        if( sz <1.0)
+          1L;
+        else
+          scala.math.round (sz)
+      }
+    }
+    
+    private def formatTime(time : Option[Timestamp]) = 
+  {
+    time match {
+      case None => ""
+      case Some(v)=> val tz = java.util.TimeZone.getTimeZone("UTC");
+        val df = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+        df.setTimeZone(tz);
+        df.format(new java.util.Date(v.getTime()))
+    }
+  }
+    private def viewDataUrl = {
+        val encodedId = java.net.URLEncoder.encode(id, "utf-8")
+        val encodedPackageId = java.net.URLEncoder.encode(packageId.getOrElse(""), "utf-8")
+        
+        s"${Config.Ckan.home}dataset/$encodedPackageId/resource/$encodedId"
+    }
+    
     def toJson = JsObject(
             "id"             -> JsString(id),
             "url"            -> JsString(s"${Config.namespace}resources/${id}"),
             "dataUrl"        -> JsString(s"${Config.namespace}resources/${id}/data"),
+            "viewDataUrl"    -> JsString(viewDataUrl),
             "name"           -> JsString(name        getOrElse ""),
             "description"    -> JsString(description getOrElse ""),
             "format"         -> JsString(format      getOrElse ""),
-            "mimetype"       -> JsString(mimetype    getOrElse ""),
-            "size"           -> JsNumber(size        getOrElse 0L),
-            "created"        -> JsNumber(created.map  { _.getTime } getOrElse 0L),
-            "modified"       -> JsNumber(modified.map { _.getTime } getOrElse 0L),
+            "mimetype"       -> JsString(getMime),
+            "size"           -> JsNumber(fileSize),
+            "created_epoch"  -> JsNumber(created.map  { _.getTime } getOrElse 0L),
+            "modified_epoch" -> JsNumber(modified.map { _.getTime } getOrElse 0L),
             "setId"          -> JsString(packageId getOrElse ""),
-            "state"          -> JsString(state getOrElse "")
+            "state"          -> JsString(state getOrElse ""),
+            "created"        -> JsString(formatTime(created)),
+            "modified"       -> JsString(formatTime(modified))
         )
 }
 
@@ -92,7 +140,7 @@ case class Resource(
         val fileSize = (new java.io.File(localPath)).length
         fileSize <= Config.Conductor.fileSizeLimit
     }
-
+    
     lazy val isProcessable = isLocal // && isBelowSizeThreshold
     lazy val content = io.Source.fromFile(localPath).mkString
 

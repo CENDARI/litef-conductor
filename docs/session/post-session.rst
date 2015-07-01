@@ -18,6 +18,7 @@ Attribute   Type    Description
 ==========  ======= ===========
 username    String  User's unique username
 sessionKey  String  Authentication key
+sysadmin    Boolean `true` if a user is a sysadmin, otherwise `false`
 ==========  ======= ===========
 
 Example request::
@@ -28,5 +29,6 @@ Example response::
 
     {
       "username": "cendari_notes",
-      "sessionKey": "******"
+      "sessionKey": "******",
+      "sysadmin": false
     }

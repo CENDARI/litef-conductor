@@ -2,7 +2,7 @@ import com.github.retronym.SbtOneJar._
 
 name := """conductor"""
 
-version := "1.2.1"
+version := "1.3.0"
 
 scalaVersion := "2.10.3"
 
@@ -22,8 +22,8 @@ buildInfoPackage := "info"
 
 libraryDependencies ++= {
     object V {
-        val spray = "1.2.1"
-        val akka  = "2.2.4"
+        val spray = "1.3.1"
+        val akka  = "2.3.9"
     }
     Seq(
         "com.typesafe.akka"  %% "akka-actor"         % V.akka          withSources,
@@ -32,16 +32,16 @@ libraryDependencies ++= {
         "ch.qos.logback"      % "logback-classic"    % "1.0.13"        withSources,
         "io.spray"            % "spray-can"          % V.spray         withSources,
         "io.spray"            % "spray-routing"      % V.spray         withSources,
-        "io.spray"            % "spray-testkit"      % V.spray         % "test",
+        // "io.spray"            % "spray-testkit"      % V.spray         % "test",
         "io.spray"           %% "spray-json"         % "1.2.3"         withSources,
         "io.spray"            % "spray-client"       % V.spray         withSources,
-        "io.spray"            % "spray-http"         % "1.2.0"         withSources,
-        "org.specs2"         %% "specs2"             % "1.14"          % "test",
-        "com.novocode"        % "junit-interface"    % "0.7"           % "test->default",
+        "io.spray"            % "spray-http"         % V.spray         withSources,
+        // "org.specs2"         %% "specs2"             % "1.14"          % "test",
+        // "com.novocode"        % "junit-interface"    % "0.7"           % "test->default",
         "com.typesafe.slick" %% "slick"              % "2.0.0"         withSources,
         // "org.slf4j"           % "slf4j-nop"          % "1.6.4"         withSources,
         "postgresql"          % "postgresql"         % "9.1-901.jdbc4" withSources,
-        "org.scalatest"       % "scalatest_2.10"     % "2.0",
+        // "org.scalatest"       % "scalatest_2.10"     % "2.0",
         "ivan"               %% "javelin-ontologies" % "2.0",
         "ivan"               %% "javelin"            % "2.0",
         "ivan"               %% "scala-utils"        % "2.0"

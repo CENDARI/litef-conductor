@@ -30,7 +30,7 @@ import ckan.UserDataspaceRoleJsonProtocol._
 import ckan.UserDataspaceRole
 import common.Config.{ Ckan => CkanConfig }
 import StateFilter._
-import StateFilterProtocol._
+import FilterStringProtocol._
 
 // Needed for implicit conversions, not unused:
 import scala.concurrent.ExecutionContext.Implicits.global

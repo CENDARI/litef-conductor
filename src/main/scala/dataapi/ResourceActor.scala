@@ -24,6 +24,7 @@ import spray.json._
 import DefaultJsonProtocol._
 import MediaTypes._
 import HttpCharsets._
+import java.util.UUID
 
 import common.Config.{ Ckan => CkanConfig }
 import common.Config
@@ -36,7 +37,7 @@ import ckan.DataspaceResourceJsonProtocol._
 import CkanJsonProtocol._
 import spray.httpx.SprayJsonSupport._
 import scala.slick.lifted.{Column, Query}
-import ckan.CkanGodInterface.IteratorData
+import ckan.IteratorData
 import HttpMethods._
 import HttpHeaders._
 import akka.event.Logging._
@@ -47,15 +48,20 @@ import conductor.ResourceAttachmentUtil._
 
 object ResourceActor {
     /// Gets the list of resources modified in the specified time range
-    // case class ListResources(
-    //         val since: Option[Timestamp],
-    //         val until: Option[Timestamp],
-    //         val start: Int = 0,
-    //         val count: Int = CkanGodInterface.queryResultDefaultLimit
-    //     )
+     case class ListResources(
+            val authorizationKey:   String,
+            val since:              Option[Timestamp],
+            val until:              Option[Timestamp],
+            val state:              StateFilter,
+            val start:              Int = 0,
+            val count:              Int = CkanGodInterface.queryResultDefaultLimit
+         )
 
     /// Gets the next results for the iterator
-    // case class ListResourcesFromIterator(val iterator: String)
+    case class ListResourcesFromIterator(
+        val authorizationKey: String,
+        val iterator: String
+    )
 
     /// Gets the data of the specified resource
     case class GetResourceData(id: String)
@@ -75,17 +81,32 @@ object ResourceActor {
             val start: Int = 0,
             val count: Int = CkanGodInterface.queryResultDefaultLimit
         )
-
+        
     /// Gets the resources for the specified dataspace
     case class ListDataspaceResourcesFromIterator(
             val dataspaceId: String,
             val iterator: String
         )
 
+    /// Gets the resources for the specified package
+    case class ListPackageResources(
+            val packageId: String,
+            val since: Option[Timestamp],
+            val until: Option[Timestamp],
+            val state: StateFilter,
+            val start: Int = 0,
+            val count: Int = CkanGodInterface.queryResultDefaultLimit
+    )
+    
+    /// Gets the resources for the specified package
+    case class ListPackageResourcesFromIterator(
+            val packageId: String,
+            val iterator: String
+    )
+    
     case class CreateResource(
             val authorizationKey: String,
-            val id: String,
-            val upload: FormFile,
+            val file: FormFile,
             val name: Option[String],
             val format: Option[String],
             val description: Option[String],
@@ -104,7 +125,7 @@ object ResourceActor {
             val authorizationKey: String,
             val id: String
         )
-    
+
 }
 
 class ResourceActor
@@ -115,31 +136,46 @@ class ResourceActor
     import context.system
 
     val log = Logging(context.system, this)
-
+    
+    lazy val logger = org.slf4j.LoggerFactory getLogger getClass
+    
     def receive: Receive = {
         /// Gets the list of resources modified in the specified time range
-        // case ListResources(since, until, start, count) =>
-        //     CkanGodInterface.database withSession { implicit session: Session =>
-        //
-        //         val (query, nextPage, currentPage) = CkanGodInterface.listResourcesQuery(since, until, start, count)
-        //
-        //         sender ! JsObject(
-        //             "nextPage"    -> JsString(nextPage.map("/resources/query/results/" + _)    getOrElse ""),
-        //             "currentPage" -> JsString(currentPage.map("/resources/query/results/" + _) getOrElse ""),
-        //             "data"        -> query.list.toJson
-        //         ).prettyPrint
-        //
-        //     }
-        //
-        // case ListResourcesFromIterator(iteratorData) =>
-        //     val iterator = IteratorData.fromId(iteratorData).get
-        //     receive(ListResources(
-        //         Some(iterator.since),
-        //         Some(iterator.until),
-        //         iterator.start,
-        //         iterator.count
-        //     ))
-
+        case ListResources(authorizationKey, since, until, state, start, count) =>
+            
+            CkanGodInterface.database withSession { implicit session: Session =>
+                
+                val (query, nextPage, currentPage) = CkanGodInterface.listResourcesQuery(authorizationKey, since, until, state, start, count)
+                
+                val resources = query.list
+                val results = 
+                    if (resources.size > 0)
+                        JsObject(
+                            "nextPage"    -> JsString(nextPage map (s"${Config.namespace}resources/query/results/" + _)    getOrElse ""),
+                            "currentPage" -> JsString(currentPage map (s"${Config.namespace}resources/query/results/" + _) getOrElse ""),
+                            "data"        -> resources.toJson,
+                            "end"         -> JsBoolean(false)
+                        ).prettyPrint
+                    else
+                        JsObject(
+                            "end"         -> JsBoolean(true)
+                        ).prettyPrint
+                
+                sender ! HttpResponse(status = StatusCodes.OK,
+                                      entity = HttpEntity(ContentType(`application/json`, `UTF-8`), results))
+            }
+            
+        case ListResourcesFromIterator(authorizationKey, iteratorData) =>
+            val iterator = IteratorData.fromId(iteratorData).get
+            receive(ListResources(
+                    authorizationKey,
+                    Some(iterator.since),
+                    Some(iterator.until),
+                    iterator.state,
+                    iterator.start,
+                    iterator.count
+                ))
+            
         /// Gets the meta data for the the specified resource
         // case GetResourceMetadata(id) => IO(Http) forward {
         //     Get(CkanConfig.namespace + "action/resource_show?id=" + id) ~>
@@ -258,7 +294,6 @@ class ResourceActor
                                       entity = HttpEntity(ContentType(`application/json`, `UTF-8`), results))
             }
 
-
         /// Gets the resources for the specified dataspace
         case ListDataspaceResourcesFromIterator(dataspaceId, iteratorData) =>
             val iterator = IteratorData.fromId(iteratorData).get
@@ -270,26 +305,67 @@ class ResourceActor
                 iterator.start,
                 iterator.count
             ))
+        
+        /// Gets the resources for the specified package
+        case ListPackageResources(packageId, since, until, state, start, count) =>
+            CkanGodInterface.database withSession { implicit session: Session =>
 
-        case CreateResource(authorizationKey, id, upload, name, format, description, package_id) => {
+                val (query, nextPage, currentPage) = CkanGodInterface.listPackageResourcesQuery(packageId, since, until, state, start, count)
+
+                val resources = query.list
+                val results =
+                    if (resources.size > 0)
+                        JsObject(
+                            "nextPage"    -> JsString(nextPage map (s"${Config.namespace}sets/$packageId/resources/query/results/" + _)    getOrElse ""),
+                            "currentPage" -> JsString(currentPage map (s"${Config.namespace}sets/$packageId/resources/query/results/" + _) getOrElse ""),
+                            "data"        -> resources.toJson,
+                            "end"         -> JsBoolean(false)
+                        ).prettyPrint
+                    else
+                        JsObject(
+                            "end"         -> JsBoolean(true)
+                        ).prettyPrint
+
+                sender ! HttpResponse(status = StatusCodes.OK,
+                                      entity = HttpEntity(ContentType(`application/json`, `UTF-8`), results))
+            }
+            
+        /// Gets the resources for the specified package
+        case ListPackageResourcesFromIterator(packageId, iteratorData) =>
+            val iterator = IteratorData.fromId(iteratorData).get
+            receive(ListPackageResources(
+                packageId,
+                Some(iterator.since),
+                Some(iterator.until),
+                iterator.state,
+                iterator.start,
+                iterator.count
+            ))
+        
+        case CreateResource(authorizationKey, file, name, format, description, packageId) => {
             val originalSender = sender
 
+            val id = UUID.randomUUID().toString
+            
             var fields = Seq[BodyPart]()
-
+            
             val fieldId = BodyPart(id)
             val namedFieldId = fieldId.copy(headers = `Content-Disposition`("form-data", Map("name" -> "id")) +: fieldId.headers)
             fields = fields :+ namedFieldId
 
-            val fieldUpload = BodyPart(upload.entity)
-            val namedFieldUpload = fieldUpload.copy(headers = `Content-Disposition`("form-data", Map("filename" -> upload.name.get, "name" -> "upload")) +: fieldUpload.headers)
+            val fieldUpload = BodyPart(file.entity)
+            val namedFieldUpload = fieldUpload.copy(headers = `Content-Disposition`("form-data", Map("filename" -> file.name.get, "name" -> "upload")) +: fieldUpload.headers)
             fields = fields :+ namedFieldUpload
 
-            for (n <- name) {
-                val fieldName = BodyPart(n)
-                val namedFieldName = fieldName.copy(headers = `Content-Disposition`("form-data", Map("name" -> "name")) +: fieldName.headers)
-                fields = fields :+ namedFieldName
+            val title = name match {
+                case Some(s)    => s
+                case None       => file.name.get
             }
-
+            
+            val fieldName = BodyPart(title)
+            val namedFieldName = fieldName.copy(headers = `Content-Disposition`("form-data", Map("name" -> "name")) +: fieldName.headers)
+            fields = fields :+ namedFieldName
+            
             for (f <- format) {
                 val fieldFormat = BodyPart(f)
                 val namedFieldFormat = fieldFormat.copy(headers = `Content-Disposition`("form-data", Map("name" -> "format")) +: fieldFormat.headers)
@@ -302,28 +378,36 @@ class ResourceActor
                 fields = fields :+ namedFieldDescription
             }
 
-            val fieldPackageId = BodyPart(package_id)
+            val fieldPackageId = BodyPart(packageId)
             val namedFieldPackageId = fieldPackageId.copy(headers = `Content-Disposition`("form-data", Map("name" -> "package_id")) +: fieldPackageId.headers)
             fields = fields :+ namedFieldPackageId
 
             val resource = MultipartFormData(fields)
-
+            
             (IO(Http) ? (Post(CkanConfig.namespace + "action/resource_create", resource)~>addHeader("Authorization", authorizationKey)))
             .mapTo[HttpResponse]
             .map { response => response.status match {
                     case StatusCodes.OK =>
                         // TODO: Try to read resource from (ugly) CKAN response, not from db
                         val createdResource = CkanGodInterface.getResource(id)
-                        originalSender ! HttpResponse(status = StatusCodes.Created,
-                                                      entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
-                                                                             createdResource.map { _.toJson.prettyPrint}.getOrElse {""}),
-                                                         headers = List(Location(s"${common.Config.namespace}resources/$id")))
-                    case _ => originalSender ! HttpResponse(response.status, "Error creating resource!")
+                        createdResource match {
+                            case Some(cr) =>
+                                originalSender ! HttpResponse(status = StatusCodes.Created,
+                                                              entity = HttpEntity(ContentType(`application/json`, `UTF-8`), cr.toJson.prettyPrint),
+                                                              headers = List(Location(s"${Config.namespace}resources/$id")))
+                            case None => originalSender ! HttpResponse(StatusCodes.InternalServerError, "Error reading newly created resource metadata from the database")
+                              
+                        }
+                        
+                    case _ =>
+                        logger info s"$response"
+                        originalSender ! HttpResponse(response.status, "Error creating resource!")
+                        //originalSender ! response
                     }
             }
         }
-
-        case UpdateResource(authorizationKey, id, upload, name, format, description) => {
+        
+        case UpdateResource(authorizationKey, id, file, name, format, description) => {
             val originalSender = sender
 
             var fields = Seq[BodyPart]()
@@ -332,17 +416,19 @@ class ResourceActor
             val namedFieldId = fieldId.copy(headers = `Content-Disposition`("form-data", Map("name" -> "id")) +: fieldId.headers)
             fields = fields :+ namedFieldId
 
-            val fieldUpload = BodyPart(upload.entity)
-            val namedFieldUpload = fieldUpload.copy(headers = `Content-Disposition`("form-data", Map("filename" -> upload.name.get, "name" -> "upload")) +: fieldUpload.headers)
+            val fieldUpload = BodyPart(file.entity)
+            val namedFieldUpload = fieldUpload.copy(headers = `Content-Disposition`("form-data", Map("filename" -> file.name.get, "name" -> "upload")) +: fieldUpload.headers)
             fields = fields :+ namedFieldUpload
             //fields = fields :+ BodyPart("upload", upload)
-
-            for (n <- name) {
-                val fieldName = BodyPart(n)
-                val namedFieldName = fieldName.copy(headers = `Content-Disposition`("form-data", Map("name" -> "name")) +: fieldName.headers)
-                fields = fields :+ namedFieldName
+            
+            val title = name match {
+                case Some(s)    => s
+                case None       => file.name.get        
             }
-
+            val fieldName = BodyPart(title)
+            val namedFieldName = fieldName.copy(headers = `Content-Disposition`("form-data", Map("name" -> "name")) +: fieldName.headers)
+            fields = fields :+ namedFieldName
+            
             for (f <- format) {
                 val fieldFormat = BodyPart(f)
                 val namedFieldFormat = fieldFormat.copy(headers = `Content-Disposition`("form-data", Map("name" -> "format")) +: fieldFormat.headers)
@@ -363,16 +449,23 @@ class ResourceActor
                 case StatusCodes.OK =>
                     // TODO: Try to read resource from (ugly) CKAN response, not from db
                     val updatedResource = CkanGodInterface.getResource(id)
-                    originalSender ! HttpResponse(status = StatusCodes.OK,
-                                                  entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
-                                                                         updatedResource.map { _.toJson.prettyPrint}.getOrElse {""}))
-                case _ => originalSender ! HttpResponse(response.status, s"""Error updating resource "$id"!""")}
+                    
+                    updatedResource match {
+                        case Some(ur)   => originalSender ! HttpResponse(status = StatusCodes.OK,
+                                                                         entity = HttpEntity(ContentType(`application/json`, `UTF-8`), ur.toJson.prettyPrint))
+                        case None       => originalSender ! HttpResponse(StatusCodes.InternalServerError, "The resources is updated, but its metadata cannot be read from the database")
+                    }
+                            
+                case _ => 
+                    logger info s"$response"
+                    originalSender ! HttpResponse(response.status, s"""Error updating resource with id "$id"!""")
+                }
             }
         }
 
         case DeleteResource(authorizationKey, id) => {
             val originalSender = sender
-            
+
             (IO(Http) ? (Post(CkanConfig.namespace + "action/resource_delete", HttpEntity(`application/json`, """{ "id": """"+ id + """"}""" ))~>addHeader("Authorization", authorizationKey)))
             .mapTo[HttpResponse]
             .map { response => response.status match {
@@ -381,8 +474,8 @@ class ResourceActor
                     originalSender ! HttpResponse(status = StatusCodes.OK,
                                                   entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
                                                                          deletedResource.map { _.toJson.prettyPrint}.getOrElse {""}))*/
-                     originalSender ! HttpResponse(StatusCodes.NoContent)  
-                                                                        
+                     originalSender ! HttpResponse(StatusCodes.NoContent)
+
                 case StatusCodes.Forbidden => originalSender ! HttpResponse(response.status, "The supplied authentication is not authorized to access this resource")
                 case _ => originalSender ! HttpResponse(response.status, s"""Error deleting resource "$id"!""" + response)}
             }
