@@ -44,8 +44,10 @@ class NerdPlugin extends AbstractPluginActor("NERD")
 {
     import context.system
 
+    lazy val logger = org.slf4j.LoggerFactory getLogger getClass
+
     def nerdProcess[T](dataFile: String): Future[HttpResponse] = {
-        println("NerdPlugin: Processing " + dataFile)
+        logger.info("NerdPlugin: Processing " + dataFile)
         val data = java.net.URLEncoder.encode(scala.io.Source.fromFile(dataFile).mkString, "utf-8")
         // val data = java.net.URLEncoder.encode(
         //     "Austria invaded and fought the Serbian army at the Battle of Cer and Battle of Kolubara beginning on 12 August.",
@@ -75,14 +77,13 @@ class NerdPlugin extends AbstractPluginActor("NERD")
             nerdProcess(resource.localPath)
                 .map { response => response.status match {
                 case StatusCodes.OK =>
-                    // println(response.entity.asString)
                     saveResponse(resource.id,
                                  resource.created,
                                  resource.modified,
                                  response)
 
                 case _ =>
-                    println("NerdPlugin: Error " + response)
+                    logger info s"NerdPlugin: Error ${response.header}"
 
                 }
             }
@@ -96,14 +97,13 @@ class NerdPlugin extends AbstractPluginActor("NERD")
             nerdProcess(attachment.localPath)
                 .map { response => response.status match {
                 case StatusCodes.OK =>
-                    // println(response.entity.asString)
                     saveResponse(attachment.resourceId,
                                  Some(attachment.created),
                                  Some(attachment.modified),
                                  response)
 
                 case _ =>
-                    println("NerdPlugin: Error " + response)
+                    logger info s"NerdPlugin: Error ${response.header}"
 
                 }
             }

@@ -83,7 +83,7 @@ class EAGIndexer extends indexer.XMLIndexer {
                 predicate.map { _ % nodeText(child) }
             }
 
-            println("Unprocessed labels: " + unprocessed)
+            // println("Unprocessed labels: " + unprocessed)
 
             // Adding the address
             result ++= address(node).map { CAO.hasRepositoryAddress % _ }

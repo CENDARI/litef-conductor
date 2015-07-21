@@ -55,7 +55,7 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
 
         // Loading the file, if it is a RDF
         if (resource.localMimetype == "application/rdf+xml") {
-            logger info s"Loading the file into Virtuoso: ${resource.localPath}"
+            logger info s"\t -> Loading the file into Virtuoso: ${resource.localPath}"
             loadFileInfoGraph(resource.localPath, resourceGraph)
         }
 
@@ -66,7 +66,7 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
 
         if (attachment.format endsWith "application/rdf+xml") {
             val resourceGraph = graphForResource(attachment.resourceId)
-            logger info s"Loading the file into Virtuoso: ${attachment.localPath}"
+            logger info s"\t -> Loading the file into Virtuoso: ${attachment.localPath}"
             loadFileInfoGraph(attachment.localPath, resourceGraph)
 
         }

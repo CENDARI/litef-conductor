@@ -101,21 +101,21 @@ class DataspaceActor
     import spray.json._
     import DefaultJsonProtocol._
     import spray.httpx.SprayJsonSupport._
-    
+
     lazy val logger = org.slf4j.LoggerFactory getLogger getClass
-    
+
     def postRequest[T](action: String, data: T, authorizationKey: String)(implicit evidence: spray.httpx.marshalling.Marshaller[T]) =
         (IO(Http) ? (
             Post(CkanConfig.namespace + "action/" + action, data)~>addHeader("Authorization", authorizationKey)
         ))
-        
+
     def dataspaceExtrasToMap(extras: List[ckan.DataspaceExtra]): Map[String, String] = {
         val t = for {
             ckan.DataspaceExtra(_, _, Some(k), Some(v), _, _) <- extras
         } yield (k, v)
         t.toMap
     }
-    
+
     def receive: Receive = {
         /// Gets the list of resources modified in the specified time range
         case ListDataspaces(authorizationKey, since, until, state, visibility, origin, start, count) =>
@@ -124,13 +124,13 @@ class DataspaceActor
                     CkanGodInterface.listDataspacesQuery(authorizationKey, since, until, state, visibility, origin, start, count)
 
                 val dataspacesList = dataspacesQuery.list
-                
+
                 val dataspacesWithExtrasList = for {
                     d <- dataspacesList
                     extras = CkanGodInterface.getDataspaceExtrasQuery(d.id).list
                     extrasMap = dataspaceExtrasToMap(extras)
                 } yield DataspaceWithExtras(d, extrasMap)
-                
+
                 // Dataspaces do not support iterators thanks to CKAN //
                 // "nextPage"    -> JsString(nextPage.map("/resources/query/results/" + _)    getOrElse ""),
                 // "currentPage" -> JsString(currentPage.map("/resources/query/results/" + _) getOrElse ""),
@@ -157,14 +157,14 @@ class DataspaceActor
             CkanGodInterface.database withSession { implicit session: Session =>
 
                 val dataspace = CkanGodInterface.getDataspace(id)
-                
+
                 dataspace match {
                     case Some(ds) =>
                         val extras = CkanGodInterface.getDataspaceExtrasQuery(ds.id).list
                         val extrasMap = dataspaceExtrasToMap(extras)
                         val dataspaceWithExtras = DataspaceWithExtras(ds, extrasMap)
                         sender ! HttpResponse(
-                            status = StatusCodes.OK, 
+                            status = StatusCodes.OK,
                             entity = HttpEntity(
                                 ContentType(`application/json`, `UTF-8`),
                                 dataspaceWithExtras.toJson.prettyPrint))
@@ -190,7 +190,7 @@ class DataspaceActor
                                 val extrasMap = dataspaceExtrasToMap(extras)
                                 val dataspaceWithExtras = DataspaceWithExtras(ds, extrasMap)
                                 originalSender ! HttpResponse(
-                                    status = StatusCodes.Created, 
+                                    status = StatusCodes.Created,
                                     entity = HttpEntity(
                                         ContentType(`application/json`, `UTF-8`),
                                         dataspaceWithExtras.toJson.prettyPrint),
@@ -199,7 +199,7 @@ class DataspaceActor
                         }
 
                     case _ =>
-                        logger info s"$response"
+                        logger info s"Failed creating a dataspace: $response"
                         //originalSender ! response
                         originalSender ! HttpResponse(response.status, "Error creating dataspace!")
                 }
@@ -209,12 +209,12 @@ class DataspaceActor
         // Updates the dataspace
         case UpdateDataspace(authorizationKey, dataspace) => {
             val originalSender = sender
-            
+
             // organization_update removes organization users info if not supplied in the JSON
             // that's why we call organization_show, replace title, description, ... and then call organization_update
             (IO(Http) ? (Get(CkanConfig.namespace + s"action/organization_show?id=${dataspace.id}&include_datasets=false")~>addHeader("Authorization", authorizationKey)))
             .mapTo[HttpResponse]
-            .map { response1 => 
+            .map { response1 =>
                     val cr = JsonParser(response1.entity.asString).convertTo[CkanResponse]
                     (response1.status, cr.result) match {
                         case (StatusCodes.OK, Some(dsOld)) =>
@@ -228,7 +228,7 @@ class DataspaceActor
                             }
                             val extras = extrasOldList ::: extrasNewList
                             val dsNew = JsObject(dsOld ++ dataspace.toJson.asJsObject.fields ++ JsObject("extras" -> extras.toJson).fields)
-                            
+
                             // TODO: Check why dsNew is not accepted (JsObject), but it has to be sent as String. This is spray related, not CKAN API related
                             (IO(Http) ? (Post(CkanConfig.namespace + "action/organization_update", dsNew.toString)~>addHeader("Authorization", authorizationKey)))
                             .mapTo[HttpResponse]
@@ -246,13 +246,13 @@ class DataspaceActor
                                                 originalSender ! HttpResponse(StatusCodes.InternalServerError, "Error reading updated dataspace metadata from the database")
                                         }
 
-                                    case _ => 
-                                        logger error s"$response2"
+                                    case _ =>
+                                        logger error s"Failed to update dataspace: $response2"
                                         originalSender ! HttpResponse(response2.status, "Error updating the dataspace")
                                     }
                             }
                         case (errorCode, errorMessage) =>
-                            logger info s"$response1"
+                            logger info s"Failed to update dataspace, no dataspace metadata: $response1"
                             originalSender ! HttpResponse(errorCode, "Error getting dataspace metadata from CKAN. The dataspace cannot be updated")
                     }
             }
@@ -285,10 +285,10 @@ class DataspaceActor
         }
 
         case response: HttpResponse =>
-            println(s"Sending the response back to the requester $response")
+            logger info s"Sending the response back to the requester ..." // $response")
 
         case other =>
-            println(s"Found an unknown thing: $other")
+            logger info s"Found an unknown thing: $other"
             sender ! other
     }
 

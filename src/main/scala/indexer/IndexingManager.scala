@@ -88,7 +88,7 @@ object IndexingManager {
     }
 
     def index(attachment: conductor.ResourceAttachment) {
-        logger.info(s"Indexing attachment ${attachment.resourceId} ${attachment.format}")
+        logger.info(s"Indexing attachment: ${attachment.resourceId} ${attachment.format}")
         val attachmentFile = new java.io.File(attachment.localPath)
 
         val joinedModel = ModelFactory.createDefaultModel
@@ -107,9 +107,10 @@ object IndexingManager {
     }
 
     def index(resource: ckan.Resource) {
-        logger.info(s"Indexing resource ${resource.id}")
         val resourceFile = resource.localFile
         val mimetype = resource.localMimetype
+
+        logger.info(s"Indexing resource:   ${resource.id} ${mimetype}")
 
         val joinedModel = ModelFactory.createDefaultModel
 

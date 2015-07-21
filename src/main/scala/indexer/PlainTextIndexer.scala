@@ -35,7 +35,7 @@ class PlainTextIndexer extends AbstractIndexer {
     ): Option[Double] =
         if (mimetype != "text/plain") None
         else {
-            logger info s"indexing plain text file: ${file.toURI} ${DC_11.title} ${file.getName}"
+            // logger info s"indexing plain text file: ${file.toURI} ${DC_11.title} ${file.getName}"
 
             val root = rootResource
 
@@ -44,7 +44,7 @@ class PlainTextIndexer extends AbstractIndexer {
                 DC_11.date  % file.lastModified
             )
 
-            logger info s"created resource: ${root.getURI} ${root}"
+            // logger info s"created resource: ${root.getURI} ${root}"
 
             Some(.95)
         }
@@ -58,7 +58,7 @@ class PlainTextIndexer extends AbstractIndexer {
     ): Option[Double] =
         if (mimetype != "text/plain") None
         else {
-            logger info s"indexing plain text file: ${file.toURI} ${DC_11.title} ${file.getName}"
+            // logger info s"indexing plain text file: ${file.toURI} ${DC_11.title} ${file.getName}"
 
             val root = rootResource
 
@@ -67,7 +67,7 @@ class PlainTextIndexer extends AbstractIndexer {
                 DC_11.date  % file.lastModified
             )
 
-            logger info s"created resource: ${root.getURI} ${root}"
+            // logger info s"created resource: ${root.getURI} ${root}"
 
             Some(.95)
         }

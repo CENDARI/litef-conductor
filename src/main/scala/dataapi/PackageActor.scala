@@ -48,33 +48,33 @@ object PackageActor {
         val start: Int = 0,
         val count: Int = CkanGodInterface.queryResultDefaultLimit
     )
-    
+
     case class ListPackagesFromIterator(
         val authorizationKey: String,
         val iteratorData: String
     )
-    
+
     case class ListDataspacePackages(
         val dataspaceId: String,
         val state: StateFilter,
         val start: Int = 0,
         val count: Int = CkanGodInterface.queryResultDefaultLimit
     )
-    
+
     case class ListDataspacePackagesFromIterator(
         val dataspaceId: String,
         val iteratorData: String
     )
-    
+
     case class GetPackageMetadata(
         val id: String
     )
-    
+
     case class CreatePackage(
         val authorizationKey: String,
         val pckg: CkanApiPackageCreate
     )
-    
+
     case class UpdatePackage(
         val authorizationKey: String,
         val pckg: CkanApiPackageUpdateWithId
@@ -84,7 +84,7 @@ object PackageActor {
 class PackageActor extends Actor with dataapi.DefaultValues {
     import PackageActor._
     import context.system
-    
+
     lazy val logger = org.slf4j.LoggerFactory getLogger getClass
 
     def receive: Receive = {
@@ -94,7 +94,7 @@ class PackageActor extends Actor with dataapi.DefaultValues {
             val (query, nextPage, currentPage) = CkanGodInterface.listPackagesQuery(authorizationKey, state, start, count)
 
             val packages = query.list
-            val results = 
+            val results =
                 if (packages.size > 0)
                     JsObject(
                         "nextPage"    -> JsString(nextPage map (s"${Config.namespace}sets/query/results/" + _)    getOrElse ""),
@@ -119,13 +119,13 @@ class PackageActor extends Actor with dataapi.DefaultValues {
                     iterator.start,
                     iterator.count
                 ))
-        
-        case ListDataspacePackages(dataspaceId, state, start, count) => 
+
+        case ListDataspacePackages(dataspaceId, state, start, count) =>
             CkanGodInterface.database withSession { implicit session: Session =>
-                
+
                 val (query, nextPage, currentPage) = CkanGodInterface.listDataspacePackagesQuery(dataspaceId, state, start, count)
                 val packages = query.list
-                val results = 
+                val results =
                     if (packages.size > 0)
                         JsObject(
                             "nextPage"    -> JsString(nextPage map (s"${Config.namespace}dataspaces/$dataspaceId/sets/query/results/" + _)    getOrElse ""),
@@ -137,12 +137,12 @@ class PackageActor extends Actor with dataapi.DefaultValues {
                         JsObject(
                             "end"         -> JsBoolean(true)
                         ).prettyPrint
-                    
+
                 sender ! HttpResponse(status = StatusCodes.OK,
                                       entity = HttpEntity(ContentType(`application/json`, `UTF-8`), results))
             }
-            
-        case ListDataspacePackagesFromIterator(dataspaceId, iteratorData) => 
+
+        case ListDataspacePackagesFromIterator(dataspaceId, iteratorData) =>
             val iterator = IteratorData.fromId(iteratorData).get
             receive(ListDataspacePackages(
                     dataspaceId,
@@ -150,25 +150,25 @@ class PackageActor extends Actor with dataapi.DefaultValues {
                     iterator.start,
                     iterator.count
                 ))
-          
+
         case GetPackageMetadata(id) =>
             CkanGodInterface.database withSession { implicit session: Session =>
 
                 val result = CkanGodInterface.getPackageById(id)
-                result match { 
+                result match {
                   case Some(p) =>
                       sender ! HttpResponse(
                                   status = StatusCodes.OK,
-                                  entity = HttpEntity(ContentType(`application/json`, `UTF-8`), 
+                                  entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
                                                       p.toJson.prettyPrint))
                   case None =>
                       sender ! HttpResponse(StatusCodes.NotFound, s"""Set with id "$id" not found""")
                 }
             }
-            
+
         case CreatePackage(authorizationKey, pckg) => {
             val originalSender = sender
-            
+
             (IO(Http) ? (Post(CkanConfig.namespace + "action/package_create", pckg)~>addHeader("Authorization", authorizationKey)))
             .mapTo[HttpResponse]
             .map { response => response.status match {
@@ -183,22 +183,22 @@ class PackageActor extends Actor with dataapi.DefaultValues {
                             case None =>
                                 originalSender ! HttpResponse(StatusCodes.InternalServerError, "Error reading newly created set from the database")
                         }
-                        
-                    case _ => 
-                        logger error s"${response.entity}"
+
+                    case _ =>
+                        logger error s"Failed to create a set: ${response.entity}"
                         originalSender ! HttpResponse(response.status, "Error creating a set")
                     }
             }
         }
         case UpdatePackage(authorizationKey, pckg) => {
-            
+
             val originalSender = sender
-            
+
             // package_update removes package extras, resources, etc. if not supplied in the JSON
             // that's why we call package_show, replace title, description, ... and then call package_update
             (IO(Http) ? (Get(CkanConfig.namespace + s"action/package_show?id=${pckg.id}")~>addHeader("Authorization", authorizationKey)))
             .mapTo[HttpResponse]
-            .map { response1 => 
+            .map { response1 =>
                     val cr = JsonParser(response1.entity.asString).convertTo[CkanResponse]
                     (response1.status, cr.result) match {
                         case (StatusCodes.OK, Some(pckgOld)) =>
@@ -217,23 +217,23 @@ class PackageActor extends Actor with dataapi.DefaultValues {
                                                 originalSender ! HttpResponse(StatusCodes.InternalServerError, "Error reading the updated set from the database")
                                         }
 
-                                    case _ => 
-                                        logger error s"$response2"
+                                    case _ =>
+                                        logger error s"Failed to update the set: $response2"
                                         originalSender ! HttpResponse(response2.status, "Error updating the set")
                                     }
                             }
                         case (errorCode, errorMessage) =>
-                            logger info s"$response1"
+                            logger info s"Failed to update the set, no metadata: $response1"
                             originalSender ! HttpResponse(errorCode, "Error getting set data from CKAN. The set cannot be updated")
                     }
             }
         }
-        
+
         case response: HttpResponse =>
-            println(s"Sending the response back to the requester $response")
+            logger info s"Sending the response back to the requester ..." // $response")
 
         case other =>
-            println(s"Found an unknown thing: $other")
+            logger info s"Found an unknown thing: $other"
             sender ! other
     }
 }
