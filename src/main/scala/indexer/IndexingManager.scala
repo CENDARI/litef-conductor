@@ -26,6 +26,7 @@ import ckan.CkanGodInterface.database
 import slick.driver.PostgresDriver.simple._
 import common.Config
 
+import org.foment.utils.Exceptions._
 import conductor.ResourceAttachmentUtil._
 import java.sql.Timestamp
 
@@ -114,10 +115,16 @@ object IndexingManager {
 
         val joinedModel = ModelFactory.createDefaultModel
 
-        indexers flatMap {
-            _.index(resource, resourceFile, mimetype)
-                .filter(_.score > .75)
-                .map(result => Result(resourceFile, result.indexerName, result.model))
+        indexers flatMap { indexer =>
+            try {
+                indexer.index(resource, resourceFile, mimetype)
+                    .filter(_.score > .75)
+                    .map(result => Result(resourceFile, result.indexerName, result.model))
+            } catch {
+                case e: Throwable =>
+                    logger info s"\t -> Indexing with ${indexer} failed with ${e}"
+                    None
+            }
         } foreach {
             joinedModel add _.model
         }
