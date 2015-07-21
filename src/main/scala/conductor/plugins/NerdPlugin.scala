@@ -103,7 +103,7 @@ class NerdPlugin extends AbstractPluginActor("NERD")
                                  response)
 
                 case _ =>
-                    logger info s"NerdPlugin: Error ${response.header}"
+                    logger info s"NerdPlugin: Error ${response.status}"
 
                 }
             }

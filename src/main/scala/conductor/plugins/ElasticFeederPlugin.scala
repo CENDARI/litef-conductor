@@ -76,27 +76,9 @@ class ElasticFeederPlugin extends AbstractPluginActor("ElasticFeeder")
     def process(attachment: conductor.ResourceAttachment) = {
         if (attachment.format == "application/x-elasticindexer-json-output") {
             sendDocument(attachment)
-                .map { response => response.status match {
-                    case StatusCodes.OK =>
-                        // logger info s"ElasticPlugin: SUCCESS $response"
-
-                        // Sending the resource dataspace
-                        // sendMetadata(attachment)
-                        //     .map { response => response.status match {
-                        //         case StatusCodes.OK =>
-                        //             println("ElasticPlugin: SUCCESS (2) " + response)
-                        //
-                        //         case _ =>
-                        //             println("ElasticPlugin: ERROR (2) " + response)
-                        //
-                        //     }
-                        // }
-
-                    case _ =>
-                        logger info s"ElasticPlugin: ERROR $response"
-
+                .map { response =>
+                    logger info s"ElasticFeederPlugin: Service responded with ${response}"
                 }
-            }
         } else Future {}
     }
 }
