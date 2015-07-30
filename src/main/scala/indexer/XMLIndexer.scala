@@ -53,7 +53,7 @@ class XMLIndexer extends AbstractIndexer {
                 None
             }
         }
-        // , "Error indexing file: " + file.getCanonicalPath )
+        , "Error indexing file: " + file.getCanonicalPath )
 
     def canIndexFile(filename: String) =
         true // CKAN does not keep extensions...
