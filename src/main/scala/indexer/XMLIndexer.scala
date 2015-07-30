@@ -37,10 +37,10 @@ class XMLIndexer extends AbstractIndexer {
     ): Option[Double] = exceptionless (
         if (mimetype != "application/xml" &&
             mimetype != "text/xml") {
-            // logger info s"mimetype is not xml: ${mimetype}"
+            logger info s"mimetype is not xml: ${mimetype}"
             None
 
-        } else if (canIndexFile(file.getName)) {
+        } else if (!canIndexFile(file.getName)) {
             // logger info "we can not index this file - the extension is bad"
             None
 
@@ -49,14 +49,15 @@ class XMLIndexer extends AbstractIndexer {
             if (canIndexXML(xml.label)) {
                 indexFile(rootResource, XML loadFile file)
             } else {
-                // logger info "We can not index this xml type"
+                // logger info s"We can not index this xml type ${xml.label}"
                 None
             }
         }
-        , "Error indexing file: " + file.getCanonicalPath )
+        // , "Error indexing file: " + file.getCanonicalPath )
 
     def canIndexFile(filename: String) =
-        extensions contains { ext: String => filename endsWith ext }
+        true // CKAN does not keep extensions...
+        // extensions contains { ext: String => filename endsWith ext }
 
     def canIndexXML(rootLabel: String) =
         labels contains rootLabel

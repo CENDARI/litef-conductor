@@ -16,6 +16,7 @@ object Indexer {
         "indexer.TikaIndexer",
         "indexer.BasicInfoIndexer",
         "indexer.NerdJsonIndexer",
-        "indexer.xml.EAGIndexer"
+        "indexer.xml.EAGIndexer",
+        "indexer.xml.EADIndexer"
     )
 }

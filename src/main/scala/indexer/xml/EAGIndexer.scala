@@ -45,6 +45,8 @@ class EAGIndexer extends indexer.XMLIndexer {
 
         // root <= desc(xml).map { CAO.hasRepositoryAddress % _ }
 
+        // logger info "EAG indexer processing a new file..."
+
         desc(xml).map { resource =>
             resource += (RDFS.isDefinedBy % root)
         }
