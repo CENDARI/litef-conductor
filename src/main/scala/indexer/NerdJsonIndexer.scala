@@ -92,7 +92,7 @@ class NerdJsonIndexer extends AbstractIndexer {
                 }
 
         if (what != null) {
-            Some(?: ("cendari://resources/" + what + "/" + item.text,
+            Some(?: ("cendari://resources/" + what + "/" + java.net.URLEncoder.encode(item.text, "utf-8"),
                     a              % schema(what),
                     schema("name") % item.text
                 ))
