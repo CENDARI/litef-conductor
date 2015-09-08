@@ -56,6 +56,7 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
         // Loading the file, if it is a RDF
         if (resource.localMimetype == "application/rdf+xml") {
             logger info s"\t -> Loading the file into Virtuoso: ${resource.localPath}"
+            resource writeLog s"\t -> Loading the file into Virtuoso: ${resource.localPath}"
             loadFileInfoGraph(resource.localPath, resourceGraph)
         }
 

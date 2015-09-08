@@ -23,6 +23,7 @@ import com.hp.hpl.jena.vocabulary.DC_11
 import javelin.ontology.Implicits._
 import spray.json._
 import com.hp.hpl.jena.vocabulary.RDF.{`type` => a}
+import conductor.ResourceAttachmentUtil._
 
 case class NerdItem(itemType: String, score: Double, text: String)
 case class NerdDocument(entities: List[NerdItem])
@@ -110,7 +111,7 @@ class NerdJsonIndexer extends AbstractIndexer {
     ): Option[Double] =
         if (mimetype != "application/x-nerd-output") None
         else try {
-            // logger info s"indexing nerd output file: ${file.toURI} ${DC_11.title} ${file.getName}"
+            resource writeLog s"NerdJsonIndexer: indexing nerd output file: ${file.toURI} ${DC_11.title} ${file.getName}"
 
             val jsondata = scala.io.Source.fromFile(file).mkString
             val nerdDocument = JsonParser(jsondata).asJsObject

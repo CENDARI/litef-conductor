@@ -63,6 +63,9 @@ class EADIndexer extends indexer.XMLIndexer {
     val labels = Seq("ead")
 
     override
+    val indexerName = "EADIndexer"
+
+    override
     def indexFile(root: Resource, xml: Elem): Option[Double] = exceptionless {
         // Adding the history information to the resource
         // root <= history(xml).map { Javelin.hasHistory % _ }

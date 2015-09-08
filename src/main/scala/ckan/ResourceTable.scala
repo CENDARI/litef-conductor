@@ -136,7 +136,7 @@ case class Resource(
     lazy val localFile = new java.io.File(localPath)
     lazy val localMimetype = {
         val result = mimetype getOrElse (new java.io.File(localPath).mimetype)
-        if (result != "text/plain") result
+        if (result != "text/plain" && result != "application/xml") result
         else {
             // Unfortunately, mimetype detection is c**p, we need to detect xml
             // ourselves
@@ -148,6 +148,7 @@ case class Resource(
                 val reader = new scala.xml.pull.XMLEventReader(src)
                 if (reader.hasNext) {
                     val rootLabel = reader.next.asInstanceOf[scala.xml.pull.EvElemStart].label
+                    writeLog(s"Resource root label is ${rootLabel}")
                     if (rootLabel == "RDF")
                         "application/rdf+xml"
                     else
@@ -171,6 +172,10 @@ case class Resource(
 
     override
     def toString = s"resource://$id?$accessLink"
+
+    def writeLog(s: String) {
+        conductor.ResourceAttachmentUtil.writeLog(id, s)
+    }
 }
 
 case class ResourceModification(

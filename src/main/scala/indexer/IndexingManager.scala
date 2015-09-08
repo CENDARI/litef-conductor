@@ -112,6 +112,7 @@ object IndexingManager {
         val mimetype = resource.localMimetype
 
         logger.info(s"Indexing resource:   ${resource.id} ${mimetype}")
+        resource.writeLog(s"IndexingManager: Started indexing ${resource.id} (${mimetype})")
 
         val joinedModel = ModelFactory.createDefaultModel
 
@@ -123,6 +124,7 @@ object IndexingManager {
             } catch {
                 case e: Throwable =>
                     logger info s"\t -> Indexing with ${indexer} failed with ${e}"
+                    resource writeLog s"IndexingManager: \t -> Indexing with ${indexer} failed with ${e}"
                     None
             }
         } foreach {
@@ -130,6 +132,7 @@ object IndexingManager {
         }
 
         // We need to save the new RDF serializations back to the database
+        resource writeLog s"IndexingManager: Saving the results"
         saveGeneratedModels(
             resource.id, resource.created, resource.modified,
             joinedModel, "")

@@ -53,6 +53,7 @@ class ElasticFeederPlugin extends AbstractPluginActor("ElasticFeeder")
 
     def sendDocument[T](attachment: conductor.ResourceAttachment): Future[HttpResponse] = {
 
+        attachment writeLog s"ElasticFeederPlugin: -> Sending attachment to Elastic: ${attachment.resourceId}, ${attachment.format}"
         logger info s" -> Sending attachment to Elastic: ${attachment.resourceId}, ${attachment.format}"
 
         val data = scala.io.Source.fromFile(attachment.localPath).mkString
@@ -78,6 +79,7 @@ class ElasticFeederPlugin extends AbstractPluginActor("ElasticFeeder")
             sendDocument(attachment)
                 .map { response =>
                     logger info s"ElasticFeederPlugin: Service responded with ${response}"
+                    attachment writeLog s"ElasticFeederPlugin: Service responded with ${response}"
                 }
         } else Future {}
     }

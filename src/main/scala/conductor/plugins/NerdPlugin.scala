@@ -81,9 +81,11 @@ class NerdPlugin extends AbstractPluginActor("NERD")
                                  resource.created,
                                  resource.modified,
                                  response)
+                    resource writeLog s"NerdPlugin: Success"
 
                 case _ =>
                     logger info s"NerdPlugin: Error ${response.header}"
+                    resource writeLog s"NerdPlugin: Error ${response.header}"
 
                 }
             }
@@ -101,9 +103,11 @@ class NerdPlugin extends AbstractPluginActor("NERD")
                                  Some(attachment.created),
                                  Some(attachment.modified),
                                  response)
+                    attachment writeLog s"NerdPlugin: Success"
 
                 case _ =>
                     logger info s"NerdPlugin: Error ${response.status}"
+                    attachment writeLog s"NerdPlugin: Error ${response.header}"
 
                 }
             }
