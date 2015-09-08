@@ -34,7 +34,7 @@ abstract class ResourceData {
     def packageId     : Option[String]
     def state         : Option[String]
 
-    private def getMime = 
+    private def getMime =
     {
       val tmp = java.nio.file.Paths.get(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6))
       (mimetype getOrElse (
@@ -45,9 +45,9 @@ abstract class ResourceData {
         )
       )
     }
-    
+
 //returns file size in KB
-    private def fileSize = 
+    private def fileSize =
     {
       val file = new java.io.File(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6) );
       if(!file.exists())
@@ -61,8 +61,8 @@ abstract class ResourceData {
           scala.math.round (sz)
       }
     }
-    
-    private def formatTime(time : Option[Timestamp]) = 
+
+    private def formatTime(time : Option[Timestamp]) =
   {
     time match {
       case None => ""
@@ -75,10 +75,10 @@ abstract class ResourceData {
     private def viewDataUrl = {
         val encodedId = java.net.URLEncoder.encode(id, "utf-8")
         val encodedPackageId = java.net.URLEncoder.encode(packageId.getOrElse(""), "utf-8")
-        
+
         s"${Config.Ckan.home}dataset/$encodedPackageId/resource/$encodedId"
     }
-    
+
     def toJson = JsObject(
             "id"             -> JsString(id),
             "url"            -> JsString(s"${Config.namespace}resources/${id}"),
@@ -134,13 +134,38 @@ case class Resource(
 
     lazy val localPath = Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6)
     lazy val localFile = new java.io.File(localPath)
-    lazy val localMimetype = mimetype getOrElse (new java.io.File(localPath).mimetype)
+    lazy val localMimetype = {
+        val result = mimetype getOrElse (new java.io.File(localPath).mimetype)
+        if (result != "text/plain") result
+        else {
+            // Unfortunately, mimetype detection is c**p, we need to detect xml
+            // ourselves
+
+            var rootElement = ""
+            val src = scala.io.Source.fromFile(localFile)
+
+            try {
+                val reader = new scala.xml.pull.XMLEventReader(src)
+                if (reader.hasNext) {
+                    val rootLabel = reader.next.asInstanceOf[scala.xml.pull.EvElemStart].label
+                    if (rootLabel == "RDF")
+                        "application/rdf+xml"
+                    else
+                        "application/xml"
+                } else
+                    "text/plain"
+
+            } catch {
+                case _: Exception => "text/plain"
+            }
+        }
+    }
 
     lazy val isBelowSizeThreshold = {
         val fileSize = (new java.io.File(localPath)).length
         fileSize <= Config.Conductor.fileSizeLimit
     }
-    
+
     lazy val isProcessable = isLocal // && isBelowSizeThreshold
     lazy val content = io.Source.fromFile(localPath).mkString
 
