@@ -25,10 +25,22 @@ litef.virtuoso {
     password = ""
 }
 
+litef.nerd {
+    namespace = "http://traces1.saclay.inria.fr:8090/"
+}
+
+litef.indexer {
+    localStoragePrefix = "/var/lib/litef/default/resources"
+}
+
+litef.elastic {
+    namespace = "http://localhost:9200/"
+}
+
 litef.conductor {
     fileSizeLimit = 10000
 
-    plugins = "conductor.plugins.DocumentIndexerPlugin,conductor.plugins.NerdPlugin"
+    plugins = "conductor.plugins.DocumentIndexerPlugin,conductor.plugins.NerdPlugin,conductor.plugins.VirtuosoFeederPlugin"
 }
 
 akka {

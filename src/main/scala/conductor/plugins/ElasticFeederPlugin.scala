@@ -37,34 +37,51 @@ import HttpHeaders._
 
 import conductor.ResourceAttachmentUtil._
 
-import common.Config.{ Nerd => NerdConfig }
+import common.Config.{ Elastic => ElasticConfig }
 import java.sql.Timestamp
+import ckan.CkanGodInterface
 
 class ElasticFeederPlugin extends AbstractPluginActor("ElasticFeeder")
 {
     import context.system
 
     lazy val logger = org.slf4j.LoggerFactory getLogger getClass
-    lazy val elasticIndexer = fr.inria.aviz.elasticindexer.Indexer.instance
 
     override
     def process(resource: ckan.Resource) = Future {
     }
 
+    def sendDocument[T](attachment: conductor.ResourceAttachment): Future[HttpResponse] = {
+
+        attachment writeLog s"ElasticFeederPlugin: -> Sending attachment to Elastic: ${attachment.resourceId}, ${attachment.format}"
+        logger info s" -> Sending attachment to Elastic: ${attachment.resourceId}, ${attachment.format}"
+
+        val data = scala.io.Source.fromFile(attachment.localPath).mkString
+
+        (IO(Http) ? (
+            Put(ElasticConfig.namespace + "cendari/resource/" + attachment.resourceId, data)
+            )).mapTo[HttpResponse]
+    }
+
+    // def sendMetadata[T](attachment: conductor.ResourceAttachment): Future[HttpResponse] = {
+    //
+    //     val resource = CkanGodInterface.getResource(attachment.resourceId).get
+    //
+    //     (IO(Http) ? (
+    //         Put(ElasticConfig.namespace + "cendari/resource/" + attachment.resourceId + "/_update",
+    //             s"{ dataspace : '${resource.group}' }")
+    //         )).mapTo[HttpResponse]
+    // }
+
     override
-    def process(attachment: conductor.ResourceAttachment) = Future {
-        try {
-            if (attachment.format == "application/x-elasticindexer-json-output") {
-
-                val contents = scala.io.Source.fromFile(attachment.localPath).mkString
-
-                logger info s"Sending attachment to Elastic: ${attachment.resourceId}, ${attachment.format}"
-                elasticIndexer.indexDocument(contents)
-
-            }
-        } catch {
-            case e: Exception => e.printStackTrace
-        }
+    def process(attachment: conductor.ResourceAttachment) = {
+        if (attachment.format == "application/x-elasticindexer-json-output") {
+            sendDocument(attachment)
+                .map { response =>
+                    logger info s"ElasticFeederPlugin: Service responded with ${response}"
+                    attachment writeLog s"ElasticFeederPlugin: Service responded with ${response}"
+                }
+        } else Future {}
     }
 }
 

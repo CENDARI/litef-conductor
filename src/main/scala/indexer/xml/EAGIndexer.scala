@@ -39,11 +39,16 @@ class EAGIndexer extends indexer.XMLIndexer {
     val labels = Seq("eag")
 
     override
+    val indexerName = "EAGIndexer"
+
+    override
     def indexFile(root: Resource, xml: Elem): Option[Double] = {
         // Adding the history information to the resource
         // root <= history(xml).map { Javelin.hasHistory % _ }
 
         // root <= desc(xml).map { CAO.hasRepositoryAddress % _ }
+
+        // logger info "EAG indexer processing a new file..."
 
         desc(xml).map { resource =>
             resource += (RDFS.isDefinedBy % root)
@@ -83,7 +88,7 @@ class EAGIndexer extends indexer.XMLIndexer {
                 predicate.map { _ % nodeText(child) }
             }
 
-            println("Unprocessed labels: " + unprocessed)
+            // println("Unprocessed labels: " + unprocessed)
 
             // Adding the address
             result ++= address(node).map { CAO.hasRepositoryAddress % _ }

@@ -23,6 +23,7 @@ import com.hp.hpl.jena.vocabulary.DC_11
 import javelin.ontology.Implicits._
 import spray.json._
 import com.hp.hpl.jena.vocabulary.RDF.{`type` => a}
+import conductor.ResourceAttachmentUtil._
 
 case class NerdItem(itemType: String, score: Double, text: String)
 case class NerdDocument(entities: List[NerdItem])
@@ -54,7 +55,7 @@ object NerdItemProtocol extends DefaultJsonProtocol {
                 //     }
 
                 case elseval =>
-                    logger info elseval.toString
+                    // logger info elseval.toString
                     null
             }
 
@@ -92,7 +93,7 @@ class NerdJsonIndexer extends AbstractIndexer {
                 }
 
         if (what != null) {
-            Some(?: ("cendari://resources/" + what + "/" + item.text,
+            Some(?: ("cendari://resources/" + what + "/" + java.net.URLEncoder.encode(item.text, "utf-8"),
                     a              % schema(what),
                     schema("name") % item.text
                 ))
@@ -110,12 +111,12 @@ class NerdJsonIndexer extends AbstractIndexer {
     ): Option[Double] =
         if (mimetype != "application/x-nerd-output") None
         else try {
-            logger info s"indexing nerd output file: ${file.toURI} ${DC_11.title} ${file.getName}"
+            resource writeLog s"NerdJsonIndexer: indexing nerd output file: ${file.toURI} ${DC_11.title} ${file.getName}"
 
             val jsondata = scala.io.Source.fromFile(file).mkString
             val nerdDocument = JsonParser(jsondata).asJsObject
 
-            logger info nerdDocument.fields("entities").toString
+            // logger info nerdDocument.fields("entities").toString
 
             val nerdItems = nerdDocument.fields("entities").convertTo[List[NerdItem]]
 
@@ -127,11 +128,12 @@ class NerdJsonIndexer extends AbstractIndexer {
                         .flatMap(mention)
                         .map(schema("mentions") % _)
 
-            logger info s"created resource: ${root.getURI} ${root}"
+            // logger info s"created resource: ${root.getURI} ${root}"
 
             Some(.95)
         } catch {
             case e: Exception =>
+                logger info "Failed to index the attachment"
                 e.printStackTrace
                 None
         }

@@ -54,6 +54,8 @@ class UserActor
     import UserActor._
     import context.system
 
+    lazy val logger = org.slf4j.LoggerFactory getLogger getClass
+
     def receive: Receive = {
 
         case GetSessionKeyForUser(user: ShibData) => {
@@ -66,8 +68,8 @@ class UserActor
                         // TODO: Update user data (email, full name) if not equal with what is provided in ShibData
                         case Some(cu) =>
                             originalSender ! HttpResponse(StatusCodes.OK,
-                                                          HttpEntity(ContentType(`application/json`, `UTF-8`), 
-                                                                     JsObject("username" -> JsString(cu.username), 
+                                                          HttpEntity(ContentType(`application/json`, `UTF-8`),
+                                                                     JsObject("username" -> JsString(cu.username),
                                                                               "sessionKey" -> JsString(cu.apikey.getOrElse("")),
                                                                               "sysadmin" -> JsBoolean(cu.sysadmin.getOrElse(false)))
                                                                      .prettyPrint))
@@ -93,7 +95,7 @@ class UserActor
                                                 val username = u.username
                                                 val sysadmin = u.sysadmin.getOrElse(false)
                                                 originalSender ! HttpResponse(StatusCodes.OK,
-                                                                      HttpEntity(ContentType(`application/json`, `UTF-8`), 
+                                                                      HttpEntity(ContentType(`application/json`, `UTF-8`),
                                                                                  JsObject("username" -> JsString(username),
                                                                                           "sessionKey" -> JsString(apikey),
                                                                                           "sysadmin" -> JsBoolean(sysadmin))
@@ -135,10 +137,10 @@ class UserActor
             }
 
         case response: HttpResponse =>
-            println(s"Sending the response back to the requester $response")
+            logger info s"Sending the response back to the requester ..." // $response")
 
         case other =>
-            println(s"Found an unknown thing: $other")
+            logger info s"Found an unknown thing: $other"
             sender ! other
     }
 }

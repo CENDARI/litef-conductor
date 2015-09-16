@@ -33,22 +33,38 @@ case class ResourceAttachment(
 )
 
 object ResourceAttachmentUtil {
+    def localDirectory(resourceId: String): String = {
+        val choppedId =
+            (resourceId take 3) + '/' +
+            (resourceId drop 3 take 3) + '/' +
+            (resourceId drop 6)
+
+        val result = Config.Indexer.localStoragePrefix + '/' + choppedId
+
+        val dir = new java.io.File(result)
+
+        if (!dir.exists && !dir.mkdirs) {
+            throw new RuntimeException(s"Can not create indexer data directory $dir")
+        }
+
+        result
+    }
+
+    def writeLog(resourceId: String, message: String) {
+        val writer = new java.io.PrintWriter(
+                        new java.io.FileOutputStream(
+                            new java.io.File(localDirectory(resourceId) + "/_log"),
+                            true /* append = true */
+                    ))
+        writer.write(message+"\n")
+        writer.close
+    }
+
     implicit class ResourceAttachmentImplicits(attachment: ResourceAttachment) {
-        def localDirectory: String = {
-            val choppedId =
-                (attachment.resourceId take 3) + '/' +
-                (attachment.resourceId drop 3 take 3) + '/' +
-                (attachment.resourceId drop 6)
+        def localDirectory: String = ResourceAttachmentUtil.localDirectory(attachment.resourceId)
 
-            val result = Config.Indexer.localStoragePrefix + '/' + choppedId
-
-            val dir = new java.io.File(result)
-
-            if (!dir.exists && !dir.mkdirs) {
-                throw new RuntimeException(s"Can not create indexer data directory $dir")
-            }
-
-            result
+        def writeLog(s: String) {
+            ResourceAttachmentUtil.writeLog(attachment.resourceId, s)
         }
 
         def fileName: String =

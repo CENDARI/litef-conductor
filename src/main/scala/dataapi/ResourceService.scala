@@ -45,7 +45,7 @@ class ResourceService()(implicit executionContext: ExecutionContext)
         {
             val _since = stringToTimestamp(since)
             val _until = stringToTimestamp(until)
-            
+
             // TODO: return 404 if the dataspace/package with the specified ids do not exist
             (dataspaceId, setId) match {
                 case (Some(did), Some(sid)) =>
@@ -53,7 +53,7 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                         complete {
                             (Core.resourceActor ? ListPackageResources(sid, _since, _until, state)).mapTo[HttpResponse]
                         }
-                    else 
+                    else
                         complete {
                             HttpResponse(StatusCodes.NotFound, s"Set with id ${sid} does not exist in the dataspace with id ${did}")
                         }
@@ -61,7 +61,7 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                     authorize(ckan.CkanGodInterface.isDataspaceAccessibleToUser(did, authorizationKey)) {
                         complete {
                             (Core.resourceActor ? ListDataspaceResources(did, _since, _until, state)).mapTo[HttpResponse]
-                        }   
+                        }
                     }
                 case (None, Some(sid)) =>
                     authorize(ckan.CkanGodInterface.isPackageAccessibleToUser(sid, authorizationKey)) {
@@ -76,13 +76,13 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                         }
                     }
             }
-            
+
         }
         catch
         {
           case e: java.text.ParseException  => complete { HttpResponse(StatusCodes.BadRequest, "Invalid date format") }
         }
-    
+
       def listResourcesFromIterator(iteratorData: String)(implicit authorizationKey: String) =
           complete {
               (Core.resourceActor ? ListResourcesFromIterator(authorizationKey, iteratorData)).mapTo[HttpResponse]
@@ -121,7 +121,7 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                 .mapTo[HttpResponse]
             }
         }
-       
+
     def updateResource(id: String, file: FormFile, format: Option[String], name: Option[String], description: Option[String]) (implicit authorizationKey: String) =
         authorize(ckan.CkanGodInterface.isResourceModifiableByUser(id, authorizationKey)) {
             complete {
@@ -158,9 +158,9 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                 pathEnd {
                     parameters('dataspaceId.as[String] ?,
                                'setId.as[String] ?,
-                               'since.as[String] ?, 
-                               'until.as[String] ?, 
-                               'state.as[StateFilter] ? StateFilter.ACTIVE) 
+                               'since.as[String] ?,
+                               'until.as[String] ?,
+                               'state.as[StateFilter] ? StateFilter.ACTIVE)
                     { listResources }
                 } ~
                 path("query" / "results" / Segment) { listResourcesFromIterator } ~
@@ -173,12 +173,12 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                 path(Segment / "data")              { id =>
                     authorize(ckan.CkanGodInterface.isResourceAccessibleToUser(id, authorizationKey)) {
                         val resource = ckan.CkanGodInterface.getResource(id)
-                        
-                        resource map { resource => 
+
+                        resource map { resource =>
                             logger info s"REQ RES ${resource.id} -> ${resource.localPath}"
                             getFromFile(resource.localPath)
                         } getOrElse {
-                            // TODO: Make this work properly 
+                            // TODO: Make this work properly
                             getFromFile("/error505")
                         }
                     }
@@ -189,7 +189,7 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                     & formFields('format.as[Option[String]])
                     & formFields('name.as[Option[String]])
                     & formFields('description.as[Option[String]])
-                    & formFields('setId.as[String]))  { createResource } 
+                    & formFields('setId.as[String]))  { createResource }
             } ~
             put {
                 (path(Segment)

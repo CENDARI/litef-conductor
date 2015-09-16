@@ -209,7 +209,7 @@ object AbstractIndexer {
             writer write content
             writer.close
 
-            logger info s"Saving attachment: ${resourceId}, ${mimetype}"
+            logger info s"\t -> Saving attachment: ${resourceId}, ${mimetype}"
 
             // val stream = new java.io.ByteArrayOutputStream()
             conductor.ResourceAttachmentTable.query += conductor.ResourceAttachment(
@@ -224,12 +224,12 @@ object AbstractIndexer {
 
         } catch {
             case e: org.postgresql.util.PSQLException =>
-                println(e.toString())
+                logger info s"\t SQL error while saving the attachment: ${e}"
 
                 None
 
             case e: Exception =>
-                println(s"Unknown exception $e")
+                logger info s"\t unknown error while saving the attachment: ${e}"
 
                 None
         }

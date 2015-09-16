@@ -23,6 +23,15 @@ import nepomuk.ontology.NIE
 
 import javelin.ontology.Implicits._
 import com.hp.hpl.jena.vocabulary.DC_11
+import collection.mutable.{ MultiMap => MutableMultiMap, HashMap => MutableHashMap, Set => MutableSet }
+import collection.immutable.{ HashMap, Map }
+
+import org.apache.tika.metadata.{ Metadata => TikaMetadata, Property => TikaProperty }
+import org.apache.tika.metadata.TikaCoreProperties
+import fr.inria.aviz.tikaextensions.tika.CendariProperties
+
+import spray.json._
+import DefaultJsonProtocol._
 
 final
 class TikaIndexer extends AbstractIndexer {
@@ -36,7 +45,75 @@ class TikaIndexer extends AbstractIndexer {
         runTika(resource, file, root)
 
     lazy val tikaIndexer = fr.inria.aviz.tikaextensions.TikaExtensions.instance
-    lazy val elasticIndexer = fr.inria.aviz.elasticindexer.Indexer.instance
+
+    def parseMetadata(metadata: TikaMetadata) = {
+        val result = new MutableHashMap[String, MutableSet[String]] with MutableMultiMap[String, String]
+
+        val sfields = Map[String, String](
+            "resourceName"                  -> "uri",    /*TikaMetadata.RESOURCE_NAME_KEY*/
+            "Content-Type"                  -> "format", /*TikaMetadata.CONTENT_TYPE*/
+            "text"                          -> "text",
+
+            "Application-Name"              -> "application",
+            "Creation-date"                 -> "date"
+            )
+
+        val pfields = Map[TikaProperty, String](
+            TikaCoreProperties.CREATED      -> "date",
+            CendariProperties.DATE          -> "date",
+            TikaCoreProperties.TITLE        -> "title",
+            TikaCoreProperties.CREATOR      -> "creatorName",
+            TikaCoreProperties.CREATOR_TOOL -> "application",
+            TikaCoreProperties.KEYWORDS     -> "tag",
+            TikaCoreProperties.PUBLISHER    -> "publisher",
+            TikaCoreProperties.MODIFIED     -> "date",
+            TikaCoreProperties.CONTRIBUTOR  -> "contributorName",
+
+            TikaCoreProperties.DESCRIPTION  -> "description",
+            CendariProperties.PERSON        -> "personName",
+            CendariProperties.ORGANIZATION  -> "org",
+            CendariProperties.TAG           -> "tag",
+            CendariProperties.REFERENCE     -> "ref",
+            CendariProperties.EVENT         -> "event"
+            )
+
+        sfields.foreach {
+            m =>
+                if (metadata.get(m._1) != null)
+                    result.addBinding(m._2, metadata get m._1)
+        }
+        pfields.foreach {
+            m =>
+                if (metadata.get(m._1) != null)
+                    result.addBinding(m._2, metadata get m._1)
+        }
+
+        if (metadata.get(CendariProperties.PLACE) != null) {
+            metadata.getValues(CendariProperties.PLACE).foreach {
+                name => result.addBinding("placeName", name)
+            }
+        }
+
+
+        // if (metadata.get(CendariProperties.LANG) != null)
+        //     info.setLanguage(metadata.getValues(CendariProperties.LANG));
+        // else if (metadata.get(TikaCoreProperties.LANGUAGE) != null)
+        //     info.setLanguage(metadata.get(TikaCoreProperties.LANGUAGE));
+        // else {
+        //     LanguageIdentifier langIdent = new LanguageIdentifier(parsedContent);
+        //         info.setLanguage(langIdent.getLanguage());
+        // }
+        // if (metadata.get(TikaCoreProperties.LATITUDE)!= null && metadata.get(TikaCoreProperties.LONGITUDE) != null) {
+        //     String latlon =
+        //             metadata.get(TikaCoreProperties.LATITUDE) +
+        //             ", "+
+        //             metadata.get(TikaCoreProperties.LONGITUDE);
+        //     info.setPlace(new Place(null, latlon));
+        // }
+
+        result
+    }
+
 
     def addOptionalProperty[T](root: Resource, property: Property, value: T) =
         if (value != null) root += (property % value)
@@ -44,24 +121,33 @@ class TikaIndexer extends AbstractIndexer {
     def runTika(resource: ckan.Resource, file: java.io.File, root: => Resource): Option[Double] = try {
 
         val metadata = tikaIndexer.parseDocument(file.getName, null, new java.io.FileInputStream(file), -1)
-        val info = elasticIndexer convertMetadata metadata
+        val info = parseMetadata(metadata) //elasticIndexer convertMetadata metadata
 
-        AbstractIndexer.saveAttachment(resource, info.getText, "text/plain")
-        AbstractIndexer.saveAttachment(resource, elasticIndexer toJSON info, "application/x-elasticindexer-json-output")
+        resource.group.map { info.addBinding("dataspace", _) }
+
+        info.addBinding("resourceId", resource.id)
+        info.addBinding("localPath", resource.localPath)
+
+        val text = info.get("text").get
+        AbstractIndexer.saveAttachment(resource, text.head, "text/plain")
+        AbstractIndexer.saveAttachment(resource,
+            (HashMap[String, Set[String]]() ++ info).toJson.prettyPrint,
+            "application/x-elasticindexer-json-output")
 
         // TODO: We might want to save the plain text in Virtuoso,
         // or other fields
 
-        addOptionalProperty(root, NIE.plainTextContent , info.getText)
-        addOptionalProperty(root, DC_11.title          , info.getTitle)
-        addOptionalProperty(root, DC_11.creator        , info.getCreator)
-        addOptionalProperty(root, DC_11.date           , info.getDate)
-        addOptionalProperty(root, DC_11.format         , info.getFormat)
+        addOptionalProperty(root, NIE.plainTextContent , metadata.get("text"))
+        addOptionalProperty(root, DC_11.title          , metadata.get("title"))
+        addOptionalProperty(root, DC_11.creator        , metadata.get("creator"))
+        addOptionalProperty(root, DC_11.date           , metadata.get("date"))
+        addOptionalProperty(root, DC_11.format         , metadata.get("format"))
 
         Some(0.85)
     } catch {
-        case e: Exception =>
-            e.printStackTrace
+        case e: Throwable =>
+            logger info s"Tika failed: ${e}"
+            resource writeLog s"TikaIndexer: Error: ${e}"
             None
     }
 

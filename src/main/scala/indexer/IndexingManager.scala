@@ -26,6 +26,7 @@ import ckan.CkanGodInterface.database
 import slick.driver.PostgresDriver.simple._
 import common.Config
 
+import org.foment.utils.Exceptions._
 import conductor.ResourceAttachmentUtil._
 import java.sql.Timestamp
 
@@ -88,7 +89,7 @@ object IndexingManager {
     }
 
     def index(attachment: conductor.ResourceAttachment) {
-        logger.info(s"Indexing attachment ${attachment.resourceId} ${attachment.format}")
+        logger.info(s"Indexing attachment: ${attachment.resourceId} ${attachment.format}")
         val attachmentFile = new java.io.File(attachment.localPath)
 
         val joinedModel = ModelFactory.createDefaultModel
@@ -107,21 +108,31 @@ object IndexingManager {
     }
 
     def index(resource: ckan.Resource) {
-        logger.info(s"Indexing resource ${resource.id}")
         val resourceFile = resource.localFile
         val mimetype = resource.localMimetype
 
+        logger.info(s"Indexing resource:   ${resource.id} ${mimetype}")
+        resource.writeLog(s"IndexingManager: Started indexing ${resource.id} (${mimetype})")
+
         val joinedModel = ModelFactory.createDefaultModel
 
-        indexers flatMap {
-            _.index(resource, resourceFile, mimetype)
-                .filter(_.score > .75)
-                .map(result => Result(resourceFile, result.indexerName, result.model))
+        indexers flatMap { indexer =>
+            try {
+                indexer.index(resource, resourceFile, mimetype)
+                    .filter(_.score > .75)
+                    .map(result => Result(resourceFile, result.indexerName, result.model))
+            } catch {
+                case e: Throwable =>
+                    logger info s"\t -> Indexing with ${indexer} failed with ${e}"
+                    resource writeLog s"IndexingManager: \t -> Indexing with ${indexer} failed with ${e}"
+                    None
+            }
         } foreach {
             joinedModel add _.model
         }
 
         // We need to save the new RDF serializations back to the database
+        resource writeLog s"IndexingManager: Saving the results"
         saveGeneratedModels(
             resource.id, resource.created, resource.modified,
             joinedModel, "")
