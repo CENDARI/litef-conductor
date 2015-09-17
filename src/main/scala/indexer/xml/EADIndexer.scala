@@ -42,6 +42,7 @@ class EADIndexer extends indexer.XMLIndexer {
     lazy val `CAO.Archive`                = caoType("Archive")
     lazy val `CAO.Class`                  = caoType("Class")
     lazy val `CAO.Collection`             = caoType("Collection")
+    lazy val `CAO.Subcollection`          = caoType("Subcollection")
     lazy val `CAO.File`                   = caoType("File")
     lazy val `CAO.Fonds`                  = caoType("Fonds")
     lazy val `CAO.Item`                   = caoType("Item")
@@ -147,12 +148,14 @@ class EADIndexer extends indexer.XMLIndexer {
     def parseCollectionTag(node: Node): Resource = {
             // Creating a repository instance
             val resultType = node.attribute("level").getOrElse("item") match {
-                    case "collection" => `CAO.Collection`
-                    case "class"      => `CAO.Class`
-                    case "file"       => `CAO.File`
-                    case "fonds"      => `CAO.Fonds`
-                    case "item"       => `CAO.Item`
-                    case "series"     => `CAO.Series`
+                    case "collection"    => `CAO.Collection`
+                    case "subcollection" => `CAO.Subcollection`
+                    case "class"         => `CAO.Class`
+                    case "file"          => `CAO.File`
+                    case "fonds"         => `CAO.Fonds`
+                    case "item"          => `CAO.Item`
+                    case "series"        => `CAO.Series`
+                    case _               => `CAO.Item`
                 }
 
             val result: Resource = ? (a % resultType)
