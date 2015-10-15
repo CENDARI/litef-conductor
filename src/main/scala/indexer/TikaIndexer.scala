@@ -74,7 +74,10 @@ class TikaIndexer extends AbstractIndexer {
             CendariProperties.ORGANIZATION  -> "org",
             CendariProperties.TAG           -> "tag",
             CendariProperties.REFERENCE     -> "ref",
-            CendariProperties.EVENT         -> "event"
+            CendariProperties.EVENT         -> "event",
+
+            CendariProperties.LANG          -> "language",
+            TikaCoreProperties.LANGUAGE     -> "language"
             )
 
         sfields.foreach {
@@ -88,28 +91,20 @@ class TikaIndexer extends AbstractIndexer {
                     result.addBinding(m._2, metadata get m._1)
         }
 
+        if (metadata.get(TikaCoreProperties.LATITUDE)!= null && metadata.get(TikaCoreProperties.LONGITUDE) != null) {
+            val latlon =
+                    metadata.get(TikaCoreProperties.LATITUDE) +
+                    ", " +
+                    metadata.get(TikaCoreProperties.LONGITUDE);
+            result.addBinding("place", latlon);
+        }
+
         if (metadata.get(CendariProperties.PLACE) != null) {
             metadata.getValues(CendariProperties.PLACE).foreach {
                 name => result.addBinding("placeName", name)
             }
         }
 
-
-        // if (metadata.get(CendariProperties.LANG) != null)
-        //     info.setLanguage(metadata.getValues(CendariProperties.LANG));
-        // else if (metadata.get(TikaCoreProperties.LANGUAGE) != null)
-        //     info.setLanguage(metadata.get(TikaCoreProperties.LANGUAGE));
-        // else {
-        //     LanguageIdentifier langIdent = new LanguageIdentifier(parsedContent);
-        //         info.setLanguage(langIdent.getLanguage());
-        // }
-        // if (metadata.get(TikaCoreProperties.LATITUDE)!= null && metadata.get(TikaCoreProperties.LONGITUDE) != null) {
-        //     String latlon =
-        //             metadata.get(TikaCoreProperties.LATITUDE) +
-        //             ", "+
-        //             metadata.get(TikaCoreProperties.LONGITUDE);
-        //     info.setPlace(new Place(null, latlon));
-        // }
 
         result
     }
