@@ -55,9 +55,18 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
 
         // Loading the file, if it is a RDF
         if (resource.localMimetype == "application/rdf+xml") {
-            logger info s"\t -> Loading the file into Virtuoso: ${resource.localPath}"
-            resource writeLog s"\t -> Loading the file into Virtuoso: ${resource.localPath}"
-            loadFileInfoGraph(resource.localPath, resourceGraph)
+            val sourcePath = resource.localPath
+            val destinationPath = conductor.ResourceAttachment(resource.id, "_copy").localPath
+
+            import java.nio.file.Files
+            import java.nio.file.Paths
+
+            resource writeLog s"\t -> Copying: ${sourcePath} to ${destinationPath}"
+            Files.copy(Paths.get(sourcePath), Paths.get(destinationPath))
+
+            logger info s"\t -> Loading the file into Virtuoso: ${destinationPath}"
+            resource writeLog s"\t -> Loading the file into Virtuoso: ${destinationPath}"
+            loadFileInfoGraph(destinationPath, resourceGraph)
         }
 
     }
