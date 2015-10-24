@@ -139,7 +139,7 @@ trait AbstractIndexer {
         model.createResource(file.toURI.toString)
 
     def createResource() =
-        model.createResource("litef://" + UUID.randomUUID.toString)
+        model.createResource("http://resources.cendari.dariah.eu/resources/anonymous/" + UUID.randomUUID.toString)
 
     def ?:(pvs: PropertyValue[_]*): Resource = createResource() ++= pvs
 

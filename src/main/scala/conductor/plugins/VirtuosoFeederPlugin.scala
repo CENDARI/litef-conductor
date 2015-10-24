@@ -41,15 +41,17 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
     def process(resource: ckan.Resource): Future[Unit] = Future {
 
         val resourceGraph = graphForResource(resource.id)
+        val dataspaceGraph = graphForDataspace(resource.group.get)
 
         // If we are processing a resource, we need to empty out
         // all the data from Virtuoso that we used to have
+        clearGraph("litef://resource/" + resource.id) // old URI for the graph
         clearGraph(resourceGraph)
 
         for (group <- resource.group) {
-            execute(s"""|SPARQL INSERT IN GRAPH <litef://dataspaces> {
-                        |<litef://dataspaces/${group}> a <http://www.w3.org/2004/03/trix/rdfg-1/Graph> .
-                        |<${resourceGraph}> rdfs:member <litef://dataspaces/${group}> .
+            execute(s"""|SPARQL INSERT IN GRAPH <${graphForDataspace("")}> {
+                        |<${dataspaceGraph}> a <http://www.w3.org/2004/03/trix/rdfg-1/Graph> .
+                        |<${resourceGraph}> rdfs:member <${dataspaceGraph}> .
                         |}""".stripMargin)
         }
 
@@ -65,7 +67,7 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
             Files.copy(Paths.get(sourcePath), Paths.get(destinationPath))
 
             logger info s"\t -> Loading the file into Virtuoso: ${destinationPath}"
-            resource writeLog s"\t -> Loading the file into Virtuoso: ${destinationPath}"
+            resource writeLog s"\t -> Loading the file into Virtuoso: ${destinationPath} into graph ${resourceGraph}"
             loadFileInfoGraph(destinationPath, resourceGraph)
         }
 
