@@ -93,10 +93,16 @@ class NerdJsonIndexer extends AbstractIndexer {
                 }
 
         if (what != null) {
-            Some(?: ("cendari://resources/" + what + "/" + java.net.URLEncoder.encode(item.text, "utf-8"),
-                    a              % schema(what),
-                    schema("name") % item.text
-                ))
+            val entityResource = s"http://resources.cendari.dariah.eu/${what.toLowerCase}s/" + java.net.URLEncoder.encode(item.text, "utf-8")
+
+            // This is evil. And against the system design we had since the beginning.
+            // But the users want a smaller database...
+            conductor.plugins.VirtuosoFeederPlugin.
+            execute(s"""|SPARQL INSERT IN GRAPH <http://resources.cendari.dariah.eu/entitiesGraph> {
+                        |<${entityResource}> a <${schema(what)}> .
+                        |<${entityResource}> <${schema("name")}> "${item.text}"^^xsd:string .
+                        |}""".stripMargin)
+            Some(?: (entityResource))
         } else {
             None
         }

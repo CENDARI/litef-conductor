@@ -45,10 +45,11 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
 
         // If we are processing a resource, we need to empty out
         // all the data from Virtuoso that we used to have
-        clearGraph("litef://resource/" + resource.id) // old URI for the graph
-        clearGraph(resourceGraph)
+        VirtuosoFeederPlugin.clearGraph("litef://resource/" + resource.id) // old URI for the graph
+        VirtuosoFeederPlugin.clearGraph(resourceGraph)
 
         for (group <- resource.group) {
+            VirtuosoFeederPlugin.
             execute(s"""|SPARQL INSERT IN GRAPH <${graphForDataspace("")}> {
                         |<${dataspaceGraph}> a <http://www.w3.org/2004/03/trix/rdfg-1/Graph> .
                         |<${dataspaceGraph}> rdfs:member <${resourceGraph}> .
@@ -69,7 +70,7 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
 
             logger info s"\t -> Loading the file into Virtuoso: ${destinationPath}"
             resource writeLog s"\t -> Loading the file into Virtuoso: ${destinationPath} into graph ${resourceGraph}"
-            loadFileInfoGraph(destinationPath, resourceGraph)
+            VirtuosoFeederPlugin.loadFileInfoGraph(destinationPath, resourceGraph)
         }
 
     }
@@ -80,13 +81,14 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
         if (attachment.format endsWith "application/rdf+xml") {
             val resourceGraph = graphForResource(attachment.resourceId)
             logger info s"\t -> Loading the file into Virtuoso: ${attachment.localPath}"
-            loadFileInfoGraph(attachment.localPath, resourceGraph)
+            VirtuosoFeederPlugin.loadFileInfoGraph(attachment.localPath, resourceGraph)
 
         }
 
     }
+}
 
-
+object VirtuosoFeederPlugin {
     lazy val connection = {
         Class.forName("virtuoso.jdbc4.Driver");
         java.sql.DriverManager.getConnection(
