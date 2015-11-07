@@ -23,7 +23,7 @@ import org.foment.utils.Exceptions._
 
 abstract
 class XMLIndexer extends AbstractIndexer {
-    lazy val logger = org.slf4j.LoggerFactory getLogger getClass
+    // lazy val logger = org.slf4j.LoggerFactory getLogger getClass
 
     val indexerName: String
     val extensions: Seq[String]
@@ -38,7 +38,7 @@ class XMLIndexer extends AbstractIndexer {
     ): Option[Double] = exceptionless (
         if (mimetype != "application/xml" &&
             mimetype != "text/xml") {
-            logger info s"mimetype is not xml: ${mimetype}"
+            // logger info s"mimetype is not xml: ${mimetype}"
             resource writeLog s"${indexerName}: mimetype is not xml: ${mimetype}"
             None
 

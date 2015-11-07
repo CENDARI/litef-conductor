@@ -144,7 +144,7 @@ class TikaIndexer extends AbstractIndexer {
         Some(0.85)
     } catch {
         case e: Throwable =>
-            logger info s"Tika failed: ${e}"
+            // logger info s"Tika failed: ${e}"
             resource writeLog s"TikaIndexer: Error: ${e}"
             None
     }

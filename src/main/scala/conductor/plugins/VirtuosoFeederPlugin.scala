@@ -35,7 +35,7 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
 {
     import context.system
 
-    lazy val logger = org.slf4j.LoggerFactory getLogger getClass
+    // lazy val logger = org.slf4j.LoggerFactory getLogger getClass
 
     override
     def process(resource: ckan.Resource): Future[Unit] = Future {
@@ -68,7 +68,7 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
             resource writeLog s"\t -> Copying: ${sourcePath} to ${destinationPath}"
             Files.copy(Paths.get(sourcePath), Paths.get(destinationPath))
 
-            logger info s"\t -> Loading the file into Virtuoso: ${destinationPath}"
+            // logger info s"\t -> Loading the file into Virtuoso: ${destinationPath}"
             resource writeLog s"\t -> Loading the file into Virtuoso: ${destinationPath} into graph ${resourceGraph}"
             VirtuosoFeederPlugin.loadFileInfoGraph(destinationPath, resourceGraph)
         }
@@ -80,7 +80,7 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
 
         if (attachment.format endsWith "application/rdf+xml") {
             val resourceGraph = graphForResource(attachment.resourceId)
-            logger info s"\t -> Loading the file into Virtuoso: ${attachment.localPath}"
+            // logger info s"\t -> Loading the file into Virtuoso: ${attachment.localPath}"
             VirtuosoFeederPlugin.loadFileInfoGraph(attachment.localPath, resourceGraph)
 
         }

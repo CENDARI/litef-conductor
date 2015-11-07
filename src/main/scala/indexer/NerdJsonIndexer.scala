@@ -29,7 +29,7 @@ case class NerdItem(itemType: String, score: Double, text: String)
 case class NerdDocument(entities: List[NerdItem])
 
 object NerdItemProtocol extends DefaultJsonProtocol {
-    lazy val logger = org.slf4j.LoggerFactory getLogger getClass
+    // lazy val logger = org.slf4j.LoggerFactory getLogger getClass
 
     implicit object NerdItemFormat extends RootJsonFormat[NerdItem] {
         def read(value: JsValue) =
@@ -69,7 +69,7 @@ import NerdItemProtocol._
 final
 class NerdJsonIndexer extends AbstractIndexer {
 
-    lazy val logger = org.slf4j.LoggerFactory getLogger getClass
+    // lazy val logger = org.slf4j.LoggerFactory getLogger getClass
 
     override
     def indexFile(
@@ -139,8 +139,8 @@ class NerdJsonIndexer extends AbstractIndexer {
             Some(.95)
         } catch {
             case e: Exception =>
-                logger info "Failed to index the attachment"
-                e.printStackTrace
+                // logger info "Failed to index the attachment"
+                resource writeLog s"Failed to index the attachment ${e.toString}"
                 None
         }
 }

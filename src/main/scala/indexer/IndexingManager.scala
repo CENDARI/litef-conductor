@@ -33,6 +33,9 @@ import java.sql.Timestamp
 object IndexingManager {
     lazy val logger = org.slf4j.LoggerFactory getLogger getClass
 
+    var benchmarkCounter : Long = 0
+    var benchmarkCounterLastUpdate : Long = 0
+
     /**
      * The list of indexers
      */
@@ -89,7 +92,9 @@ object IndexingManager {
     }
 
     def index(attachment: conductor.ResourceAttachment) {
-        logger.info(s"Indexing attachment: ${attachment.resourceId} ${attachment.format}")
+        // logger.info(s"Indexing attachment: ${attachment.resourceId} ${attachment.format}")
+        attachment.writeLog(s"IndexingManager: Started indexing attachment ${attachment.resourceId} (${attachment.format})")
+
         val attachmentFile = new java.io.File(attachment.localPath)
 
         val joinedModel = ModelFactory.createDefaultModel
@@ -108,6 +113,21 @@ object IndexingManager {
     }
 
     def index(resource: ckan.Resource) {
+        val currentTime = System.currentTimeMillis
+        if (benchmarkCounterLastUpdate == 0) {
+            benchmarkCounterLastUpdate = currentTime
+        }
+
+        benchmarkCounter = benchmarkCounter + 1
+
+        if (currentTime - benchmarkCounterLastUpdate > 60000) {
+            logger.info(s"Processed ${benchmarkCounter} resources in the last minute")
+            benchmarkCounter = 0
+            benchmarkCounterLastUpdate = currentTime
+        }
+
+        // fin benchmark
+
         val resourceFile = resource.localFile
         val mimetype = resource.localMimetype
 
@@ -123,7 +143,7 @@ object IndexingManager {
                     .map(result => Result(resourceFile, result.indexerName, result.model))
             } catch {
                 case e: Throwable =>
-                    logger info s"\t -> Indexing with ${indexer} failed with ${e}"
+                    logger info s"\t -> Indexing with ${indexer} failed"
                     resource writeLog s"IndexingManager: \t -> Indexing with ${indexer} failed with ${e}"
                     None
             }
