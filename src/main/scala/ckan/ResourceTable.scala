@@ -34,45 +34,44 @@ abstract class ResourceData {
     def packageId     : Option[String]
     def state         : Option[String]
 
-    private def getMime =
-    {
-      val tmp = java.nio.file.Paths.get(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6))
-      (mimetype getOrElse (
-        if(java.nio.file.Files.probeContentType(tmp) == null)
-          ""
-        else
-          java.nio.file.Files.probeContentType(tmp)
-        )
-      )
+    private def getMime = {
+        val tmp = java.nio.file.Paths.get(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6))
+        (mimetype getOrElse (
+            if(java.nio.file.Files.probeContentType(tmp) == null) {
+                ""
+            } else {
+                java.nio.file.Files.probeContentType(tmp)
+            }
+        ))
     }
 
-//returns file size in KB
-    private def fileSize =
-    {
-      val file = new java.io.File(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6) );
-      if(!file.exists())
-        0L
-      else
-      {
-        val sz = file.length()/1024.0;
-        if( sz <1.0)
-          1L;
-        else
-          scala.math.round (sz)
-      }
+    //returns file size in KB
+    private def fileSize = {
+        val file = new java.io.File(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6) );
+
+        if (!file.exists()) {
+            0L
+        } else {
+            val sz = file.length() / 1024.0
+            if (sz < 1.0) {
+                1L
+            } else {
+                scala.math.round(sz)
+            }
+        }
     }
 
-    private def formatTime(time : Option[Timestamp]) =
-  {
-    time match {
-      case None => ""
-      case Some(v)=> val tz = java.util.TimeZone.getTimeZone("UTC");
-        val df = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
-        df.setTimeZone(tz);
-        df.format(new java.util.Date(v.getTime()))
+    private def formatTime(time : Option[Timestamp]) = {
+        time match {
+            case None => ""
+            case Some(v)=> val tz = java.util.TimeZone.getTimeZone("UTC");
+            val df = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+            df.setTimeZone(tz);
+            df.format(new java.util.Date(v.getTime()))
+        }
     }
-  }
-    private def viewDataUrl = {
+
+    def viewDataUrl = {
         val encodedId = java.net.URLEncoder.encode(id, "utf-8")
         val encodedPackageId = java.net.URLEncoder.encode(packageId.getOrElse(""), "utf-8")
 
@@ -133,7 +132,9 @@ case class Resource(
     }
 
     lazy val localPath = Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6)
+
     lazy val localFile = new java.io.File(localPath)
+
     lazy val localMimetype = {
         val result = mimetype getOrElse (new java.io.File(localPath).mimetype)
         if (result != "text/plain" && result != "application/xml") result

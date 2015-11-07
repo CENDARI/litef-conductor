@@ -50,7 +50,7 @@ class TikaIndexer extends AbstractIndexer {
         val result = new MutableHashMap[String, MutableSet[String]] with MutableMultiMap[String, String]
 
         val sfields = Map[String, String](
-            "resourceName"                  -> "uri",    /*TikaMetadata.RESOURCE_NAME_KEY*/
+            // "resourceName"                  -> "uri",    /*TikaMetadata.RESOURCE_NAME_KEY*/
             "Content-Type"                  -> "format", /*TikaMetadata.CONTENT_TYPE*/
             "text"                          -> "text",
 
@@ -118,10 +118,11 @@ class TikaIndexer extends AbstractIndexer {
         val metadata = tikaIndexer.parseDocument(file.getName, null, new java.io.FileInputStream(file), -1)
         val info = parseMetadata(metadata) //elasticIndexer convertMetadata metadata
 
-        resource.group.map { info.addBinding("dataspace", _) }
+        resource.group.map { info.addBinding("project", _) }
 
-        info.addBinding("resourceId", resource.id)
-        info.addBinding("localPath", resource.localPath)
+        info.addBinding("uri", resource.viewDataUrl)
+        info.addBinding("application", "repository")
+        info.addBinding("resourceId",  resource.id)
 
         val text = info.get("text").get
         AbstractIndexer.saveAttachment(resource, text.head, "text/plain")
@@ -134,9 +135,11 @@ class TikaIndexer extends AbstractIndexer {
 
         addOptionalProperty(root, NIE.plainTextContent , metadata.get("text"))
         addOptionalProperty(root, DC_11.title          , metadata.get("title"))
-        addOptionalProperty(root, DC_11.creator        , metadata.get("creator"))
         addOptionalProperty(root, DC_11.date           , metadata.get("date"))
         addOptionalProperty(root, DC_11.format         , metadata.get("format"))
+
+        addOptionalProperty(root, DC_11.creator        , metadata.get("creator"))
+        addOptionalProperty(root, DC_11.contributor    , metadata.get("contributor"))
 
         Some(0.85)
     } catch {
