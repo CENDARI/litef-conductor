@@ -81,6 +81,7 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
         if (attachment.format endsWith "application/rdf+xml") {
             val resourceGraph = graphForResource(attachment.resourceId)
             // logger info s"\t -> Loading the file into Virtuoso: ${attachment.localPath}"
+            attachment writeLog s"\t -> Loading the file into Virtuoso: ${attachment.localPath} into graph ${resourceGraph}"
             VirtuosoFeederPlugin.loadFileInfoGraph(attachment.localPath, resourceGraph)
 
         }
@@ -98,24 +99,31 @@ object VirtuosoFeederPlugin {
     def execute(query: String) =
         connection.createStatement execute query
 
+    def prepare(query: String) =
+        connection.prepareStatement(query)
+
     def clearGraph(namedGraphUri: String) =
         execute(s"SPARQL CLEAR GRAPH <$namedGraphUri>")
 
     def loadFileInfoGraph(file: String, namedGraphUri: String) = {
-        // DB.DBA.TTLP_MT is for TTL and friends, while
-        // DB.DBA.RDF_LOAD_RDFXML_MT would be for xml/rdf
-        // val virtuosoInsertFunction = "DB.DBA.TTLP_MT"
-        val virtuosoInsertFunction = "DB.DBA.RDF_LOAD_RDFXML_MT"
+        try {
+            // DB.DBA.TTLP_MT is for TTL and friends, while
+            // DB.DBA.RDF_LOAD_RDFXML_MT would be for xml/rdf
+            // val virtuosoInsertFunction = "DB.DBA.TTLP_MT"
+            val virtuosoInsertFunction = "DB.DBA.RDF_LOAD_RDFXML_MT"
 
-        execute(
-            s"""|CALL
-            |$virtuosoInsertFunction(
-                |    file_to_string_output('$file'),
-                |    '',
-                |    '$namedGraphUri'
-                |)""".stripMargin
-            )
-
+            execute(
+                s"""|CALL
+                |$virtuosoInsertFunction(
+                    |    file_to_string_output('$file'),
+                    |    '',
+                    |    '$namedGraphUri'
+                    |)""".stripMargin
+                )
+        } catch {
+            case e: Exception =>
+                e.printStackTrace
+        }
     }
 }
 

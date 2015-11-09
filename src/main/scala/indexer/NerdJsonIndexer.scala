@@ -81,7 +81,13 @@ class NerdJsonIndexer extends AbstractIndexer {
 
     def schema(what: String) = "http://schema.org/" #> what
 
-    def mention(item: NerdItem): Option[Resource] = {
+    def escape(raw: String): String = {
+        raw.replaceAll("\'", "\\'")
+        // import scala.reflect.runtime.universe._
+        // Literal(Constant(raw)).toString
+    }
+
+    def resourceMention(resource: conductor.ResourceAttachment, item: NerdItem): List[Resource] = {
 
         val what = item.itemType match {
                     case "PERSON"       => "Person"
@@ -95,16 +101,25 @@ class NerdJsonIndexer extends AbstractIndexer {
         if (what != null) {
             val entityResource = s"http://resources.cendari.dariah.eu/${what.toLowerCase}s/" + java.net.URLEncoder.encode(item.text, "utf-8")
 
+            val query = s"""|SPARQL INSERT IN GRAPH <http://resources.cendari.dariah.eu/entitiesGraph> {
+                            |<${entityResource}> a <${schema(what)}> .
+                            |<${entityResource}> <${schema("name")}> ??
+                            |}""".stripMargin// ''${escape(item.text)}'^^xsd:string .
+
             // This is evil. And against the system design we had since the beginning.
             // But the users want a smaller database...
-            conductor.plugins.VirtuosoFeederPlugin.
-            execute(s"""|SPARQL INSERT IN GRAPH <http://resources.cendari.dariah.eu/entitiesGraph> {
-                        |<${entityResource}> a <${schema(what)}> .
-                        |<${entityResource}> <${schema("name")}> "${item.text}"^^xsd:string .
-                        |}""".stripMargin)
-            Some(?: (entityResource))
+            try {
+                val statement = conductor.plugins.VirtuosoFeederPlugin.prepare(query)
+                statement.setString(1, item.text)
+                statement.execute()
+                List(?: (entityResource))
+            } catch {
+                case e: java.sql.SQLException =>
+                    resource.writeLog(s"SPARQL error ${e.getMessage} ${e.toString} \n query was: ${query}")
+                List()
+            }
         } else {
-            None
+            List()
         }
     }
 
@@ -127,6 +142,8 @@ class NerdJsonIndexer extends AbstractIndexer {
             val nerdItems = nerdDocument.fields("entities").convertTo[List[NerdItem]]
 
             val root = rootResource
+
+            val mention = (item: NerdItem) => resourceMention(resource, item)
 
             root ++= nerdItems
                         .filter(_ != null)
