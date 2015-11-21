@@ -18,6 +18,20 @@ sourceGenerators in Compile <+= buildInfo
 
 buildInfoKeys := Seq[BuildInfoKey](version)
 
+buildInfoKeys ++= Seq[BuildInfoKey](
+        "gitHash" -> new java.lang.Object() {
+            override def toString(): String = {
+                try {
+                    val extracted = new java.io.InputStreamReader(
+                        java.lang.Runtime.getRuntime().exec("git rev-parse HEAD").getInputStream())
+                    (new java.io.BufferedReader(extracted)).readLine()
+                } catch {
+                    case t: Throwable => "get git hash failed"
+                }
+            }
+        }.toString()
+    )
+
 buildInfoPackage := "info"
 
 libraryDependencies ++= {

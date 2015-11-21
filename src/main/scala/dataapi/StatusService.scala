@@ -26,16 +26,19 @@ import spray.httpx.SprayJsonSupport._
 import spray.routing.Directives
 
 class StatusService() extends Directives {
-  
+
   val route =
         path("status") {
             get {
                 complete {
                   HttpResponse(status = StatusCodes.OK,
                                entity = HttpEntity(ContentType(`application/json`, `UTF-8`),
-                                                   JsObject("status" -> JsString("OK"), 
-                                                            "hostname" -> JsString(InetAddress.getLocalHost().getCanonicalHostName()), 
-                                                            "version" -> JsString(info.BuildInfo.version))
+                                                   JsObject(
+                                                       "status"   -> JsString("OK"),
+                                                       "hostname" -> JsString(InetAddress.getLocalHost().getCanonicalHostName()),
+                                                       "version"  -> JsString(info.BuildInfo.version),
+                                                       "revision" -> JsString(info.BuildInfo.gitHash)
+                                                   )
                                                    .prettyPrint))
                 }
             }
