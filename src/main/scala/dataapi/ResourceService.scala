@@ -182,6 +182,17 @@ class ResourceService()(implicit executionContext: ExecutionContext)
                             getFromFile("/error505")
                         }
                     }
+                } ~
+                path(Segment / ".log")              { id =>
+                    authorize(ckan.CkanGodInterface.isResourceAccessibleToUser(id, authorizationKey)) {
+                        try {
+                            getFromFile(conductor.ResourceAttachmentUtil.localDirectory(id) + "/_log")
+                        } catch {
+                            case e: Exception =>
+                                // TODO: Make this work properly
+                                getFromFile("/error505")
+                        }
+                    }
                 }
             } ~
             post {
