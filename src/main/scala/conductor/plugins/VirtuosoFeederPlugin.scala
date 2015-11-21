@@ -57,6 +57,8 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
                         |}""".stripMargin)
         }
 
+        resource writeLog s"VirtuosoFeeder -> Mimetype is ${resource.localMimetype}"
+
         // Loading the file, if it is a RDF
         if (resource.localMimetype == "application/rdf+xml") {
             val sourcePath = resource.localPath
