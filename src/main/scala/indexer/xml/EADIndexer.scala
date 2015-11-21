@@ -35,8 +35,8 @@ class EADIndexer extends indexer.XMLIndexer {
 
     def schema(what: String) = "http://schema.org/" #> what
 
-    def cao(what: String) = "http://cendari.mi.sanu.ac.rs/ontologies/cao#" #> what
-    def caoType(what: String) = "http://cendari.mi.sanu.ac.rs/ontologies/cao#" ## what
+    def cao(what: String) = "http://resources.cendari.dariah.eu/ontologies/cao#" #> what
+    def caoType(what: String) = "http://resources.cendari.dariah.eu/ontologies/cao#" ## what
 
     // TODO: move to CAO.ttl
     lazy val `CAO.Archive`                = caoType("Archive")
