@@ -54,7 +54,7 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
                 execute(s"""|SPARQL INSERT IN GRAPH <${graphForDataspace("")}> {
                             |<${dataspaceGraph}> a <http://www.w3.org/2004/03/trix/rdfg-1/Graph> .
                             |<${dataspaceGraph}> rdfs:member <${resourceGraph}> .
-                            |<${resourceGraph}> <http://cendari.mi.sanu.ac.rs/ontologies/cao#dataspace> <${dataspaceGraph}> .
+                            |<${resourceGraph}> <http://resources.cendari.dariah.eu/ontologies/cao#dataspace> <${dataspaceGraph}> .
                             |}""".stripMargin)
             }
 
