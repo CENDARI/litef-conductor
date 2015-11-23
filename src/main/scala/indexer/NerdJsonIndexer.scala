@@ -17,13 +17,15 @@
 
 package indexer
 
-import com.hp.hpl.jena.rdf.model.Resource
+import com.hp.hpl.jena.rdf.model.{Resource, ModelFactory, Model}
 import com.hp.hpl.jena.vocabulary.DC_11
+import virtuoso.jena.driver.{VirtGraph, VirtModel}
 
 import javelin.ontology.Implicits._
 import spray.json._
 import com.hp.hpl.jena.vocabulary.RDF.{`type` => a}
 import conductor.ResourceAttachmentUtil._
+import common.Config.{ Virtuoso => VirtuosoConfig }
 
 case class NerdItem(itemType: String, score: Double, text: String)
 case class NerdDocument(entities: List[NerdItem])
@@ -81,12 +83,6 @@ class NerdJsonIndexer extends AbstractIndexer {
 
     def schema(what: String) = "http://schema.org/" #> what
 
-    def escape(raw: String): String = {
-        raw.replaceAll("\'", "\\'")
-        // import scala.reflect.runtime.universe._
-        // Literal(Constant(raw)).toString
-    }
-
     def resourceMention(resource: conductor.ResourceAttachment, item: NerdItem): List[Resource] = {
 
         val what = item.itemType match {
@@ -99,25 +95,42 @@ class NerdJsonIndexer extends AbstractIndexer {
                 }
 
         if (what != null) {
-            val entityResource = s"http://resources.cendari.dariah.eu/${what.toLowerCase}s/" + java.net.URLEncoder.encode(item.text, "utf-8")
-
-            val query = s"""|SPARQL INSERT IN GRAPH <http://resources.cendari.dariah.eu/entitiesGraph> {
-                            |<${entityResource}> a <${schema(what)}> .
-                            |<${entityResource}> <${schema("name")}> ??
-                            |}""".stripMargin// ''${escape(item.text)}'^^xsd:string .
-
             // This is evil. And against the system design we had since the beginning.
             // But the users want a smaller database...
             try {
-                val statement = conductor.plugins.VirtuosoFeederPlugin.prepare(query)
-                statement.setString(1, item.text)
-                statement.execute()
+                val entityResource = s"http://resources.cendari.dariah.eu/${what.toLowerCase}s/" + java.net.URLEncoder.encode(item.text, "utf-8")
+                val entitiesGraph = new VirtGraph("http://resources.cendari.dariah.eu/entitiesGraph", VirtuosoConfig.url, VirtuosoConfig.user, VirtuosoConfig.password)
+
+                val model = ModelFactory.createModelForGraph(entitiesGraph)
+
+                model.createResource(entityResource) ++= Seq(
+                        a % schema(what),
+                        schema("name") % item.text
+                    )
+
+                // entitiesGraph add entityResourceOb
                 List(?: (entityResource))
             } catch {
-                case e: java.sql.SQLException =>
-                    resource.writeLog(s"SPARQL error ${e.getMessage} ${e.toString} \n query was: ${query}")
+                case e: Exception =>
+                    resource.writeLog(s"resourceMention error ${e.toString}")
                 List()
             }
+
+            // val query = s"""|SPARQL INSERT IN GRAPH <http://resources.cendari.dariah.eu/entitiesGraph> {
+            //                 |<${entityResource}> a <${schema(what)}> .
+            //                 |<${entityResource}> <${schema("name")}> ??
+            //                 |}""".stripMargin// ''${escape(item.text)}'^^xsd:string .
+            //
+            // try {
+            //     val statement = conductor.plugins.VirtuosoFeederPlugin.prepare(query)
+            //     statement.setString(1, item.text)
+            //     statement.execute()
+            //     List(?: (entityResource))
+            // } catch {
+            //     case e: java.sql.SQLException =>
+            //         resource.writeLog(s"SPARQL error ${e.getMessage} ${e.toString} \n query was: ${query}")
+            //     List()
+            // }
         } else {
             List()
         }
