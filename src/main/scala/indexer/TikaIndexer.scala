@@ -51,7 +51,7 @@ class TikaIndexer extends AbstractIndexer {
 
         val sfields = Map[String, String](
             // "resourceName"                  -> "uri",    /*TikaMetadata.RESOURCE_NAME_KEY*/
-            "Content-Type"                  -> "format", /*TikaMetadata.CONTENT_TYPE*/
+            // "Content-Type"                  -> "format", /*TikaMetadata.CONTENT_TYPE*/
             "text"                          -> "text",
 
             "Application-Name"              -> "application",
@@ -105,7 +105,6 @@ class TikaIndexer extends AbstractIndexer {
             }
         }
 
-
         result
     }
 
@@ -118,11 +117,24 @@ class TikaIndexer extends AbstractIndexer {
         val metadata = tikaIndexer.parseDocument(file.getName, null, new java.io.FileInputStream(file), -1)
         val info = parseMetadata(metadata) //elasticIndexer convertMetadata metadata
 
-        resource.group.map { info.addBinding("project", _) }
+        // Looking for the dataspace
+        val dataspace = ckan.DataspaceResourceTable.dataspaceForResource(resource.id)
+
+        dataspace.map { dataspace =>
+            info.addBinding("project", dataspace.title getOrElse dataspace.name)
+            info.addBinding("dataspaceId", dataspace.id)
+        }
 
         info.addBinding("uri", resource.viewDataUrl)
         info.addBinding("application", "repository")
         info.addBinding("resourceId",  resource.id)
+
+        val mimetype = resource.localMimetype
+        info.addBinding("format", mimetype)
+
+        if (mimetype == "application/ead+xml" || mimetype == "application/eag+xml") {
+            info.addBinding("application", "archives")
+        }
 
         val text = info.get("text").get
         AbstractIndexer.saveAttachment(resource, text.head, "text/plain")
@@ -136,7 +148,9 @@ class TikaIndexer extends AbstractIndexer {
         addOptionalProperty(root, NIE.plainTextContent , metadata.get("text"))
         addOptionalProperty(root, DC_11.title          , metadata.get("title"))
         addOptionalProperty(root, DC_11.date           , metadata.get("date"))
-        addOptionalProperty(root, DC_11.format         , metadata.get("format"))
+
+        // addOptionalProperty(root, DC_11.format         , metadata.get("format"))
+
 
         addOptionalProperty(root, DC_11.creator        , metadata.get("creator"))
         addOptionalProperty(root, DC_11.contributor    , metadata.get("contributor"))

@@ -137,28 +137,46 @@ case class Resource(
 
     lazy val localMimetype = {
         val result = mimetype getOrElse (new java.io.File(localPath).mimetype)
-        if (result != "text/plain" && result != "application/xml") result
-        else {
+        if (result != "text/plain" && result != "text/xml" && result != "application/xml") {
+            writeLog(s"Resource type is not XML it seems ${result}")
+            result
+        } else {
             // Unfortunately, mimetype detection is c**p, we need to detect xml
             // ourselves
 
-            var rootElement = ""
             val src = scala.io.Source.fromFile(localFile)
 
             try {
                 val reader = new scala.xml.pull.XMLEventReader(src)
                 if (reader.hasNext) {
-                    val rootLabel = reader.next.asInstanceOf[scala.xml.pull.EvElemStart].label
+                    var rootElement: scala.xml.pull.EvElemStart = null;
+
+                    while (rootElement == null) try {
+                        rootElement = reader.next.asInstanceOf[scala.xml.pull.EvElemStart]
+                    } catch {
+                        case e: java.lang.ClassCastException =>
+                            writeLog(s"Exception while reading class element: ${e}")
+                    }
+
+                    val rootLabel = rootElement.label.toLowerCase
+
                     writeLog(s"Resource root label is ${rootLabel}")
-                    if (rootLabel == "RDF")
+
+                    if (rootLabel == "rdf")
                         "application/rdf+xml"
+                    else if (rootLabel contains "ead")
+                        "application/ead+xml"
+                    else if (rootLabel contains "eag")
+                        "application/eag+xml"
                     else
                         "application/xml"
                 } else
                     "text/plain"
 
             } catch {
-                case _: Exception => "text/plain"
+                case e: Exception =>
+                    writeLog(s"Tried to read the file as XML, but failed: ${e}")
+                    "text/plain"
             }
         }
     }
@@ -170,6 +188,8 @@ case class Resource(
 
     lazy val isProcessable = isLocal // && isBelowSizeThreshold
     lazy val content = io.Source.fromFile(localPath).mkString
+
+    lazy val dataspace = DataspaceResourceTable.dataspaceForResource(id)
 
     override
     def toString = s"resource://$id?$accessLink"

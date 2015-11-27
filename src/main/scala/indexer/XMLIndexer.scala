@@ -36,7 +36,7 @@ class XMLIndexer extends AbstractIndexer {
         mimetype: String,
         rootResource: => Resource
     ): Option[Double] = exceptionless (
-        if (mimetype != "application/xml" &&
+        if (!(mimetype.startsWith("application/") && mimetype.endsWith("xml")) &&
             mimetype != "text/xml") {
             // logger info s"mimetype is not xml: ${mimetype}"
             resource writeLog s"${indexerName}: mimetype is not xml: ${mimetype}"

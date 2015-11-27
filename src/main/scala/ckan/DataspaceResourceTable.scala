@@ -108,6 +108,19 @@ class DataspaceResourceTable(tag: Tag)
 
 object DataspaceResourceTable {
     val query = TableQuery[DataspaceResourceTable]
+
+    def dataspaceForResource(resourceId: String): Option[ckan.Dataspace] = CkanGodInterface.database withSession { implicit session: Session =>
+        val dataspaceId: Option[String] =
+            DataspaceResourceTable.query
+                .filter(_.id === resourceId)
+                .map(_.dataspaceId)
+                .take(1)
+                .list
+                .headOption
+
+        dataspaceId flatMap ckan.DataspaceTable.dataspaceForId
+        // ckan.DataspaceTable.dataspaceForId(dataspaceId)
+    }
 }
 
 // TODO: This needs to be united with ResourceJsonProtocol
