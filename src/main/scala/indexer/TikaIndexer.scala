@@ -141,6 +141,9 @@ class TikaIndexer extends AbstractIndexer {
         AbstractIndexer.saveAttachment(resource,
             (HashMap[String, Set[String]]() ++ info).toJson.prettyPrint,
             "application/x-elasticindexer-json-output")
+        AbstractIndexer.saveAttachment(resource,
+            metadata.toString,
+            "application/x-tika-indexer-output")
 
         // TODO: We might want to save the plain text in Virtuoso,
         // or other fields
