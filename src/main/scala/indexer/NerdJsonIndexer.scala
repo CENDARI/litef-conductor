@@ -82,14 +82,17 @@ class NerdJsonIndexer extends AbstractIndexer {
     ): Option[Double] = None
 
     def schema(what: String) = "http://schema.org/" #> what
+    def foaf(what: String)   = "foaf:" #> what
+    def edm(what: String)    = "http://www.europeana.eu/schemas/edm/" #> what
+    def skos(what: String)   = "http://www.w3.org/2004/02/skos/core#" #> what
 
     def resourceMention(resource: conductor.ResourceAttachment, item: NerdItem): List[Resource] = {
 
         val what = item.itemType match {
-                    case "PERSON"       => "Person"
-                    case "EVENT"        => "Event"
-                    case "LOCATION"     => "Place"
-                    case "ORGANISATION" => "Organisation"
+                    case "PERSON"       => foaf("Person")
+                    case "EVENT"        => edm("Event")
+                    case "LOCATION"     => edm("Place")
+                    case "ORGANISATION" => foaf("Organisation")
                     // case "PERIOD"    => "Period"
                     case _              => null
                 }
@@ -98,14 +101,14 @@ class NerdJsonIndexer extends AbstractIndexer {
             // This is evil. And against the system design we had since the beginning.
             // But the users want a smaller database...
             try {
-                val entityResource = s"http://resources.cendari.dariah.eu/${what.toLowerCase}s/" + java.net.URLEncoder.encode(item.text, "utf-8")
+                val entityResource = s"http://resources.cendari.dariah.eu/${item.itemType.toLowerCase}s/" + java.net.URLEncoder.encode(item.text, "utf-8")
                 val entitiesGraph = new VirtGraph("http://resources.cendari.dariah.eu/entitiesGraph", VirtuosoConfig.url, VirtuosoConfig.user, VirtuosoConfig.password)
 
                 val model = ModelFactory.createModelForGraph(entitiesGraph)
 
                 model.createResource(entityResource) ++= Seq(
-                        a % schema(what),
-                        schema("name") % item.text
+                        a % what,
+                        skos("prefLabel") % item.text
                     )
 
                 // entitiesGraph add entityResourceOb
