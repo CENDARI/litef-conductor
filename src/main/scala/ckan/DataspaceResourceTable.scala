@@ -42,7 +42,8 @@ case class DataspaceResource(
     created       : Option[Timestamp] = None,
     cacheUrl      : Option[String]    = None,
     packageId     : Option[String]    = None,
-    urlType       : Option[String]    = None
+    urlType       : Option[String]    = None,
+    webstoreUrl   : Option[String]    = None
 ) extends ResourceData
 
 case class DataspaceResourcePair(
@@ -74,6 +75,7 @@ class DataspaceResourceTable(tag: Tag)
     val cacheUrl      = column[ Option[String]    ]  ("cache_url")
     val packageId     = column[ Option[String]    ]  ("package_id")
     val urlType       = column[ Option[String]    ]  ("url_type")
+    val webstoreUrl   = column[ Option[String]    ]  ("webstore_url")
 
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
@@ -97,7 +99,8 @@ class DataspaceResourceTable(tag: Tag)
         created        ,
         cacheUrl       ,
         packageId      ,
-        urlType
+        urlType        ,
+        webstoreUrl
     ) <> (DataspaceResource.tupled, DataspaceResource.unapply)
 
     def justIds = (

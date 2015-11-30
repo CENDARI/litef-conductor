@@ -33,6 +33,7 @@ abstract class ResourceData {
     def created       : Option[Timestamp]
     def packageId     : Option[String]
     def state         : Option[String]
+    def webstoreUrl   : Option[String]
 
     private def getMime = {
         val tmp = java.nio.file.Paths.get(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6))
@@ -118,7 +119,8 @@ case class Resource(
     created       : Option[Timestamp] = None,
     cacheUrl      : Option[String]    = None,
     packageId     : Option[String]    = None,
-    urlType       : Option[String]    = None
+    urlType       : Option[String]    = None,
+    webstoreUrl   : Option[String]    = None
 ) extends ResourceData {
 
     lazy val isLocal = urlType == Some("upload")
@@ -227,6 +229,7 @@ class ResourceTable(tag: Tag)
     val cacheUrl      = column[ Option[String]    ]  ("cache_url")
     val packageId     = column[ Option[String]    ]  ("package_id")
     val urlType       = column[ Option[String]    ]  ("url_type")
+    val webstoreUrl   = column[ Option[String]    ]  ("webstore_url")
 
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
@@ -249,7 +252,8 @@ class ResourceTable(tag: Tag)
         created        ,
         cacheUrl       ,
         packageId      ,
-        urlType
+        urlType        ,
+        webstoreUrl
     ) <> (Resource.tupled, Resource.unapply)
 }
 

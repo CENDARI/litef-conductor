@@ -55,7 +55,8 @@ class TikaIndexer extends AbstractIndexer {
             "text"                          -> "text",
 
             "Application-Name"              -> "application",
-            "Creation-date"                 -> "date"
+            "Creation-date"                 -> "date",
+            "cendari:nerd"                  -> "cleaner_text"
             )
 
         val pfields = Map[TikaProperty, String](
@@ -125,7 +126,7 @@ class TikaIndexer extends AbstractIndexer {
             info.addBinding("dataspaceId", dataspace.id)
         }
 
-        info.addBinding("uri", resource.viewDataUrl)
+        info.addBinding("uri", resource.webstoreUrl getOrElse resource.viewDataUrl)
         info.addBinding("application", "repository")
         info.addBinding("resourceId",  resource.id)
 
@@ -136,7 +137,8 @@ class TikaIndexer extends AbstractIndexer {
             info.addBinding("application", "archives")
         }
 
-        val text = info.get("text").get
+        val text = info.get("cleaner_text").getOrElse(info.get("text").get)
+
         AbstractIndexer.saveAttachment(resource, text.head, "text/plain")
         AbstractIndexer.saveAttachment(resource,
             (HashMap[String, Set[String]]() ++ info).toJson.prettyPrint,
