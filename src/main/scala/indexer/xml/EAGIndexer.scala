@@ -101,6 +101,7 @@ class EAGIndexer extends indexer.XMLIndexer {
         xml \\ "location" map { node =>
             ? (
                 a % vCard.Address,
+                a % CAO.RepositoryAddress,
                 vCard.`country-name`   % nodeText(node \\ "country"),
                 vCard.`postal-code`    % nodeText(node \\ "postalcode"),
                 vCard.`locality`       % nodeText(node \\ "municipality"),

@@ -35,13 +35,14 @@ class EADIndexer extends indexer.XMLIndexer {
 
     def schema(what: String) = "http://schema.org/" #> what
 
-    def cao(what: String) = "http://cendari.mi.sanu.ac.rs/ontologies/cao#" #> what
-    def caoType(what: String) = "http://cendari.mi.sanu.ac.rs/ontologies/cao#" ## what
+    def cao(what: String) = "http://resources.cendari.dariah.eu/ontologies/cao#" #> what
+    def caoType(what: String) = "http://resources.cendari.dariah.eu/ontologies/cao#" ## what
 
     // TODO: move to CAO.ttl
     lazy val `CAO.Archive`                = caoType("Archive")
     lazy val `CAO.Class`                  = caoType("Class")
     lazy val `CAO.Collection`             = caoType("Collection")
+    lazy val `CAO.Subcollection`          = caoType("Subcollection")
     lazy val `CAO.File`                   = caoType("File")
     lazy val `CAO.Fonds`                  = caoType("Fonds")
     lazy val `CAO.Item`                   = caoType("Item")
@@ -72,7 +73,7 @@ class EADIndexer extends indexer.XMLIndexer {
 
         // root <= desc(xml).map { CAO.hasRepositoryAddress % _ }
 
-        logger info "EAD indexer processing a new file..."
+        // logger info "EAD indexer processing a new file..."
 
         desc(xml).map { resource =>
             resource += (RDFS.isDefinedBy % root)
@@ -147,12 +148,14 @@ class EADIndexer extends indexer.XMLIndexer {
     def parseCollectionTag(node: Node): Resource = {
             // Creating a repository instance
             val resultType = node.attribute("level").getOrElse("item") match {
-                    case "collection" => `CAO.Collection`
-                    case "class"      => `CAO.Class`
-                    case "file"       => `CAO.File`
-                    case "fonds"      => `CAO.Fonds`
-                    case "item"       => `CAO.Item`
-                    case "series"     => `CAO.Series`
+                    case "collection"    => `CAO.Collection`
+                    case "subcollection" => `CAO.Subcollection`
+                    case "class"         => `CAO.Class`
+                    case "file"          => `CAO.File`
+                    case "fonds"         => `CAO.Fonds`
+                    case "item"          => `CAO.Item`
+                    case "series"        => `CAO.Series`
+                    case _               => `CAO.Item`
                 }
 
             val result: Resource = ? (a % resultType)

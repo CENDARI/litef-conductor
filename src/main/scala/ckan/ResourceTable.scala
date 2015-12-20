@@ -33,46 +33,46 @@ abstract class ResourceData {
     def created       : Option[Timestamp]
     def packageId     : Option[String]
     def state         : Option[String]
+    def webstoreUrl   : Option[String]
 
-    private def getMime =
-    {
-      val tmp = java.nio.file.Paths.get(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6))
-      (mimetype getOrElse (
-        if(java.nio.file.Files.probeContentType(tmp) == null)
-          ""
-        else
-          java.nio.file.Files.probeContentType(tmp)
-        )
-      )
+    private def getMime = {
+        val tmp = java.nio.file.Paths.get(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6))
+        (mimetype getOrElse (
+            if(java.nio.file.Files.probeContentType(tmp) == null) {
+                ""
+            } else {
+                java.nio.file.Files.probeContentType(tmp)
+            }
+        ))
     }
 
-//returns file size in KB
-    private def fileSize =
-    {
-      val file = new java.io.File(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6) );
-      if(!file.exists())
-        0L
-      else
-      {
-        val sz = file.length()/1024.0;
-        if( sz <1.0)
-          1L;
-        else
-          scala.math.round (sz)
-      }
+    //returns file size in KB
+    private def fileSize = {
+        val file = new java.io.File(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6) );
+
+        if (!file.exists()) {
+            0L
+        } else {
+            val sz = file.length() / 1024.0
+            if (sz < 1.0) {
+                1L
+            } else {
+                scala.math.round(sz)
+            }
+        }
     }
 
-    private def formatTime(time : Option[Timestamp]) =
-  {
-    time match {
-      case None => ""
-      case Some(v)=> val tz = java.util.TimeZone.getTimeZone("UTC");
-        val df = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
-        df.setTimeZone(tz);
-        df.format(new java.util.Date(v.getTime()))
+    private def formatTime(time : Option[Timestamp]) = {
+        time match {
+            case None => ""
+            case Some(v)=> val tz = java.util.TimeZone.getTimeZone("UTC");
+            val df = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+            df.setTimeZone(tz);
+            df.format(new java.util.Date(v.getTime()))
+        }
     }
-  }
-    private def viewDataUrl = {
+
+    def viewDataUrl = {
         val encodedId = java.net.URLEncoder.encode(id, "utf-8")
         val encodedPackageId = java.net.URLEncoder.encode(packageId.getOrElse(""), "utf-8")
 
@@ -119,7 +119,8 @@ case class Resource(
     created       : Option[Timestamp] = None,
     cacheUrl      : Option[String]    = None,
     packageId     : Option[String]    = None,
-    urlType       : Option[String]    = None
+    urlType       : Option[String]    = None,
+    webstoreUrl   : Option[String]    = None
 ) extends ResourceData {
 
     lazy val isLocal = urlType == Some("upload")
@@ -133,31 +134,51 @@ case class Resource(
     }
 
     lazy val localPath = Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6)
+
     lazy val localFile = new java.io.File(localPath)
+
     lazy val localMimetype = {
         val result = mimetype getOrElse (new java.io.File(localPath).mimetype)
-        if (result != "text/plain" && result != "application/xml") result
-        else {
+        if (result != "text/plain" && result != "text/xml" && result != "application/xml") {
+            writeLog(s"Resource type is not XML it seems ${result}")
+            result
+        } else {
             // Unfortunately, mimetype detection is c**p, we need to detect xml
             // ourselves
 
-            var rootElement = ""
             val src = scala.io.Source.fromFile(localFile)
 
             try {
                 val reader = new scala.xml.pull.XMLEventReader(src)
                 if (reader.hasNext) {
-                    val rootLabel = reader.next.asInstanceOf[scala.xml.pull.EvElemStart].label
+                    var rootElement: scala.xml.pull.EvElemStart = null;
+
+                    while (rootElement == null) try {
+                        rootElement = reader.next.asInstanceOf[scala.xml.pull.EvElemStart]
+                    } catch {
+                        case e: java.lang.ClassCastException =>
+                            writeLog(s"Exception while reading class element: ${e}")
+                    }
+
+                    val rootLabel = rootElement.label.toLowerCase
+
                     writeLog(s"Resource root label is ${rootLabel}")
-                    if (rootLabel == "RDF")
+
+                    if (rootLabel == "rdf")
                         "application/rdf+xml"
+                    else if (rootLabel contains "ead")
+                        "application/ead+xml"
+                    else if (rootLabel contains "eag")
+                        "application/eag+xml"
                     else
                         "application/xml"
                 } else
                     "text/plain"
 
             } catch {
-                case _: Exception => "text/plain"
+                case e: Exception =>
+                    writeLog(s"Tried to read the file as XML, but failed: ${e}")
+                    "text/plain"
             }
         }
     }
@@ -169,6 +190,8 @@ case class Resource(
 
     lazy val isProcessable = isLocal // && isBelowSizeThreshold
     lazy val content = io.Source.fromFile(localPath).mkString
+
+    lazy val dataspace = DataspaceResourceTable.dataspaceForResource(id)
 
     override
     def toString = s"resource://$id?$accessLink"
@@ -206,6 +229,7 @@ class ResourceTable(tag: Tag)
     val cacheUrl      = column[ Option[String]    ]  ("cache_url")
     val packageId     = column[ Option[String]    ]  ("package_id")
     val urlType       = column[ Option[String]    ]  ("url_type")
+    val webstoreUrl   = column[ Option[String]    ]  ("webstore_url")
 
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
@@ -228,7 +252,8 @@ class ResourceTable(tag: Tag)
         created        ,
         cacheUrl       ,
         packageId      ,
-        urlType
+        urlType        ,
+        webstoreUrl
     ) <> (Resource.tupled, Resource.unapply)
 }
 

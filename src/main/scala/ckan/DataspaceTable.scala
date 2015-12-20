@@ -55,7 +55,7 @@ class DataspaceTable(tag: Tag)
     val revisionId     = column[ Option[String]    ] ("revision_id")
     val approvalStatus = column[ Option[String]    ] ("approval_status")
     val imageUrl       = column[ Option[String]    ] ("image_url")
-    
+
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
         id             ,
@@ -74,6 +74,10 @@ class DataspaceTable(tag: Tag)
 
 object DataspaceTable {
     val query = TableQuery[DataspaceTable]
+
+    def dataspaceForId(id: String): Option[Dataspace] = CkanGodInterface.database withSession { implicit session: Session =>
+        query.filter(_.id === id).take(1).list.headOption
+    }
 }
 
 object DataspaceJsonProtocol extends DefaultJsonProtocol {

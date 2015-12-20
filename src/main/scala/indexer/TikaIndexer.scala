@@ -50,12 +50,13 @@ class TikaIndexer extends AbstractIndexer {
         val result = new MutableHashMap[String, MutableSet[String]] with MutableMultiMap[String, String]
 
         val sfields = Map[String, String](
-            "resourceName"                  -> "uri",    /*TikaMetadata.RESOURCE_NAME_KEY*/
-            "Content-Type"                  -> "format", /*TikaMetadata.CONTENT_TYPE*/
+            // "resourceName"                  -> "uri",    /*TikaMetadata.RESOURCE_NAME_KEY*/
+            // "Content-Type"                  -> "format", /*TikaMetadata.CONTENT_TYPE*/
             "text"                          -> "text",
 
             "Application-Name"              -> "application",
-            "Creation-date"                 -> "date"
+            "Creation-date"                 -> "date",
+            "cendari:nerd"                  -> "cleaner_text"
             )
 
         val pfields = Map[TikaProperty, String](
@@ -74,7 +75,10 @@ class TikaIndexer extends AbstractIndexer {
             CendariProperties.ORGANIZATION  -> "org",
             CendariProperties.TAG           -> "tag",
             CendariProperties.REFERENCE     -> "ref",
-            CendariProperties.EVENT         -> "event"
+            CendariProperties.EVENT         -> "event",
+
+            CendariProperties.LANG          -> "language",
+            TikaCoreProperties.LANGUAGE     -> "language"
             )
 
         sfields.foreach {
@@ -88,28 +92,19 @@ class TikaIndexer extends AbstractIndexer {
                     result.addBinding(m._2, metadata get m._1)
         }
 
+        if (metadata.get(TikaCoreProperties.LATITUDE)!= null && metadata.get(TikaCoreProperties.LONGITUDE) != null) {
+            val latlon =
+                    metadata.get(TikaCoreProperties.LATITUDE) +
+                    ", " +
+                    metadata.get(TikaCoreProperties.LONGITUDE);
+            result.addBinding("place", latlon);
+        }
+
         if (metadata.get(CendariProperties.PLACE) != null) {
             metadata.getValues(CendariProperties.PLACE).foreach {
                 name => result.addBinding("placeName", name)
             }
         }
-
-
-        // if (metadata.get(CendariProperties.LANG) != null)
-        //     info.setLanguage(metadata.getValues(CendariProperties.LANG));
-        // else if (metadata.get(TikaCoreProperties.LANGUAGE) != null)
-        //     info.setLanguage(metadata.get(TikaCoreProperties.LANGUAGE));
-        // else {
-        //     LanguageIdentifier langIdent = new LanguageIdentifier(parsedContent);
-        //         info.setLanguage(langIdent.getLanguage());
-        // }
-        // if (metadata.get(TikaCoreProperties.LATITUDE)!= null && metadata.get(TikaCoreProperties.LONGITUDE) != null) {
-        //     String latlon =
-        //             metadata.get(TikaCoreProperties.LATITUDE) +
-        //             ", "+
-        //             metadata.get(TikaCoreProperties.LONGITUDE);
-        //     info.setPlace(new Place(null, latlon));
-        // }
 
         result
     }
@@ -123,30 +118,54 @@ class TikaIndexer extends AbstractIndexer {
         val metadata = tikaIndexer.parseDocument(file.getName, null, new java.io.FileInputStream(file), -1)
         val info = parseMetadata(metadata) //elasticIndexer convertMetadata metadata
 
-        resource.group.map { info.addBinding("dataspace", _) }
+        // Looking for the dataspace
+        val dataspace = ckan.DataspaceResourceTable.dataspaceForResource(resource.id)
 
-        info.addBinding("resourceId", resource.id)
-        info.addBinding("localPath", resource.localPath)
+        dataspace.map { dataspace =>
+            info.addBinding("project", dataspace.title getOrElse dataspace.name)
+            info.addBinding("groups_allowed", dataspace.name)
+            info.addBinding("dataspaceId", dataspace.id)
+        }
 
-        val text = info.get("text").get
+        info.addBinding("uri", resource.webstoreUrl getOrElse resource.viewDataUrl)
+        info.addBinding("url", resource.webstoreUrl getOrElse resource.viewDataUrl)
+        info.addBinding("application", "repository")
+        info.addBinding("resourceId",  resource.id)
+
+        val mimetype = resource.localMimetype
+        info.addBinding("format", mimetype)
+
+        if (mimetype == "application/ead+xml" || mimetype == "application/eag+xml") {
+            info.addBinding("application", "archives")
+        }
+
+        val text = info.get("cleaner_text").getOrElse(info.get("text").get)
+
         AbstractIndexer.saveAttachment(resource, text.head, "text/plain")
         AbstractIndexer.saveAttachment(resource,
             (HashMap[String, Set[String]]() ++ info).toJson.prettyPrint,
             "application/x-elasticindexer-json-output")
+        AbstractIndexer.saveAttachment(resource,
+            metadata.toString,
+            "application/x-tika-indexer-output")
 
         // TODO: We might want to save the plain text in Virtuoso,
         // or other fields
 
         addOptionalProperty(root, NIE.plainTextContent , metadata.get("text"))
         addOptionalProperty(root, DC_11.title          , metadata.get("title"))
-        addOptionalProperty(root, DC_11.creator        , metadata.get("creator"))
         addOptionalProperty(root, DC_11.date           , metadata.get("date"))
-        addOptionalProperty(root, DC_11.format         , metadata.get("format"))
+
+        // addOptionalProperty(root, DC_11.format         , metadata.get("format"))
+
+
+        addOptionalProperty(root, DC_11.creator        , metadata.get("creator"))
+        addOptionalProperty(root, DC_11.contributor    , metadata.get("contributor"))
 
         Some(0.85)
     } catch {
         case e: Throwable =>
-            logger info s"Tika failed: ${e}"
+            // logger info s"Tika failed: ${e}"
             resource writeLog s"TikaIndexer: Error: ${e}"
             None
     }

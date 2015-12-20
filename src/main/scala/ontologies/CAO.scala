@@ -12,7 +12,7 @@ import javelin.ontology.Implicits._
   * Ontology for mapping EAG files
   */
 object CAO {
-    lazy val NS = "http://cendari.eu/ontologies/cendari/cao/"
+    lazy val NS = "http://resources.cendari.dariah.eu/ontologies/cao#"
 
     /**
      * contact (property)

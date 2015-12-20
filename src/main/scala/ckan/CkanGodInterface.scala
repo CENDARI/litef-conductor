@@ -64,7 +64,7 @@ object CkanGodInterface {
             getResourceQuery(id).list.headOption
         }
     }
-    
+
     /**
      * @param id UUID of the desired resource
      * @return the URL for the specified resource
@@ -75,7 +75,7 @@ object CkanGodInterface {
             .list
             .headOption
     }
-    
+
     /**
      * @param authorizationKey CKAN authorization key of the user that requests resources
      * @param _since gets only the resources newer than the specified timestamp
@@ -91,26 +91,26 @@ object CkanGodInterface {
         val since = _since getOrElse (new Timestamp(0))
         val until = _until getOrElse (new Timestamp(System.currentTimeMillis()))
         val count = math.min(_count, queryResultMaximumLimit)
-        
+
         var q = DataspaceResourceTable.query
                 .filter(_.modified.between(since, until))
-        
+
         if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) q = q.filter(_.state === state.toString.toLowerCase)
-        
+
         if(!isSysadmin(authorizationKey)) {
             val resourcesInDataspacesWithPrivileges =
                 q.filter(_.dataspaceId in UserDataspaceRoleTable.query
                                         .filter(_.userApiKey === authorizationKey)
                                         .filter(_.state === "active")
                                         .map(_.dataspaceId))
-            val resourcesInPublicDataspaces = 
+            val resourcesInPublicDataspaces =
                 q.filter(_.dataspaceId in DataspaceExtraTable.query
                                         .filter(_.key === "visibility")
                                         .filter(_.value === "public")
                                         .filter(_.state === "active")
                                         .map(_.dataspaceId))
             q = resourcesInDataspacesWithPrivileges union resourcesInPublicDataspaces
-                
+
         }
         q = q.sortBy(_.modified asc).drop(start).take(count)
 
@@ -120,31 +120,31 @@ object CkanGodInterface {
             Some(IteratorData(since, until, state, start,         count).generateId)  // current
         )
     }
-    
+
     def getPackageById(id: String): Option[Package] = database withSession { implicit session: Session =>
         database withSession { implicit session: Session =>
             PackageTable.query.filter(_.id === id).list.headOption
         }
     }
-    
+
     def getPackageByName(name: String): Option[Package] = database withSession { implicit session: Session =>
         database withSession { implicit session: Session =>
             PackageTable.query.filter(_.name === name).list.headOption
         }
     }
 
-    def listPackagesQuery(authorizationKey: String, state: StateFilter, start: Int, _count: Int) = database withSession { 
+    def listPackagesQuery(authorizationKey: String, state: StateFilter, start: Int, _count: Int) = database withSession {
         implicit session: Session =>
-        
+
         val since = new Timestamp(0)
         val until = new Timestamp(System.currentTimeMillis())
         val count = math.min(_count, queryResultMaximumLimit)
-        
+
         var q = PackageTable.query
                 .filter(_.modified.between(since, until))
-        
-        if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) q = q.filter(_.state === state.toString.toLowerCase)        
-        
+
+        if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) q = q.filter(_.state === state.toString.toLowerCase)
+
         if(!isSysadmin(authorizationKey)) {
             val packagesInDataspacesWithPrivileges = q.filter(_.dataspaceId in UserDataspaceRoleTable.query
                                                                     .filter(_.userApiKey === authorizationKey)
@@ -155,34 +155,34 @@ object CkanGodInterface {
                                                             .filter(_.value === "public")
                                                             .filter(_.state === "active")
                                                             .map(_.dataspaceId))
-                  
+
             q = packagesInDataspacesWithPrivileges union packagesInPublicDataspaces
         }
-        
+
         q = q.sortBy( p => (p.dataspaceId, p.title asc)).drop(start).take(count)
-        
+
         (
             q,
             Some(IteratorData(since, until, state, start + count, count).generateId), // next
             Some(IteratorData(since, until, state, start,         count).generateId)  // current
         )
     }
-    
+
     def listDataspacePackagesQuery(dataspaceId: String, state: StateFilter, start: Int, _count: Int) = database withSession {
         implicit session: Session =>
-        
+
         val since = new Timestamp(0)
         val until = new Timestamp(System.currentTimeMillis())
         val count = math.min(_count, queryResultMaximumLimit)
-        
+
         var q = PackageTable.query
                 .filter(_.dataspaceId === dataspaceId)
                 .filter(_.modified.between(since, until))
-                
+
         if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) q = q.filter(_.state === state.toString.toLowerCase)
-        
+
         q = q.sortBy(_.title asc).drop(start).take(count)
-        
+
         (
             q,
             Some(IteratorData(since, until, state, start + count, count).generateId), // next
@@ -215,7 +215,7 @@ object CkanGodInterface {
                 .filter(_.created.between(since, until))
 
         if (state == StateFilter.ACTIVE || state == StateFilter.DELETED) q = q.filter(_.state === state.toString.toLowerCase)
-        
+
         origin match {
             case None  =>
             case Some("") =>
@@ -225,16 +225,16 @@ object CkanGodInterface {
                                         .filter(_.value =!= "")
                                         .filter(_.state === "active")
                                         .map(_.dataspaceId))
-            case Some(o) => 
+            case Some(o) =>
                 q = q.filter(_.id in DataspaceExtraTable.query
                                         .filter(_.key === "origin")
                                         .filter(_.value === o)
                                         .filter(_.state === "active")
                                         .map(_.dataspaceId))
         }
-        
+
         val isAdmin = isSysadmin(authorizationKey)
-        
+
         visibility match {
             case Some(Visibility.PRIVATE) =>
                 q = q.filterNot(_.id in DataspaceExtraTable.query
@@ -267,11 +267,11 @@ object CkanGodInterface {
                                                                     .map(_.dataspaceId))
                     q = queryDataspacesWithPrivileges union queryDataspacesPublic
                 }
-            
+
         }
-        
+
         q = q.sortBy(_.title asc)
-        
+
         (
             q,
             None, // Dataspaces do not support iterators // IteratorData(since, until, start + count, count).generateId, // next
@@ -297,7 +297,7 @@ object CkanGodInterface {
             getDataspaceQuery(id).list.headOption
         }
     }
-    
+
     def getDataspaceExtrasQuery(id: String) = {
         database withSession { implicit session: Session =>
             DataspaceExtraTable.query
@@ -305,7 +305,7 @@ object CkanGodInterface {
             .filter(_.state === "active")
         }
     }
-    
+
     def getDataspaceExtras(id: String) = {
         database withSession { implicit session: Session =>
             getDataspaceExtrasQuery(id).list
@@ -348,7 +348,7 @@ object CkanGodInterface {
             Some(IteratorData(since, until, state, start,         count).generateId)  // current
         )
     }
-    
+
     /**
      * @param packageId UUID of the requested package
      * @param _since gets only the resources newer than the specified timestamp
@@ -417,10 +417,10 @@ object CkanGodInterface {
                 .list
                 .size > 0
     }
-    
+
     def isPackageAccessibleToUser(id: String, authorizationKey: String): Boolean = database withSession {implicit session: Session =>
         if(isSysadmin(authorizationKey)) true
-        else if(isPackageInPublicDataspace(id)) true 
+        else if(isPackageInPublicDataspace(id)) true
         else PackageTable.query
                 .map(_.justIds)
                 .filter(_._2 === id)
@@ -432,7 +432,7 @@ object CkanGodInterface {
                 .list
                 .size > 0
     }
-    
+
     def isPackageModifiableByUser(id: String, authorizationKey: String): Boolean = database withSession {implicit session: Session =>
         if(isSysadmin(authorizationKey))
             true
@@ -488,7 +488,7 @@ object CkanGodInterface {
             .list
             .size > 0
     }
-    
+
     /**
      * @param id resource UUID
      * @param authorizationKey CKAN user authorization id
@@ -539,7 +539,7 @@ object CkanGodInterface {
           .list
           .size > 0
     }
-    
+
     /**
      * @param authorizationKey CKAN user authorization key
      * @return whether the user with specified authorization key is a CKAN admin
@@ -564,7 +564,7 @@ object CkanGodInterface {
         .list
         .size > 0
     }
-    
+
     def isPackageInPublicDataspace(id: String): Boolean = database withSession { implicit session: Session =>
         PackageTable.query
             .map(_.justIds)
@@ -578,7 +578,7 @@ object CkanGodInterface {
             .list
             .size > 0
     }
-    
+
     def isResourceInPublicDataspace(id: String): Boolean = database withSession { implicit session: Session =>
         DataspaceResourceTable.query
             .map(_.justIds)
@@ -629,7 +629,7 @@ object CkanGodInterface {
         var q = UserDataspaceRoleTable.query
                 .filter(_.id === id)
                 .filter(_.state === "active")
-        
+
         if(!isSysadmin(authorizationKey))
           q = q.filter(_.dataspaceId in UserDataspaceRoleTable.query
                                         .filter(_.userApiKey === authorizationKey)
@@ -644,7 +644,7 @@ object CkanGodInterface {
                         .filter(userId)(u => r => r.userId === u)
                         .filter(dataspaceId)(d => r => r.dataspaceId === d)
                         .query
-                        
+
             if(!isSysadmin(authorizationKey))
               q = q.filter(_.dataspaceId in UserDataspaceRoleTable.query
                                             .filter(_.userApiKey === authorizationKey)

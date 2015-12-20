@@ -20,8 +20,8 @@ package indexer
 
 object LitefNaming {
 
-    def graphForResource(id: String) = "litef://resource/" + id
-    def graphForDataspace(id: String) = "litef://dataspace/" + id
+    def graphForResource(id: String) = "http://resources.cendari.dariah.eu/resources/" + id
+    def graphForDataspace(id: String) = "http://resources.cendari.dariah.eu/dataspaces/" + id
 
 }
 

@@ -4,7 +4,7 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix prov: <http://www.w3.org/ns/prov#> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
-@prefix cao: <http://cendari.eu/ontologies/cendari/cao/> .
+@prefix cao: <http://resources.cendari.dariah.eu/ontologies/cao#> .
 @prefix iso639-1: <http://id.loc.gov/ontologies/iso639-1_Languages> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
@@ -16,7 +16,7 @@
 
 cao:Audience
     a :Class ;
-    rdfs:comment """This is a class which contains possiible values for the types of usage of the archival  description. 
+    rdfs:comment """This is a class which contains possiible values for the types of usage of the archival  description.
 .
 For archival institution descriptions, originally, allowed are \"internal\" or \"external\" as individuals, to point to the internal/external use of the Institutional description.
 By default \"external\" should be used.
@@ -52,7 +52,7 @@ CAO relates it as a property of the Repository and not as a property of the top 
 
 cao:CendariTopicScheme
     a :Class ;
-    rdfs:comment """Cendari@EAG recommends only WW1 or Medieval. 
+    rdfs:comment """Cendari@EAG recommends only WW1 or Medieval.
 By further development of the SKOS scheme however, topics can be further specialized.""" ;
     rdfs:label "Topics" ;
     rdfs:subClassOf skos:ConceptScheme ;
@@ -88,7 +88,7 @@ In case of a foaf:Person, there is a posisbility to specify the affiliation (via
 
 cao:ConventionOrStandard
     a :Class ;
-    rdfs:comment """Convention declaration. Represents a concept, a convention used in description of the institution. 
+    rdfs:comment """Convention declaration. Represents a concept, a convention used in description of the institution.
 
 Corresponds to /control/conventionDeclaration
 
@@ -123,12 +123,12 @@ cao:FreeRepositoryAccess
 
 cao:ISO3166-1
     a :Class ;
-    rdfs:comment """Individuals of this class are country codes corresponding to ISO 3166-1-alpha-2 code. 
+    rdfs:comment """Individuals of this class are country codes corresponding to ISO 3166-1-alpha-2 code.
 """ ;
     rdfs:label "Country code" ;
     prov:editorialNote """NB
 
-Class needs addition of properties country name, country code and eventually some  geo information. 
+Class needs addition of properties country name, country code and eventually some  geo information.
 
 Need manual generation of individuals, as there is no officially published RDF vocabulary.""" .
 
@@ -140,16 +140,16 @@ cao:Institution
 
 cao:InstitutionIdentity
     a :Class ;
-    rdfs:comment """Identyfing information about an institution holds properties such as identifier, country code, former names of the institution etc.. 
+    rdfs:comment """Identyfing information about an institution holds properties such as identifier, country code, former names of the institution etc..
 
 Corresponds to archgude/identity element of the CENDARI@EAG profile.
 
 """ ;
     rdfs:label "Identity" ;
-    prov:editorialNote """EAG understands several things under repository and this is where the confusion starts. 
+    prov:editorialNote """EAG understands several things under repository and this is where the confusion starts.
 
-While /eag/archguide/Identity provides some metadata imho the institution, it also provides an attribute named \"repositorId\" which according the EAG describes the \"repository\" -> but imho this should be the id of the institution - it is a confusing name. 
-CAO does not change the name, but must clearly understand the difference. 
+While /eag/archguide/Identity provides some metadata imho the institution, it also provides an attribute named \"repositorId\" which according the EAG describes the \"repository\" -> but imho this should be the id of the institution - it is a confusing name.
+CAO does not change the name, but must clearly understand the difference.
 
 
 """ .
@@ -212,23 +212,23 @@ cao:RecreationalService
 cao:Repository
     a :Class ;
     rdfs:comment """A Repository of an archival institution
-An institution may have more than one repositories which offer data services. An example for an institution is the NKP, and the repositories within are different archives represented  by Manuscriptorium. 
+An institution may have more than one repositories which offer data services. An example for an institution is the NKP, and the repositories within are different archives represented  by Manuscriptorium.
 
 """ ;
     rdfs:label "Repository" ;
     rdfs:subClassOf <http://www.w3.org/ns/org#Site> ;
-    prov:editorialNote """RepositoryType 
+    prov:editorialNote """RepositoryType
 both Cendari@EAG and APEX EAG2012 relate the repository type information on repository institution level.  This may be due to the XML-based structure.
 
-Within CAO Repository type is added as a property of the repository itself - and one can associate more values for a repository. Thus the information about the types of repository of the institution is available by querying for institution, but as well additional level of granularity is provided. 
+Within CAO Repository type is added as a property of the repository itself - and one can associate more values for a repository. Thus the information about the types of repository of the institution is available by querying for institution, but as well additional level of granularity is provided.
 
 APEX EAG2012
-Cendari repository information is not as detailed as APEX EAG 2012 information about the repository. 
+Cendari repository information is not as detailed as APEX EAG 2012 information about the repository.
 If needed, that can be extended.""" .
 
 cao:RepositoryAccess
     a :Class ;
-    rdfs:comment """Type of access to the material/data in the repository. 
+    rdfs:comment """Type of access to the material/data in the repository.
 
 EAG@CENDARI thus CAO allows for two types (modelled as subclasses) of repository access:
 
@@ -251,7 +251,7 @@ cao:RepositoryAddress
 This is subclass of vcard:Address, but it additionally includes some more properties which are not in vcard:Address definition. """ ;
     rdfs:label "Address" ;
     rdfs:subClassOf vcard:Address ;
-    prov:editorialNote """Corresponds to 
+    prov:editorialNote """Corresponds to
 /archguide/desc/repositories/repository/location elemnt in CENDARI@EAG profile""" .
 
 cao:RepositoryServices
@@ -264,7 +264,7 @@ Corresponds to /repository/services/<servicetype> elements of APEX EAG 2012
 """ ;
     rdfs:label "Repository Services" ;
     rdfs:subClassOf skos:Concept ;
-    prov:editorialNote """NB: 
+    prov:editorialNote """NB:
 
 Cendari@eag assumes only the SearchRoomService, while APEX EAG 2012 offers a list of more services. The latter is considered for  CAO ontology.""" .
 
@@ -290,16 +290,16 @@ Enumerated list is as follows (same in both Cendari@eag and EAG APEX 2012):
 Corresponds to the element archguide/identity/repositoryType, but is related as a property of the Repository and not as a property of the top level Institution described by EAG document.""" ;
     rdfs:label "Repository Type" ;
     rdfs:subClassOf skos:Concept ;
-    prov:editorialNote """ToBeDiscussed: 
+    prov:editorialNote """ToBeDiscussed:
 There is a small confusion imho with the  EAG (at both Cendari&APEX) .
 On the InstitutionIdentity, there is a claim it is describes the repository identity and even has a repositorId number. In fact, this repositorId number is an identifier for the Institution.
 
-identity/repositoryType thus in EAG imho models the type of the institution and not the type of the repository. 
+identity/repositoryType thus in EAG imho models the type of the institution and not the type of the repository.
 
 Further, in /archguide/desc a user can describe several repositories by same institution, but does not precise the repositoryType at more granular level.
 
 CAO models this situation in a slightly different manner:
-repositoryType is property of cao:Repository and not of cao:Institution. Each cao:Repository may be related to several instances of cao:RepositoryType via \"cao:isRepositoryOfType\". 
+repositoryType is property of cao:Repository and not of cao:Institution. Each cao:Repository may be related to several instances of cao:RepositoryType via \"cao:isRepositoryOfType\".
 """ .
 
 cao:SearchRoomService
@@ -312,9 +312,9 @@ cao:SearchRoomService
 
 cao:SourceInformation
     a :Class ;
-    rdfs:comment """Represents the sources from where archival institution description is provided. 
+    rdfs:comment """Represents the sources from where archival institution description is provided.
 
-EAG and EAG@CENDARI assume that information about the archival institution may be created without source information. 
+EAG and EAG@CENDARI assume that information about the archival institution may be created without source information.
 This ontology makes it more restrictire, thus a source information must always exist.
 
 For a particular source, users may then create repository history notes (repositorhist) or holdings descriptions.""" ;
@@ -336,7 +336,7 @@ cao:Topic
     a :Class ;
     rdfs:comment """Topics covered by the Institution. It is a concept organized within  cao:CendariTopicScheme.
 
-Cendari@EAG recommends only WW1 or Medieval. 
+Cendari@EAG recommends only WW1 or Medieval.
 By further development of the SKOS scheme however, topics can be further specialized.""" ;
     rdfs:label "Topic" ;
     rdfs:subClassOf skos:Concept ;
@@ -349,7 +349,7 @@ cao:URI
 Corresponds to /control/sources/source@href and /control/sources/source@id
 
 
-In case there is not online representation of the resource, URI has to be provided as well and manually defined by the user. 
+In case there is not online representation of the resource, URI has to be provided as well and manually defined by the user.
 
 For example,  in this case it may be of a format such as :
 
@@ -370,9 +370,9 @@ caoid  (Cendari Archival Ontology Identifiers)
 
 cao:addressType
     a :DatatypeProperty ;
-    rdfs:comment """Type of address recorded as a repository address. Permits to specify what type of address is recorded (postal, visitors, etc.). 
+    rdfs:comment """Type of address recorded as a repository address. Permits to specify what type of address is recorded (postal, visitors, etc.).
 
-Corresponds to /desc/repositories/repository/location@type attribute 
+Corresponds to /desc/repositories/repository/location@type attribute
 """ ;
     rdfs:domain cao:RepositoryAddress ;
     rdfs:label "address type" ;
@@ -615,7 +615,7 @@ cao:hasTopics
 
 cao:holdingsNote
     a :DatatypeProperty ;
-    rdfs:comment """Based on specified source (with URL, SourceNote) 
+    rdfs:comment """Based on specified source (with URL, SourceNote)
 corresponding to /holdings/descriptiveNote element in CENDARI@EAG""" ;
     rdfs:domain cao:SourceInformation ;
     rdfs:label "Holdings" ;
@@ -674,7 +674,7 @@ cao:parForm
 
 cao:repositoryHistoryNote
     a :DatatypeProperty ;
-    rdfs:comment """corresponds to /desc/repositorhist/descriptiveNote of CENDARI@EAG 
+    rdfs:comment """corresponds to /desc/repositorhist/descriptiveNote of CENDARI@EAG
 
 A note on repository history, based on referenced source""" ;
     rdfs:domain cao:SourceInformation ;
@@ -763,13 +763,13 @@ vcard:hasURL
 prov:Activity
     rdfs:comment """Records every change made in the description of the institution, the date, the person responsible for the changes and the type of event. There are as many maintenance events as required.
 
-hasAgent property relates it to corresponding Contributor (which may be a foaf:Person or org:FormalOrganization) within Cendari. 
+hasAgent property relates it to corresponding Contributor (which may be a foaf:Person or org:FormalOrganization) within Cendari.
 """ ;
     prov:editorialNote """corresponds to /control/MaintenanceHistory/MaintenanceEvent  from Cendari@EAG and APEX EAG2012
 
 Is equivalent to prov:Activity included within MaintenanceHistory (which is modelled as a prov:Bundle).
 
-Types of maintenance Events are modelled as prov:Activity subclasses. 
+Types of maintenance Events are modelled as prov:Activity subclasses.
 
 CENDARI EAG specializes prov:Replace type of activity, as cao:Delete - to express deletion of an institutional description (soft deletion).""" .
 

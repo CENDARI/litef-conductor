@@ -24,7 +24,7 @@ import javelin.ontology.Implicits._
 
 final
 class PlainTextIndexer extends AbstractIndexer {
-    lazy val logger = org.slf4j.LoggerFactory getLogger getClass
+    // lazy val logger = org.slf4j.LoggerFactory getLogger getClass
 
     override
     def indexFile(
