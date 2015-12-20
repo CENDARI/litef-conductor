@@ -10,7 +10,7 @@
     <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
     <!ENTITY skos "http://www.w3.org/2004/02/skos/core#" >
     <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
-    <!ENTITY cao "http://cendari.eu/ontologies/cendari/cao/" >
+    <!ENTITY cao "http://resources.cendari.dariah.eu/ontologies/cao#" >
     <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
     <!ENTITY iso639-1 "http://id.loc.gov/ontologies/iso639-1_Languages" >
 ]>
@@ -22,7 +22,7 @@
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
      xmlns:prov="http://www.w3.org/ns/prov#"
      xmlns:foaf="http://xmlns.com/foaf/0.1/"
-     xmlns:cao="http://cendari.eu/ontologies/cendari/cao/"
+     xmlns:cao="http://resources.cendari.dariah.eu/ontologies/cao#"
      xmlns:iso639-1="http://id.loc.gov/ontologies/iso639-1_Languages"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
@@ -37,10 +37,10 @@
         <imports rdf:resource="http://www.w3.org/ns/prov#"/>
         <imports rdf:resource="http://xmlns.com/foaf/0.1/"/>
     </Ontology>
-    
 
 
-    <!-- 
+
+    <!--
     ///////////////////////////////////////////////////////////////////////////////////////
     //
     // Annotation properties
@@ -48,28 +48,28 @@
     ///////////////////////////////////////////////////////////////////////////////////////
      -->
 
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/authForm -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#authForm -->
 
     <AnnotationProperty rdf:about="&cao;authForm">
         <rdfs:domain rdf:resource="&cao;InstitutionIdentity"/>
         <rdfs:subPropertyOf rdf:resource="&skos;prefLabel"/>
     </AnnotationProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/parForm -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#parForm -->
 
     <AnnotationProperty rdf:about="&cao;parForm">
         <rdfs:domain rdf:resource="&cao;InstitutionIdentity"/>
         <rdfs:subPropertyOf rdf:resource="&skos;altLabel"/>
     </AnnotationProperty>
-    
 
 
-    <!-- 
+
+    <!--
     ///////////////////////////////////////////////////////////////////////////////////////
     //
     // Object Properties
@@ -77,10 +77,10 @@
     ///////////////////////////////////////////////////////////////////////////////////////
      -->
 
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasAccessNotes -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasAccessNotes -->
 
     <ObjectProperty rdf:about="&cao;hasAccessNotes">
         <rdfs:label>access notes</rdfs:label>
@@ -88,10 +88,10 @@
         <rdfs:range rdf:resource="&cao;RepositoryAccess"/>
         <rdfs:subPropertyOf rdf:resource="&vcard;hasRelated"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasAffiliation -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasAffiliation -->
 
     <ObjectProperty rdf:about="&cao;hasAffiliation">
         <rdfs:label>affiliation</rdfs:label>
@@ -105,30 +105,30 @@
             </Class>
         </rdfs:domain>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasAgencyCode -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasAgencyCode -->
 
     <ObjectProperty rdf:about="&cao;hasAgencyCode">
         <rdfs:label>agency code</rdfs:label>
         <rdfs:domain rdf:resource="&cao;MaintenanceAgency"/>
         <rdfs:subPropertyOf rdf:resource="&vcard;hasUID"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasAgencyName -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasAgencyName -->
 
     <ObjectProperty rdf:about="&cao;hasAgencyName">
         <rdfs:label>name</rdfs:label>
         <rdfs:domain rdf:resource="&cao;MaintenanceAgency"/>
         <rdfs:subPropertyOf rdf:resource="&vcard;hasName"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasAgent -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasAgent -->
 
     <ObjectProperty rdf:about="&cao;hasAgent">
         <rdfs:label>agent</rdfs:label>
@@ -136,10 +136,10 @@
         <rdfs:domain rdf:resource="&prov;Activity"/>
         <rdfs:subPropertyOf rdf:resource="&prov;agent"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasAudience -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasAudience -->
 
     <ObjectProperty rdf:about="&cao;hasAudience">
         <rdfs:label>audience</rdfs:label>
@@ -147,20 +147,20 @@
         <rdfs:domain rdf:resource="&cao;Institution"/>
         <rdfs:subPropertyOf rdf:resource="&skos;related"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasContact -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasContact -->
 
     <ObjectProperty rdf:about="&cao;hasContact">
         <rdfs:label>contact</rdfs:label>
         <rdfs:range rdf:resource="&cao;Contact"/>
         <rdfs:domain rdf:resource="&cao;RepositoryServices"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasConventions -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasConventions -->
 
     <ObjectProperty rdf:about="&cao;hasConventions">
         <rdfs:label>convention</rdfs:label>
@@ -168,29 +168,29 @@
         <rdfs:domain rdf:resource="&cao;ConventionOrStandardScheme"/>
         <rdfs:subPropertyOf rdf:resource="&skos;hasTopConcept"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasCountryCode -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasCountryCode -->
 
     <ObjectProperty rdf:about="&cao;hasCountryCode">
         <rdfs:label>code</rdfs:label>
         <rdfs:range rdf:resource="&cao;ISO3166-1"/>
         <rdfs:domain rdf:resource="&cao;InstitutionIdentity"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasFax -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasFax -->
 
     <ObjectProperty rdf:about="&cao;hasFax">
         <rdfs:domain rdf:resource="&cao;RepositoryAddress"/>
         <rdfs:subPropertyOf rdf:resource="&vcard;hasTelephone"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasHoldingsInTopic -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasHoldingsInTopic -->
 
     <ObjectProperty rdf:about="&cao;hasHoldingsInTopic">
         <rdfs:label>holdings</rdfs:label>
@@ -205,10 +205,10 @@
             </Class>
         </rdfs:domain>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasIdentity -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasIdentity -->
 
     <ObjectProperty rdf:about="&cao;hasIdentity">
         <rdfs:label>identity</rdfs:label>
@@ -218,10 +218,10 @@
         <propertyDisjointWith rdf:resource="&cao;hasNonPreferredName"/>
         <propertyDisjointWith rdf:resource="&cao;hasParallelName"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasLanguage -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasLanguage -->
 
     <ObjectProperty rdf:about="&cao;hasLanguage">
         <rdfs:label>language</rdfs:label>
@@ -229,30 +229,30 @@
         <rdfs:domain rdf:resource="&cao;LanguageDeclaration"/>
         <rdfs:range rdf:resource="http://id.loc.gov/vocabulary/iso639-1/iso639-1_Language"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasLanguageDeclaration -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasLanguageDeclaration -->
 
     <ObjectProperty rdf:about="&cao;hasLanguageDeclaration">
         <rdfs:label>declaration</rdfs:label>
         <rdfs:domain rdf:resource="&cao;Institution"/>
         <rdfs:range rdf:resource="&cao;LanguageDeclaration"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasMaintenanceAgency -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasMaintenanceAgency -->
 
     <ObjectProperty rdf:about="&cao;hasMaintenanceAgency">
         <rdfs:label>agency</rdfs:label>
         <rdfs:domain rdf:resource="&cao;Institution"/>
         <rdfs:range rdf:resource="&cao;MaintenanceAgency"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasMaintenanceEvent -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasMaintenanceEvent -->
 
     <ObjectProperty rdf:about="&cao;hasMaintenanceEvent">
         <rdfs:label>event</rdfs:label>
@@ -262,20 +262,20 @@
         <rdfs:range rdf:resource="&prov;Activity"/>
         <rdfs:subPropertyOf rdf:resource="&prov;activity"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasMaintenanceHistory -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasMaintenanceHistory -->
 
     <ObjectProperty rdf:about="&cao;hasMaintenanceHistory">
         <rdfs:label>history</rdfs:label>
         <rdfs:domain rdf:resource="&cao;Institution"/>
         <rdfs:range rdf:resource="&cao;MaintenanceHistory"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasNonPreferredName -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasNonPreferredName -->
 
     <ObjectProperty rdf:about="&cao;hasNonPreferredName">
         <rdfs:label>non preferred name</rdfs:label>
@@ -285,10 +285,10 @@
         <rdfs:subPropertyOf rdf:resource="&cao;hasIdentity"/>
         <propertyDisjointWith rdf:resource="&cao;hasParallelName"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasParallelName -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasParallelName -->
 
     <ObjectProperty rdf:about="&cao;hasParallelName">
         <rdfs:label>parallel name</rdfs:label>
@@ -297,10 +297,10 @@
         <rdfs:range rdf:resource="&cao;InstitutionIdentity"/>
         <rdfs:subPropertyOf rdf:resource="&cao;hasIdentity"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasPhone -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasPhone -->
 
     <ObjectProperty rdf:about="&cao;hasPhone">
         <rdfs:subPropertyOf rdf:resource="&vcard;hasTelephone"/>
@@ -313,20 +313,20 @@
             </Class>
         </rdfs:domain>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasRecordId -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasRecordId -->
 
     <ObjectProperty rdf:about="&cao;hasRecordId">
         <rdfs:label>id</rdfs:label>
         <rdfs:domain rdf:resource="&cao;Institution"/>
         <rdfs:subPropertyOf rdf:resource="&vcard;hasUID"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasRepository -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasRepository -->
 
     <ObjectProperty rdf:about="&cao;hasRepository">
         <rdfs:label>repository</rdfs:label>
@@ -334,10 +334,10 @@
         <rdfs:range rdf:resource="&cao;Repository"/>
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/ns/org#hasSite"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasRepositoryAddress -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasRepositoryAddress -->
 
     <ObjectProperty rdf:about="&cao;hasRepositoryAddress">
         <rdfs:label>address</rdfs:label>
@@ -345,10 +345,10 @@
         <rdfs:range rdf:resource="&cao;RepositoryAddress"/>
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/ns/org#siteAddress"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasRepositoryTypes -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasRepositoryTypes -->
 
     <ObjectProperty rdf:about="&cao;hasRepositoryTypes">
         <rdfs:label>types</rdfs:label>
@@ -356,30 +356,30 @@
         <rdfs:range rdf:resource="&cao;RepositoryType"/>
         <rdfs:subPropertyOf rdf:resource="&skos;hasTopConcept"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasService -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasService -->
 
     <ObjectProperty rdf:about="&cao;hasService">
         <rdfs:label>service</rdfs:label>
         <rdfs:domain rdf:resource="&cao;Repository"/>
         <rdfs:range rdf:resource="&cao;RepositoryServices"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasSources -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasSources -->
 
     <ObjectProperty rdf:about="&cao;hasSources">
         <rdfs:label>sources</rdfs:label>
         <rdfs:domain rdf:resource="&cao;Institution"/>
         <rdfs:range rdf:resource="&cao;SourceInformation"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasTopics -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasTopics -->
 
     <ObjectProperty rdf:about="&cao;hasTopics">
         <rdfs:label>topics</rdfs:label>
@@ -387,10 +387,10 @@
         <rdfs:range rdf:resource="&cao;Topic"/>
         <rdfs:subPropertyOf rdf:resource="&skos;hasTopConcept"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/isPerson -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#isPerson -->
 
     <ObjectProperty rdf:about="&cao;isPerson">
         <rdfs:label>isPerson</rdfs:label>
@@ -398,10 +398,10 @@
         <rdfs:subPropertyOf rdf:resource="&vcard;hasRelated"/>
         <rdfs:range rdf:resource="&foaf;Person"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/isRepositoryOfType -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#isRepositoryOfType -->
 
     <ObjectProperty rdf:about="&cao;isRepositoryOfType">
         <rdfs:label>type</rdfs:label>
@@ -409,10 +409,10 @@
         <rdfs:range rdf:resource="&cao;RepositoryType"/>
         <rdfs:subPropertyOf rdf:resource="&skos;related"/>
     </ObjectProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/usesConventionsOrStandards -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#usesConventionsOrStandards -->
 
     <ObjectProperty rdf:about="&cao;usesConventionsOrStandards">
         <rdfs:label>conventions</rdfs:label>
@@ -420,7 +420,7 @@
         <rdfs:domain rdf:resource="&cao;Institution"/>
         <rdfs:subPropertyOf rdf:resource="&skos;related"/>
     </ObjectProperty>
-    
+
 
 
     <!-- http://www.w3.org/2006/vcard/ns#hasEmail -->
@@ -435,7 +435,7 @@
             </Class>
         </rdfs:domain>
     </rdf:Description>
-    
+
 
 
     <!-- http://www.w3.org/2006/vcard/ns#hasGeo -->
@@ -443,7 +443,7 @@
     <rdf:Description rdf:about="&vcard;hasGeo">
         <rdfs:domain rdf:resource="&cao;RepositoryAddress"/>
     </rdf:Description>
-    
+
 
 
     <!-- http://www.w3.org/2006/vcard/ns#hasLogo -->
@@ -458,7 +458,7 @@
             </Class>
         </rdfs:domain>
     </rdf:Description>
-    
+
 
 
     <!-- http://www.w3.org/2006/vcard/ns#hasPhoto -->
@@ -466,7 +466,7 @@
     <rdf:Description rdf:about="&vcard;hasPhoto">
         <rdfs:domain rdf:resource="&cao;Repository"/>
     </rdf:Description>
-    
+
 
 
     <!-- http://www.w3.org/2006/vcard/ns#hasURL -->
@@ -474,10 +474,10 @@
     <rdf:Description rdf:about="&vcard;hasURL">
         <rdfs:domain rdf:resource="&cao;RepositoryAddress"/>
     </rdf:Description>
-    
 
 
-    <!-- 
+
+    <!--
     ///////////////////////////////////////////////////////////////////////////////////////
     //
     // Data properties
@@ -485,20 +485,20 @@
     ///////////////////////////////////////////////////////////////////////////////////////
      -->
 
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/Note -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#Note -->
 
     <DatatypeProperty rdf:about="&cao;Note">
         <rdfs:label>Note</rdfs:label>
         <rdfs:comment>Data property representing various notes associated to the institution and repository descriptions e.g. cao:holdingsNote, cao:repositoryHistoryNote, cao:sourceNote etc.</rdfs:comment>
         <rdfs:range rdf:resource="&rdfs;Literal"/>
     </DatatypeProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/URI -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#URI -->
 
     <DatatypeProperty rdf:about="&cao;URI">
         <rdfs:label>URI</rdfs:label>
@@ -507,7 +507,7 @@
 Corresponds to /control/sources/source@href and /control/sources/source@id
 
 
-In case there is not online representation of the resource, URI has to be provided as well and manually defined by the user. 
+In case there is not online representation of the resource, URI has to be provided as well and manually defined by the user.
 
 For example,  in this case it may be of a format such as :
 
@@ -525,25 +525,25 @@ caoid  (Cendari Archival Ontology Identifiers)
         <rdfs:domain rdf:resource="&cao;SourceInformation"/>
         <rdfs:range rdf:resource="&xsd;anyURI"/>
     </DatatypeProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/addressType -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#addressType -->
 
     <DatatypeProperty rdf:about="&cao;addressType">
         <rdfs:label>address type</rdfs:label>
-        <rdfs:comment>Type of address recorded as a repository address. Permits to specify what type of address is recorded (postal, visitors, etc.). 
+        <rdfs:comment>Type of address recorded as a repository address. Permits to specify what type of address is recorded (postal, visitors, etc.).
 
-Corresponds to /desc/repositories/repository/location@type attribute 
+Corresponds to /desc/repositories/repository/location@type attribute
 </rdfs:comment>
         <rdfs:domain rdf:resource="&cao;RepositoryAddress"/>
         <rdfs:range rdf:resource="&rdfs;Literal"/>
         <rdfs:subPropertyOf rdf:resource="&vcard;note"/>
     </DatatypeProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasMaintenanceStatus -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasMaintenanceStatus -->
 
     <DatatypeProperty rdf:about="&cao;hasMaintenanceStatus">
         <rdfs:label>Status</rdfs:label>
@@ -607,10 +607,10 @@ new, cancelled, deleted, deletedReplaced, deletedMerged, deletedSplit, derived o
             </rdfs:Datatype>
         </rdfs:range>
     </DatatypeProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/hasScript -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#hasScript -->
 
     <DatatypeProperty rdf:about="&cao;hasScript">
         <rdfs:label>Script</rdfs:label>
@@ -636,14 +636,14 @@ TODO: make separate class and generate vocabulary  from ISO 15924 List (create c
             </rdfs:Datatype>
         </rdfs:range>
     </DatatypeProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/holdingsNote -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#holdingsNote -->
 
     <DatatypeProperty rdf:about="&cao;holdingsNote">
         <rdfs:label>Holdings</rdfs:label>
-        <rdfs:comment>Based on specified source (with URL, SourceNote) 
+        <rdfs:comment>Based on specified source (with URL, SourceNote)
 corresponding to /holdings/descriptiveNote element in CENDARI@EAG</rdfs:comment>
         <rdfs:subPropertyOf rdf:resource="&cao;Note"/>
         <rdfs:domain rdf:resource="&cao;SourceInformation"/>
@@ -651,20 +651,20 @@ corresponding to /holdings/descriptiveNote element in CENDARI@EAG</rdfs:comment>
         <propertyDisjointWith rdf:resource="&cao;sourceNote"/>
         <rdfs:range rdf:resource="&rdfs;Literal"/>
     </DatatypeProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/name -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#name -->
 
     <DatatypeProperty rdf:about="&cao;name">
         <rdfs:domain rdf:resource="&cao;InstitutionIdentity"/>
         <rdfs:range rdf:resource="&rdfs;Literal"/>
         <rdfs:subPropertyOf rdf:resource="&vcard;organization-name"/>
     </DatatypeProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/notAfter -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#notAfter -->
 
     <DatatypeProperty rdf:about="&cao;notAfter">
         <rdfs:label>Latest</rdfs:label>
@@ -674,10 +674,10 @@ Initial use is for cao:InstitutionIdentity, describing latest date when the inst
         <rdfs:domain rdf:resource="&cao;InstitutionIdentity"/>
         <rdfs:range rdf:resource="&xsd;dateTime"/>
     </DatatypeProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/notBefore -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#notBefore -->
 
     <DatatypeProperty rdf:about="&cao;notBefore">
         <rdfs:label>Earliest</rdfs:label>
@@ -687,24 +687,24 @@ Initial use is for cao:InstitutionIdentity, describing earliest date when the in
         <rdfs:domain rdf:resource="&cao;InstitutionIdentity"/>
         <rdfs:range rdf:resource="&xsd;dateTime"/>
     </DatatypeProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/occupation -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#occupation -->
 
     <DatatypeProperty rdf:about="&cao;occupation">
         <rdfs:domain rdf:resource="&cao;Contact"/>
         <rdfs:range rdf:resource="&rdfs;Literal"/>
         <rdfs:subPropertyOf rdf:resource="&vcard;role"/>
     </DatatypeProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/repositoryHistoryNote -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#repositoryHistoryNote -->
 
     <DatatypeProperty rdf:about="&cao;repositoryHistoryNote">
         <rdfs:label>History</rdfs:label>
-        <rdfs:comment>corresponds to /desc/repositorhist/descriptiveNote of CENDARI@EAG 
+        <rdfs:comment>corresponds to /desc/repositorhist/descriptiveNote of CENDARI@EAG
 
 A note on repository history, based on referenced source</rdfs:comment>
         <rdfs:subPropertyOf rdf:resource="&cao;Note"/>
@@ -712,20 +712,20 @@ A note on repository history, based on referenced source</rdfs:comment>
         <propertyDisjointWith rdf:resource="&cao;sourceNote"/>
         <rdfs:range rdf:resource="&rdfs;Literal"/>
     </DatatypeProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/repositoryId -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#repositoryId -->
 
     <DatatypeProperty rdf:about="&cao;repositoryId">
         <rdfs:domain rdf:resource="&cao;InstitutionIdentity"/>
         <rdfs:range rdf:resource="&rdfs;Literal"/>
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/ns/org#identifier"/>
     </DatatypeProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/restAccess -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#restAccess -->
 
     <DatatypeProperty rdf:about="&cao;restAccess">
         <rdfs:label>Access</rdfs:label>
@@ -736,10 +736,10 @@ Can be added and provides detailed information about the “access policies, inc
         <rdfs:domain rdf:resource="&cao;RepositoryAccess"/>
         <rdfs:range rdf:resource="&rdfs;Literal"/>
     </DatatypeProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/sourceNote -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#sourceNote -->
 
     <DatatypeProperty rdf:about="&cao;sourceNote">
         <rdfs:label>Source</rdfs:label>
@@ -750,10 +750,10 @@ Corresponds to /control/sources/sourceEntry element</rdfs:comment>
         <rdfs:domain rdf:resource="&cao;SourceInformation"/>
         <rdfs:range rdf:resource="&rdfs;Literal"/>
     </DatatypeProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/termsOfUseNote -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#termsOfUseNote -->
 
     <DatatypeProperty rdf:about="&cao;termsOfUseNote">
         <rdfs:label>termsOfUse</rdfs:label>
@@ -764,10 +764,10 @@ Can be used as complement or solely to the cao:termsOfUseURI</rdfs:comment>
         <rdfs:domain rdf:resource="&cao;RepositoryAccess"/>
         <rdfs:range rdf:resource="&rdfs;Literal"/>
     </DatatypeProperty>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/termsOfUseURI -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#termsOfUseURI -->
 
     <DatatypeProperty rdf:about="&cao;termsOfUseURI">
         <rdfs:label>TermsOfUseURI</rdfs:label>
@@ -777,10 +777,10 @@ Can be used solely or as a complement to cao:termsOfUseNote</rdfs:comment>
         <rdfs:domain rdf:resource="&cao;RepositoryAccess"/>
         <rdfs:range rdf:resource="&xsd;anyURI"/>
     </DatatypeProperty>
-    
 
 
-    <!-- 
+
+    <!--
     ///////////////////////////////////////////////////////////////////////////////////////
     //
     // Classes
@@ -788,24 +788,24 @@ Can be used solely or as a complement to cao:termsOfUseNote</rdfs:comment>
     ///////////////////////////////////////////////////////////////////////////////////////
      -->
 
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/Audience -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#Audience -->
 
     <Class rdf:about="&cao;Audience">
         <rdfs:label>Audience</rdfs:label>
-        <rdfs:comment>This is a class which contains possiible values for the types of usage of the archival  description. 
+        <rdfs:comment>This is a class which contains possiible values for the types of usage of the archival  description.
 .
 For archival institution descriptions, originally, allowed are &quot;internal&quot; or &quot;external&quot; as individuals, to point to the internal/external use of the Institutional description.
 By default &quot;external&quot; should be used.
 
 Maps to eag@audience attribute of the top level eag element from Cendari@EAG profile</rdfs:comment>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/CendariRepositoryTypeScheme -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#CendariRepositoryTypeScheme -->
 
     <Class rdf:about="&cao;CendariRepositoryTypeScheme">
         <rdfs:label>Repository Types</rdfs:label>
@@ -832,32 +832,32 @@ CAO relates it as a property of the Repository and not as a property of the top 
 </rdfs:comment>
         <prov:editorialNote>Develop Repository Types Scheme</prov:editorialNote>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/CendariTopicScheme -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#CendariTopicScheme -->
 
     <Class rdf:about="&cao;CendariTopicScheme">
         <rdfs:label>Topics</rdfs:label>
         <rdfs:subClassOf rdf:resource="&skos;ConceptScheme"/>
-        <rdfs:comment>Cendari@EAG recommends only WW1 or Medieval. 
+        <rdfs:comment>Cendari@EAG recommends only WW1 or Medieval.
 By further development of the SKOS scheme however, topics can be further specialized.</rdfs:comment>
         <prov:editorialNote>TODO: develop Topic concept scheme</prov:editorialNote>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/ConditionalRepositoryAccess -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#ConditionalRepositoryAccess -->
 
     <Class rdf:about="&cao;ConditionalRepositoryAccess">
         <rdfs:label>Conditional access</rdfs:label>
         <rdfs:subClassOf rdf:resource="&cao;RepositoryAccess"/>
         <rdfs:comment>There are restrictive conditions for use and access to the repository material.</rdfs:comment>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/Contact -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#Contact -->
 
     <Class rdf:about="&cao;Contact">
         <rdfs:label>Contact</rdfs:label>
@@ -871,10 +871,10 @@ Corresponds to /services/searchroom/contact element of CENDARI@EAG profile. Adde
         <prov:editorialNote>NB: I think here we should also have an address, but that is obviously somewhere else in the institution description.
 Additional proposal here is to have one Contact class with all necessary infos... TBD:..</prov:editorialNote>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/Contributor -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#Contributor -->
 
     <Class rdf:about="&cao;Contributor">
         <rdfs:label>Contributor</rdfs:label>
@@ -885,24 +885,24 @@ In case of a foaf:Person, there is a posisbility to specify the affiliation (via
             <rdf:Description rdf:about="&foaf;Person"/>
         </disjointUnionOf>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/ConventionOrStandard -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#ConventionOrStandard -->
 
     <Class rdf:about="&cao;ConventionOrStandard">
         <rdfs:label>Convention</rdfs:label>
         <rdfs:subClassOf rdf:resource="&skos;Concept"/>
-        <rdfs:comment>Convention declaration. Represents a concept, a convention used in description of the institution. 
+        <rdfs:comment>Convention declaration. Represents a concept, a convention used in description of the institution.
 
 Corresponds to /control/conventionDeclaration
 
 in CAO it is used as a concept belonging to the Concept schema of conventions (see cao:ConventionOrStandardScheme ) </rdfs:comment>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/ConventionOrStandardScheme -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#ConventionOrStandardScheme -->
 
     <Class rdf:about="&cao;ConventionOrStandardScheme">
         <rdfs:label>Conventions</rdfs:label>
@@ -911,10 +911,10 @@ in CAO it is used as a concept belonging to the Concept schema of conventions (s
 
 Used in cao:hasConventions to list all conventions and standards used within the EAG Document</rdfs:comment>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/Delete -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#Delete -->
 
     <Class rdf:about="&cao;Delete">
         <rdfs:label>Delete</rdfs:label>
@@ -923,35 +923,35 @@ Used in cao:hasConventions to list all conventions and standards used within the
 
 In real terms, this would mean the institutional description record is withdrawn from usage and not physically deleted. </rdfs:comment>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/FreeRepositoryAccess -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#FreeRepositoryAccess -->
 
     <Class rdf:about="&cao;FreeRepositoryAccess">
         <rdfs:label>Free</rdfs:label>
         <rdfs:subClassOf rdf:resource="&cao;RepositoryAccess"/>
         <rdfs:comment>Access and use of the repository material is free, and there are no restrictive conditions.</rdfs:comment>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/ISO3166-1 -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#ISO3166-1 -->
 
     <Class rdf:about="&cao;ISO3166-1">
         <rdfs:label>Country code</rdfs:label>
         <prov:editorialNote>NB
 
-Class needs addition of properties country name, country code and eventually some  geo information. 
+Class needs addition of properties country name, country code and eventually some  geo information.
 
 Need manual generation of individuals, as there is no officially published RDF vocabulary.</prov:editorialNote>
-        <rdfs:comment>Individuals of this class are country codes corresponding to ISO 3166-1-alpha-2 code. 
+        <rdfs:comment>Individuals of this class are country codes corresponding to ISO 3166-1-alpha-2 code.
 </rdfs:comment>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/Institution -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#Institution -->
 
     <Class rdf:about="&cao;Institution">
         <rdfs:label>Institution</rdfs:label>
@@ -961,39 +961,39 @@ Need manual generation of individuals, as there is no officially published RDF v
         <rdfs:comment></rdfs:comment>
         <rdfs:comment>Archive, Library, Museum etc. described with EAG</rdfs:comment>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/InstitutionIdentity -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#InstitutionIdentity -->
 
     <Class rdf:about="&cao;InstitutionIdentity">
         <rdfs:label>Identity</rdfs:label>
-        <rdfs:comment>Identyfing information about an institution holds properties such as identifier, country code, former names of the institution etc.. 
+        <rdfs:comment>Identyfing information about an institution holds properties such as identifier, country code, former names of the institution etc..
 
 Corresponds to archgude/identity element of the CENDARI@EAG profile.
 
 </rdfs:comment>
-        <prov:editorialNote>EAG understands several things under repository and this is where the confusion starts. 
+        <prov:editorialNote>EAG understands several things under repository and this is where the confusion starts.
 
-While /eag/archguide/Identity provides some metadata imho the institution, it also provides an attribute named &quot;repositorId&quot; which according the EAG describes the &quot;repository&quot; -&gt; but imho this should be the id of the institution - it is a confusing name. 
-CAO does not change the name, but must clearly understand the difference. 
+While /eag/archguide/Identity provides some metadata imho the institution, it also provides an attribute named &quot;repositorId&quot; which according the EAG describes the &quot;repository&quot; -&gt; but imho this should be the id of the institution - it is a confusing name.
+CAO does not change the name, but must clearly understand the difference.
 
 
 </prov:editorialNote>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/InternetAccessService -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#InternetAccessService -->
 
     <Class rdf:about="&cao;InternetAccessService">
         <rdfs:label>Internet Access</rdfs:label>
         <rdfs:subClassOf rdf:resource="&cao;RepositoryServices"/>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/LanguageDeclaration -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#LanguageDeclaration -->
 
     <Class rdf:about="&cao;LanguageDeclaration">
         <rdfs:label>Language Declaration</rdfs:label>
@@ -1004,19 +1004,19 @@ Contains information about the Languages and scripts used in the description of 
 
 Corresponds to /control/languagedeclarations/languagedeclaration element of CENDARI@EAG profile.</rdfs:comment>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/LibraryService -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#LibraryService -->
 
     <Class rdf:about="&cao;LibraryService">
         <rdfs:label>Library</rdfs:label>
         <rdfs:subClassOf rdf:resource="&cao;RepositoryServices"/>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/MaintenanceAgency -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#MaintenanceAgency -->
 
     <Class rdf:about="&cao;MaintenanceAgency">
         <rdfs:label>Maintenance Agency</rdfs:label>
@@ -1028,10 +1028,10 @@ Alternatively, APEX may be a maintenance agency.
 
 corresponds to /control/maintenanceAgency part of Cendari@EAG and APEX EAG 2012</rdfs:comment>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/MaintenanceHistory -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#MaintenanceHistory -->
 
     <Class rdf:about="&cao;MaintenanceHistory">
         <rdfs:label>Maintenance History</rdfs:label>
@@ -1042,45 +1042,45 @@ Normally, should be taken as part of the repository internal information.
 
 Corresponds to /control/maintenanceHistory in Cendari@EAG and APEX EAG 2012 </rdfs:comment>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/RecreationalService -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#RecreationalService -->
 
     <Class rdf:about="&cao;RecreationalService">
         <rdfs:label>Recreation</rdfs:label>
         <rdfs:subClassOf rdf:resource="&cao;RepositoryServices"/>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/Repository -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#Repository -->
 
     <Class rdf:about="&cao;Repository">
         <rdfs:label>Repository</rdfs:label>
         <rdfs:subClassOf rdf:resource="http://www.w3.org/ns/org#Site"/>
         <rdfs:comment>A Repository of an archival institution
-An institution may have more than one repositories which offer data services. An example for an institution is the NKP, and the repositories within are different archives represented  by Manuscriptorium. 
+An institution may have more than one repositories which offer data services. An example for an institution is the NKP, and the repositories within are different archives represented  by Manuscriptorium.
 
 </rdfs:comment>
-        <prov:editorialNote>RepositoryType 
+        <prov:editorialNote>RepositoryType
 both Cendari@EAG and APEX EAG2012 relate the repository type information on repository institution level.  This may be due to the XML-based structure.
 
-Within CAO Repository type is added as a property of the repository itself - and one can associate more values for a repository. Thus the information about the types of repository of the institution is available by querying for institution, but as well additional level of granularity is provided. 
+Within CAO Repository type is added as a property of the repository itself - and one can associate more values for a repository. Thus the information about the types of repository of the institution is available by querying for institution, but as well additional level of granularity is provided.
 
 APEX EAG2012
-Cendari repository information is not as detailed as APEX EAG 2012 information about the repository. 
+Cendari repository information is not as detailed as APEX EAG 2012 information about the repository.
 If needed, that can be extended.</prov:editorialNote>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/RepositoryAccess -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#RepositoryAccess -->
 
     <Class rdf:about="&cao;RepositoryAccess">
         <rdfs:label>Access Type</rdfs:label>
         <rdfs:subClassOf rdf:resource="&skos;Concept"/>
-        <rdfs:comment>Type of access to the material/data in the repository. 
+        <rdfs:comment>Type of access to the material/data in the repository.
 
 EAG@CENDARI thus CAO allows for two types (modelled as subclasses) of repository access:
 
@@ -1096,28 +1096,28 @@ This class practically corresponds to the element /repository/access of the Cend
         <prov:editorialNote>NB:
 The type of access is at the moment provided at a repository level. Potentially, repository access can be actually become a property of  repository holdings.</prov:editorialNote>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/RepositoryAddress -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#RepositoryAddress -->
 
     <Class rdf:about="&cao;RepositoryAddress">
         <rdfs:label>Address</rdfs:label>
         <rdfs:subClassOf rdf:resource="&vcard;Address"/>
-        <prov:editorialNote>Corresponds to 
+        <prov:editorialNote>Corresponds to
 /archguide/desc/repositories/repository/location elemnt in CENDARI@EAG profile</prov:editorialNote>
         <rdfs:comment>Repository address of a repository of an archival institution.
 This is subclass of vcard:Address, but it additionally includes some more properties which are not in vcard:Address definition. </rdfs:comment>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/RepositoryServices -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#RepositoryServices -->
 
     <Class rdf:about="&cao;RepositoryServices">
         <rdfs:label>Repository Services</rdfs:label>
         <rdfs:subClassOf rdf:resource="&skos;Concept"/>
-        <prov:editorialNote>NB: 
+        <prov:editorialNote>NB:
 
 Cendari@eag assumes only the SearchRoomService, while APEX EAG 2012 offers a list of more services. The latter is considered for  CAO ontology.</prov:editorialNote>
         <rdfs:comment>Types of services a repository offers. There can be different types of services, each with own contact information. They are modelled as subclasses of cao:RepositoryServices.
@@ -1127,10 +1127,10 @@ Corresponds to /repository/services/&lt;servicetype&gt; elements of APEX EAG 201
 
 </rdfs:comment>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/RepositoryType -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#RepositoryType -->
 
     <Class rdf:about="&cao;RepositoryType">
         <rdfs:label>Repository Type</rdfs:label>
@@ -1153,22 +1153,22 @@ Enumerated list is as follows (same in both Cendari@eag and EAG APEX 2012):
 -Specialised non-governmental archives and archives of other cultural (heritage) institutions.
 
 Corresponds to the element archguide/identity/repositoryType, but is related as a property of the Repository and not as a property of the top level Institution described by EAG document.</rdfs:comment>
-        <prov:editorialNote>ToBeDiscussed: 
+        <prov:editorialNote>ToBeDiscussed:
 There is a small confusion imho with the  EAG (at both Cendari&amp;APEX) .
 On the InstitutionIdentity, there is a claim it is describes the repository identity and even has a repositorId number. In fact, this repositorId number is an identifier for the Institution.
 
-identity/repositoryType thus in EAG imho models the type of the institution and not the type of the repository. 
+identity/repositoryType thus in EAG imho models the type of the institution and not the type of the repository.
 
 Further, in /archguide/desc a user can describe several repositories by same institution, but does not precise the repositoryType at more granular level.
 
 CAO models this situation in a slightly different manner:
-repositoryType is property of cao:Repository and not of cao:Institution. Each cao:Repository may be related to several instances of cao:RepositoryType via &quot;cao:isRepositoryOfType&quot;. 
+repositoryType is property of cao:Repository and not of cao:Institution. Each cao:Repository may be related to several instances of cao:RepositoryType via &quot;cao:isRepositoryOfType&quot;.
 </prov:editorialNote>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/SearchRoomService -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#SearchRoomService -->
 
     <Class rdf:about="&cao;SearchRoomService">
         <rdfs:label>Search room</rdfs:label>
@@ -1177,10 +1177,10 @@ repositoryType is property of cao:Repository and not of cao:Institution. Each ca
 
 </rdfs:comment>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/SourceInformation -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#SourceInformation -->
 
     <Class rdf:about="&cao;SourceInformation">
         <rdfs:label>Source</rdfs:label>
@@ -1191,37 +1191,37 @@ b)/archguide/desc/repositorhist
 c)/archguide/desc/holdings
 
 </prov:editorialNote>
-        <rdfs:comment>Represents the sources from where archival institution description is provided. 
+        <rdfs:comment>Represents the sources from where archival institution description is provided.
 
-EAG and EAG@CENDARI assume that information about the archival institution may be created without source information. 
+EAG and EAG@CENDARI assume that information about the archival institution may be created without source information.
 This ontology makes it more restrictire, thus a source information must always exist.
 
 For a particular source, users may then create repository history notes (repositorhist) or holdings descriptions.</rdfs:comment>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/TechnicalService -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#TechnicalService -->
 
     <Class rdf:about="&cao;TechnicalService">
         <rdfs:label>Technical</rdfs:label>
         <rdfs:subClassOf rdf:resource="&cao;RepositoryServices"/>
     </Class>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/Topic -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#Topic -->
 
     <Class rdf:about="&cao;Topic">
         <rdfs:label>Topic</rdfs:label>
         <rdfs:subClassOf rdf:resource="&skos;Concept"/>
         <rdfs:comment>Topics covered by the Institution. It is a concept organized within  cao:CendariTopicScheme.
 
-Cendari@EAG recommends only WW1 or Medieval. 
+Cendari@EAG recommends only WW1 or Medieval.
 By further development of the SKOS scheme however, topics can be further specialized.</rdfs:comment>
         <prov:editorialNote>TODO: develop Topics concept scheme</prov:editorialNote>
     </Class>
-    
+
 
 
     <!-- http://www.w3.org/ns/prov#Activity -->
@@ -1229,20 +1229,20 @@ By further development of the SKOS scheme however, topics can be further special
     <rdf:Description rdf:about="&prov;Activity">
         <rdfs:comment>Records every change made in the description of the institution, the date, the person responsible for the changes and the type of event. There are as many maintenance events as required.
 
-hasAgent property relates it to corresponding Contributor (which may be a foaf:Person or org:FormalOrganization) within Cendari. 
+hasAgent property relates it to corresponding Contributor (which may be a foaf:Person or org:FormalOrganization) within Cendari.
 </rdfs:comment>
         <prov:editorialNote>corresponds to /control/MaintenanceHistory/MaintenanceEvent  from Cendari@EAG and APEX EAG2012
 
 Is equivalent to prov:Activity included within MaintenanceHistory (which is modelled as a prov:Bundle).
 
-Types of maintenance Events are modelled as prov:Activity subclasses. 
+Types of maintenance Events are modelled as prov:Activity subclasses.
 
 CENDARI EAG specializes prov:Replace type of activity, as cao:Delete - to express deletion of an institutional description (soft deletion).</prov:editorialNote>
     </rdf:Description>
-    
 
 
-    <!-- 
+
+    <!--
     ///////////////////////////////////////////////////////////////////////////////////////
     //
     // Individuals
@@ -1250,18 +1250,18 @@ CENDARI EAG specializes prov:Replace type of activity, as cao:Delete - to expres
     ///////////////////////////////////////////////////////////////////////////////////////
      -->
 
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/External -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#External -->
 
     <NamedIndividual rdf:about="&cao;External">
         <rdf:type rdf:resource="&cao;Audience"/>
     </NamedIndividual>
-    
 
 
-    <!-- http://cendari.eu/ontologies/cendari/cao/Internal -->
+
+    <!-- http://resources.cendari.dariah.eu/ontologies/cao#Internal -->
 
     <NamedIndividual rdf:about="&cao;Internal">
         <rdf:type rdf:resource="&cao;Audience"/>

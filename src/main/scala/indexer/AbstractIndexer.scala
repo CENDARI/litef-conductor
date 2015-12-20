@@ -32,6 +32,8 @@ import slick.driver.PostgresDriver.simple._
 import conductor.ResourceAttachmentUtil._
 import java.sql.Timestamp
 
+import conductor.ResourceAttachmentUtil.writeLog
+
 trait AbstractIndexer {
     /**
      * Class that represents the result of performed indexing
@@ -139,7 +141,7 @@ trait AbstractIndexer {
         model.createResource(file.toURI.toString)
 
     def createResource() =
-        model.createResource("litef://" + UUID.randomUUID.toString)
+        model.createResource("http://resources.cendari.dariah.eu/resources/anonymous/" + UUID.randomUUID.toString)
 
     def ?:(pvs: PropertyValue[_]*): Resource = createResource() ++= pvs
 
@@ -209,7 +211,8 @@ object AbstractIndexer {
             writer write content
             writer.close
 
-            logger info s"\t -> Saving attachment: ${resourceId}, ${mimetype}"
+            // logger info s"\t -> Saving attachment: ${resourceId}, ${mimetype}"
+            writeLog(resourceId, s"\t -> Saving attachment: ${resourceId}, ${mimetype}")
 
             // val stream = new java.io.ByteArrayOutputStream()
             conductor.ResourceAttachmentTable.query += conductor.ResourceAttachment(
@@ -224,12 +227,14 @@ object AbstractIndexer {
 
         } catch {
             case e: org.postgresql.util.PSQLException =>
-                logger info s"\t SQL error while saving the attachment: ${e}"
+                logger info s"\t sql ERROR while saving the attachment: ${resourceId}, ${mimetype} -- ${e}"
+                writeLog(resourceId, s"\t sql ERROR while saving the attachment: ${resourceId}, ${mimetype} -- ${e}")
 
                 None
 
             case e: Exception =>
-                logger info s"\t unknown error while saving the attachment: ${e}"
+                logger info s"\t unknown ERROR while saving the attachment: ${resourceId}, ${mimetype} -- ${e}"
+                writeLog(resourceId, s"\t unknown ERROR while saving the attachment: ${resourceId}, ${mimetype} -- ${e}")
 
                 None
         }

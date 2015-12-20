@@ -2,7 +2,7 @@ import com.github.retronym.SbtOneJar._
 
 name := """conductor"""
 
-version := "1.4.0"
+version := "2.0.0"
 
 scalaVersion := "2.10.3"
 
@@ -17,6 +17,20 @@ buildInfoSettings
 sourceGenerators in Compile <+= buildInfo
 
 buildInfoKeys := Seq[BuildInfoKey](version)
+
+buildInfoKeys ++= Seq[BuildInfoKey](
+        "gitHash" -> new java.lang.Object() {
+            override def toString(): String = {
+                try {
+                    val extracted = new java.io.InputStreamReader(
+                        java.lang.Runtime.getRuntime().exec("git rev-parse HEAD").getInputStream())
+                    (new java.io.BufferedReader(extracted)).readLine()
+                } catch {
+                    case t: Throwable => "get git hash failed"
+                }
+            }
+        }.toString()
+    )
 
 buildInfoPackage := "info"
 

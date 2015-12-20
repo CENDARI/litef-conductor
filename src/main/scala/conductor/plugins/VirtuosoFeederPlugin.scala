@@ -35,31 +35,52 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
 {
     import context.system
 
-    lazy val logger = org.slf4j.LoggerFactory getLogger getClass
+    // lazy val logger = org.slf4j.LoggerFactory getLogger getClass
 
     override
     def process(resource: ckan.Resource): Future[Unit] = Future {
+        try {
 
-        val resourceGraph = graphForResource(resource.id)
+            val resourceGraph = graphForResource(resource.id)
+            val dataspaceGraph = graphForDataspace(resource.group.get)
 
-        // If we are processing a resource, we need to empty out
-        // all the data from Virtuoso that we used to have
-        clearGraph(resourceGraph)
+            // If we are processing a resource, we need to empty out
+            // all the data from Virtuoso that we used to have
+            VirtuosoFeederPlugin.clearGraph("litef://resource/" + resource.id) // old URI for the graph
+            VirtuosoFeederPlugin.clearGraph(resourceGraph)
 
-        for (group <- resource.group) {
-            execute(s"""|SPARQL INSERT IN GRAPH <litef://dataspaces> {
-                        |<litef://dataspaces/${group}> a <http://www.w3.org/2004/03/trix/rdfg-1/Graph> .
-                        |<${resourceGraph}> rdfs:member <litef://dataspaces/${group}> .
-                        |}""".stripMargin)
+            for (group <- resource.group) {
+                VirtuosoFeederPlugin.
+                execute(s"""|SPARQL INSERT IN GRAPH <${graphForDataspace("")}> {
+                            |<${dataspaceGraph}> a <http://www.w3.org/2004/03/trix/rdfg-1/Graph> .
+                            |<${dataspaceGraph}> rdfs:member <${resourceGraph}> .
+                            |<${resourceGraph}> <http://resources.cendari.dariah.eu/ontologies/cao#dataspace> <${dataspaceGraph}> .
+                            |}""".stripMargin)
+            }
+
+            resource writeLog s"VirtuosoFeeder -> Mimetype is ${resource.localMimetype}"
+
+            // Loading the file, if it is a RDF
+            if (resource.localMimetype == "application/rdf+xml") {
+                val sourcePath = resource.localPath
+                val destinationPath = conductor.ResourceAttachment(resource.id, "_copy").localPath
+
+                import java.nio.file.Files
+                import java.nio.file.Paths
+
+                resource writeLog s"\t -> Copying: ${sourcePath} to ${destinationPath}"
+                Files.copy(Paths.get(sourcePath), Paths.get(destinationPath))
+
+                // logger info s"\t -> Loading the file into Virtuoso: ${destinationPath}"
+                resource writeLog s"\t -> Loading the file into Virtuoso: ${destinationPath} into graph ${resourceGraph}"
+                VirtuosoFeederPlugin.loadFileInfoGraph(destinationPath, resourceGraph)
+            }
+
+        } catch {
+            case e: Exception =>
+                resource writeLog s"VirtuosoFeeder -> exception ${e}"
+                e.printStackTrace
         }
-
-        // Loading the file, if it is a RDF
-        if (resource.localMimetype == "application/rdf+xml") {
-            logger info s"\t -> Loading the file into Virtuoso: ${resource.localPath}"
-            resource writeLog s"\t -> Loading the file into Virtuoso: ${resource.localPath}"
-            loadFileInfoGraph(resource.localPath, resourceGraph)
-        }
-
     }
 
     override
@@ -67,14 +88,16 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
 
         if (attachment.format endsWith "application/rdf+xml") {
             val resourceGraph = graphForResource(attachment.resourceId)
-            logger info s"\t -> Loading the file into Virtuoso: ${attachment.localPath}"
-            loadFileInfoGraph(attachment.localPath, resourceGraph)
+            // logger info s"\t -> Loading the file into Virtuoso: ${attachment.localPath}"
+            attachment writeLog s"\t -> Loading the file into Virtuoso: ${attachment.localPath} into graph ${resourceGraph}"
+            VirtuosoFeederPlugin.loadFileInfoGraph(attachment.localPath, resourceGraph)
 
         }
 
     }
+}
 
-
+object VirtuosoFeederPlugin {
     lazy val connection = {
         Class.forName("virtuoso.jdbc4.Driver");
         java.sql.DriverManager.getConnection(
@@ -84,24 +107,31 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
     def execute(query: String) =
         connection.createStatement execute query
 
+    def prepare(query: String) =
+        connection.prepareStatement(query)
+
     def clearGraph(namedGraphUri: String) =
         execute(s"SPARQL CLEAR GRAPH <$namedGraphUri>")
 
     def loadFileInfoGraph(file: String, namedGraphUri: String) = {
-        // DB.DBA.TTLP_MT is for TTL and friends, while
-        // DB.DBA.RDF_LOAD_RDFXML_MT would be for xml/rdf
-        // val virtuosoInsertFunction = "DB.DBA.TTLP_MT"
-        val virtuosoInsertFunction = "DB.DBA.RDF_LOAD_RDFXML_MT"
+        try {
+            // DB.DBA.TTLP_MT is for TTL and friends, while
+            // DB.DBA.RDF_LOAD_RDFXML_MT would be for xml/rdf
+            // val virtuosoInsertFunction = "DB.DBA.TTLP_MT"
+            val virtuosoInsertFunction = "DB.DBA.RDF_LOAD_RDFXML_MT"
 
-        execute(
-            s"""|CALL
-            |$virtuosoInsertFunction(
-                |    file_to_string_output('$file'),
-                |    '',
-                |    '$namedGraphUri'
-                |)""".stripMargin
-            )
-
+            execute(
+                s"""|CALL
+                |$virtuosoInsertFunction(
+                    |    file_to_string_output('$file'),
+                    |    '',
+                    |    '$namedGraphUri'
+                    |)""".stripMargin
+                )
+        } catch {
+            case e: Exception =>
+                e.printStackTrace
+        }
     }
 }
 

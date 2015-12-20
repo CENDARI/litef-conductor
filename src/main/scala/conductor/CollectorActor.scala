@@ -118,14 +118,23 @@ class CollectorActor
             system.scheduler.scheduleOnce(60 seconds, self, Start())
 
         } else {
-            if (!processNextAttachment && !processNextResource) {
+            if (!scheduledResources.isEmpty) {
+                processNextResource()
+
+            } else if (!scheduledAttachments.isEmpty) {
+                processNextAttachment()
+
+            } else if (!processNextAttachment && !processNextResource) {
                 system.scheduler.scheduleOnce(60 seconds, self, Start())
             }
 
         }
     }
 
-    def processNextAttachment(): Boolean = database withSession { implicit session: Session =>
+    var scheduledAttachments: List[conductor.ResourceAttachment] = List() // null
+    var scheduledResources: List[ckan.Resource] = List() // null
+
+    def getMoreAttachments() = database withSession { implicit session: Session =>
         val nextQuery =
             conductor.ResourceAttachmentTable.query
                 .filterNot(attachment =>
@@ -137,19 +146,29 @@ class CollectorActor
                         }
                         .map { _.id }
                 )
-            .take(1)
+            .take(1000)
 
-        val next = nextQuery.list.headOption
+        scheduledAttachments = nextQuery.list
+        logger.info(s"Indexing collected attachments (scheduling): ${scheduledAttachments.size}")
+    }
 
-        if (next.isEmpty) {
+    def processNextAttachment(): Boolean = {
+        if (scheduledAttachments.isEmpty) {
+            getMoreAttachments()
+        }
+
+        if (scheduledAttachments.isEmpty) {
             false
         } else {
-            processAttachment(next.get)
+            val nextAttachment = scheduledAttachments.head
+            scheduledAttachments = scheduledAttachments.tail
+            // logger.info(s"Indexing collected attachment: ${nextAttachment.resourceId} ${nextAttachment.format}")
+            processAttachment(nextAttachment)
             true
         }
     }
 
-    def processNextResource(): Boolean = database withSession { implicit session: Session =>
+    def getMoreResources() = database withSession { implicit session: Session =>
         val nextQuery =
             ckan.ResourceTable.query
                 .filter(_.modified.isNotNull)
@@ -163,14 +182,24 @@ class CollectorActor
                         }
                         .map { _.id }
                 )
-            .take(1)
+            .take(100)
 
-        val next = nextQuery.list.headOption
+        scheduledResources = nextQuery.list
+        logger.info(s"Indexing collected resources (scheduling): ${scheduledResources.size}")
+    }
 
-        if (next.isEmpty) {
+    def processNextResource(): Boolean = {
+        if (scheduledResources.isEmpty) {
+            getMoreResources()
+        }
+
+        if (scheduledResources.isEmpty) {
             false
         } else {
-            processResource(next.get)
+            val nextResource = scheduledResources.head
+            scheduledResources = scheduledResources.tail
+            // logger.info(s"Indexing collected attachment: ${nextResource.resourceId} ${nextResource.format}")
+            processResource(nextResource)
             true
         }
     }
