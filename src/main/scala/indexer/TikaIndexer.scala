@@ -123,10 +123,12 @@ class TikaIndexer extends AbstractIndexer {
 
         dataspace.map { dataspace =>
             info.addBinding("project", dataspace.title getOrElse dataspace.name)
+            info.addBinding("groups_allowed", dataspace.name)
             info.addBinding("dataspaceId", dataspace.id)
         }
 
         info.addBinding("uri", resource.webstoreUrl getOrElse resource.viewDataUrl)
+        info.addBinding("url", resource.webstoreUrl getOrElse resource.viewDataUrl)
         info.addBinding("application", "repository")
         info.addBinding("resourceId",  resource.id)
 
