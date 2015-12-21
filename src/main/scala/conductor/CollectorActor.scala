@@ -118,6 +118,8 @@ class CollectorActor
             system.scheduler.scheduleOnce(60 seconds, self, Start())
 
         } else {
+            System.gc()
+
             if (!scheduledResources.isEmpty) {
                 processNextResource()
 
