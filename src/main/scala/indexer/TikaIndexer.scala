@@ -141,7 +141,11 @@ class TikaIndexer extends AbstractIndexer {
 
         val text = info.get("cleaner_text").getOrElse(info.get("text").get)
 
-        AbstractIndexer.saveAttachment(resource, text.head, "text/plain")
+        if (!text.head.isEmpty) {
+            AbstractIndexer.saveAttachment(resource, text.head, "text/plain")
+            addOptionalProperty(root, NIE.plainTextContent, text.head)
+        }
+
         AbstractIndexer.saveAttachment(resource,
             (HashMap[String, Set[String]]() ++ info).toJson.prettyPrint,
             "application/x-elasticindexer-json-output")
@@ -152,7 +156,6 @@ class TikaIndexer extends AbstractIndexer {
         // TODO: We might want to save the plain text in Virtuoso,
         // or other fields
 
-        addOptionalProperty(root, NIE.plainTextContent , metadata.get("text"))
         addOptionalProperty(root, DC_11.title          , metadata.get("title"))
         addOptionalProperty(root, DC_11.date           , metadata.get("date"))
 
