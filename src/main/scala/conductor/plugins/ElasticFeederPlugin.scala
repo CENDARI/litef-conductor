@@ -59,7 +59,7 @@ class ElasticFeederPlugin extends AbstractPluginActor("ElasticFeeder")
         val data = scala.io.Source.fromFile(attachment.localPath).mkString
 
         (IO(Http) ? (
-            Put(ElasticConfig.namespace + "cendari/resource/" + attachment.resourceId, data)
+            Put(ElasticConfig.namespace + "cendari/document/" + attachment.resourceId, data)
             )).mapTo[HttpResponse]
     }
 
