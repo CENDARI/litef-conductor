@@ -61,21 +61,23 @@ class TikaIndexer extends AbstractIndexer {
 
         val pfields = Map[TikaProperty, String](
             TikaCoreProperties.CREATED      -> "date",
-            CendariProperties.DATE          -> "date",
-            TikaCoreProperties.TITLE        -> "title",
-            TikaCoreProperties.CREATOR      -> "creatorName",
             TikaCoreProperties.CREATOR_TOOL -> "application",
-            TikaCoreProperties.KEYWORDS     -> "tag",
-            TikaCoreProperties.PUBLISHER    -> "publisher",
             TikaCoreProperties.MODIFIED     -> "date",
-            TikaCoreProperties.CONTRIBUTOR  -> "contributorName",
 
-            TikaCoreProperties.DESCRIPTION  -> "description",
+            CendariProperties.DATE          -> "date",
+            CendariProperties.TITLE         -> "title",
+            CendariProperties.CREATOR       -> "creatorName",
+            CendariProperties.KEYWORDS      -> "tag",
+            CendariProperties.PUBLISHER     -> "publisher",
+            CendariProperties.CONTRIBUTOR   -> "contributorName",
+
+            CendariProperties.DESCRIPTION   -> "description",
             CendariProperties.PERSON        -> "personName",
             CendariProperties.ORGANIZATION  -> "org",
             CendariProperties.TAG           -> "tag",
             CendariProperties.REFERENCE     -> "ref",
             CendariProperties.EVENT         -> "event",
+            CendariProperties.PLACE         -> "placeName",
 
             CendariProperties.LANG          -> "language",
             TikaCoreProperties.LANGUAGE     -> "language"
@@ -83,16 +85,18 @@ class TikaIndexer extends AbstractIndexer {
 
         sfields.foreach {
             m =>
-                if (metadata.get(m._1) != null)
-                    result.addBinding(m._2, metadata get m._1)
+                val values = metadata.getValues(m._1)
+                if (values != null)
+                    values.foreach { result.addBinding(m._2, _) }
         }
         pfields.foreach {
             m =>
-                if (metadata.get(m._1) != null)
-                    result.addBinding(m._2, metadata get m._1)
+                val values = metadata.getValues(m._1)
+                if (values != null)
+                    values.foreach { result.addBinding(m._2, _) }
         }
 
-        if (metadata.get(TikaCoreProperties.LATITUDE)!= null && metadata.get(TikaCoreProperties.LONGITUDE) != null) {
+        if (metadata.get(TikaCoreProperties.LATITUDE) != null && metadata.get(TikaCoreProperties.LONGITUDE) != null) {
             val latlon =
                     metadata.get(TikaCoreProperties.LATITUDE) +
                     ", " +
@@ -100,18 +104,12 @@ class TikaIndexer extends AbstractIndexer {
             result.addBinding("place", latlon);
         }
 
-        if (metadata.get(CendariProperties.PLACE) != null) {
-            metadata.getValues(CendariProperties.PLACE).foreach {
-                name => result.addBinding("placeName", name)
-            }
-        }
-
         result
     }
 
 
-    def addOptionalProperty[T](root: Resource, property: Property, value: T) =
-        if (value != null) root += (property % value)
+    def addOptionalProperties[T](root: Resource, property: Property, values: Iterable[T]) =
+        if (values != null) values.foreach { value => root += (property % value) }
 
     def runTika(resource: ckan.Resource, file: java.io.File, root: => Resource): Option[Double] = try {
 
@@ -143,7 +141,7 @@ class TikaIndexer extends AbstractIndexer {
 
         if (!text.head.isEmpty) {
             AbstractIndexer.saveAttachment(resource, text.head, "text/plain")
-            addOptionalProperty(root, NIE.plainTextContent, text.head)
+            addOptionalProperties(root, NIE.plainTextContent, text)
         }
 
         AbstractIndexer.saveAttachment(resource,
@@ -156,14 +154,19 @@ class TikaIndexer extends AbstractIndexer {
         // TODO: We might want to save the plain text in Virtuoso,
         // or other fields
 
-        addOptionalProperty(root, DC_11.title          , metadata.get("title"))
-        addOptionalProperty(root, DC_11.date           , metadata.get("date"))
+        addOptionalProperties(root, DC_11.title          , metadata.getValues("title"))
+        addOptionalProperties(root, DC_11.identifier     , metadata.getValues("reference"))
+        addOptionalProperties(root, DC_11.date           , metadata.getValues("date"))
+        addOptionalProperties(root, DC_11.`type`         , metadata.getValues("type"))
+        addOptionalProperties(root, DC_11.description    , metadata.getValues("description"))
+        addOptionalProperties(root, DC_11.publisher      , metadata.getValues("publisher"))
+        addOptionalProperties(root, DC_11.language       , metadata.getValues("lang"))
 
-        // addOptionalProperty(root, DC_11.format         , metadata.get("format"))
+        // addOptionalProperties(root, DC_11.format         , metadata.get("format"))
 
 
-        addOptionalProperty(root, DC_11.creator        , metadata.get("creator"))
-        addOptionalProperty(root, DC_11.contributor    , metadata.get("contributor"))
+        addOptionalProperties(root, DC_11.creator        , metadata.getValues("creator"))
+        addOptionalProperties(root, DC_11.contributor    , metadata.getValues("contributor"))
 
         Some(0.85)
     } catch {
