@@ -121,7 +121,7 @@ object IndexingManager {
         benchmarkCounter = benchmarkCounter + 1
 
         if (currentTime - benchmarkCounterLastUpdate > 60000) {
-            logger.info(s"Processed ${benchmarkCounter} resources in the last minute")
+            logger.info(s"Processed ${benchmarkCounter} resources in the last minute or so (${(currentTime - benchmarkCounterLastUpdate) / 100.0}s)")
             benchmarkCounter = 0
             benchmarkCounterLastUpdate = currentTime
         }
