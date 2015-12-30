@@ -106,6 +106,9 @@ class CollectorActor
         dispatcherActor ! DispatcherActor.ProcessAttachment(attachment)
     }
 
+    val disableDocumentProcessing = new java.io.File("/opt/litef/conductor:disable-document-processing");
+    val enableGC = new java.io.File("/opt/litef/conductor:enable-gc");
+
     /**
      * Find the next resource, and start processing it
      * @return
@@ -113,12 +116,14 @@ class CollectorActor
     def processNext() {
         // If we have a file that tells us to stop the processing,
         // listen to it. And try again after one minute
-        val f = new java.io.File("/opt/litef/conductor:disable-document-processing");
-        if (f.exists()) {
+        if (disableDocumentProcessing.exists()) {
             system.scheduler.scheduleOnce(60 seconds, self, Start())
 
         } else {
-            System.gc()
+
+            if (enableGC.exists()) {
+                System.gc()
+            }
 
             if (!scheduledResources.isEmpty) {
                 processNextResource()
