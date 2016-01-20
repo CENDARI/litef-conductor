@@ -184,9 +184,9 @@ class CollectorActor
                 .filterNot(resource =>
                     resource.id in ProcessedResourceTable.query
                         .filter { p =>
-                            !(p.attachment === "") &&
+                            p.attachment === "" &&
                             p.id === resource.id &&
-                            p.lastProcessed <= resource.modified
+                            p.lastProcessed >= resource.modified
                         }
                         .map { _.id }
                 )
