@@ -1,0 +1,58 @@
+# Startup script for litef conductor
+#
+# chkconfig: - 80 20
+# description: litef conductor
+#
+#### BEGIN INIT INFO
+# Provides:          litef-conductor
+# Required-Start:    $syslog $time $local_fs $remote_fs
+# Required-Stop:     $syslog $time $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      S 0 1 6
+# Short-Description: CENDARI litef-conductor
+# Description:       CENDARI litef-conductor
+### END INIT INFO
+
+# Load the VERBOSE setting and other rcS variables
+. /lib/init/vars.sh
+
+# Define LSB log_* functions.
+. /lib/lsb/init-functions
+
+NAME="litef-conductor"
+DAEMONUSER="litef"
+DAEMON="java"
+DAEMON_ARGS="-Dfile.encoding=UTF-8 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -Dcom.sun.management.jmxremote.port=42043 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Xmx1024m -Xms1024m -cp /etc/litef:/opt/litef/conductor.jar core.Rest"
+PIDFILE=/var/run/litef.pid
+
+unset LANGUAGE
+export LC_ALL=POSIX
+export LANG=en_US.UTF-8
+
+case "$1" in
+   start)
+      log_daemon_msg "Starting $0";
+      start-stop-daemon --start --chuid $DAEMONUSER  \
+        --make-pidfile --pidfile $PIDFILE --background        \
+        --startas /bin/bash -- -c "exec $DAEMON $DAEMON_ARGS &>> /var/log/litef/conductor.log"
+   ;;
+   stop)
+      log_daemon_msg "Stopping $0";
+      start-stop-daemon --stop --chuid $DAEMONUSER  \
+        --make-pidfile --pidfile $PIDFILE
+   ;;
+   restart)
+      $0 stop
+      sleep 2
+      $0 start
+   ;;
+   status)
+     status_of_proc -p $PIDFILE $DAEMON $NAME && exit 0 || exit $?
+   ;;
+   *)
+      echo "Usage $0 (start|stop|restart)"
+      exit 1; 
+   ;;
+      
+esac 
+
