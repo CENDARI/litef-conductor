@@ -17,18 +17,20 @@
 
 package indexer
 
-import com.hp.hpl.jena.rdf.model.{ Model, Resource, Property }
-import org.foment.utils.Exceptions._
+import com.hp.hpl.jena.rdf.model.{ModelFactory, Model, Resource, Property}
 import nepomuk.ontology.NIE
 
 import javelin.ontology.Implicits._
-import com.hp.hpl.jena.vocabulary.DC_11
+import com.hp.hpl.jena.vocabulary.{RDF, DC_11}
+import virtuoso.jena.driver.VirtGraph
 import collection.mutable.{ MultiMap => MutableMultiMap, HashMap => MutableHashMap, Set => MutableSet }
 import collection.immutable.{ HashMap, Map }
+import com.hp.hpl.jena.vocabulary.RDF.{`type` => a}
 
 import org.apache.tika.metadata.{ Metadata => TikaMetadata, Property => TikaProperty }
 import org.apache.tika.metadata.TikaCoreProperties
 import fr.inria.aviz.tikaextensions.tika.CendariProperties
+import common.Config.{ Virtuoso => VirtuosoConfig }
 
 import spray.json._
 import DefaultJsonProtocol._
@@ -56,13 +58,20 @@ class TikaIndexer extends AbstractIndexer {
 
             "Application-Name"              -> "application",
             "Creation-date"                 -> "date",
-            "cendari:nerd"                  -> "cleaner_text"
+            "cendari:nerd"                  -> "cleaner_text",
+            "cendari:coverage"              -> "coverage",
+            "cendari:identifier"            -> "identifier",
+            "cendari:provider"              -> "dataProvider",
+            "cendari:relation"              -> "relation",
+            "cendari:rights"                -> "rights",
+            "cendari:source"                -> "source",
+            "cendari:type"                  -> "resourceType"
             )
 
         val pfields = Map[TikaProperty, String](
-            TikaCoreProperties.CREATED      -> "date",
-            TikaCoreProperties.CREATOR_TOOL -> "application",
-            TikaCoreProperties.MODIFIED     -> "date",
+            // TikaCoreProperties.CREATED      -> "date",
+            // TikaCoreProperties.CREATOR_TOOL -> "application",
+            // TikaCoreProperties.MODIFIED     -> "date",
 
             CendariProperties.DATE          -> "date",
             CendariProperties.TITLE         -> "title",
@@ -74,21 +83,25 @@ class TikaIndexer extends AbstractIndexer {
             CendariProperties.DESCRIPTION   -> "description",
             CendariProperties.PERSON        -> "personName",
             CendariProperties.ORGANIZATION  -> "org",
-            CendariProperties.TAG           -> "tag",
+            // CendariProperties.TAG           -> "tag",
             CendariProperties.REFERENCE     -> "ref",
             CendariProperties.EVENT         -> "event",
-            CendariProperties.PLACE         -> "placeName",
+            CendariProperties.PLACE         -> "place",
+            CendariProperties.FORMAT        -> "format",
 
-            CendariProperties.LANG          -> "language",
-            TikaCoreProperties.LANGUAGE     -> "language"
+            CendariProperties.LANG          -> "language"
+            // TikaCoreProperties.LANGUAGE     -> "language"
             )
 
+        // Geting values for string keys
         sfields.foreach {
             m =>
                 val values = metadata.getValues(m._1)
                 if (values != null)
                     values.foreach { result.addBinding(m._2, _) }
         }
+
+        // Getting values for property keys
         pfields.foreach {
             m =>
                 val values = metadata.getValues(m._1)
@@ -96,17 +109,35 @@ class TikaIndexer extends AbstractIndexer {
                     values.foreach { result.addBinding(m._2, _) }
         }
 
+        // Getting all our special keys - anything that starts with cendari:
+        metadata.names()
+            .filter(_.startsWith("cendari:"))
+            .map(_.replace("cendari:", "cendari_"))
+            .foreach { key =>
+                val values = metadata.getValues(key)
+                if (values != null)
+                    values.foreach {
+                        result.addBinding(key, _)
+                    }
+            }
+
+        // Getting location properties
         if (metadata.get(TikaCoreProperties.LATITUDE) != null && metadata.get(TikaCoreProperties.LONGITUDE) != null) {
             val latlon =
                     metadata.get(TikaCoreProperties.LATITUDE) +
                     ", " +
-                    metadata.get(TikaCoreProperties.LONGITUDE);
-            result.addBinding("place", latlon);
+                    metadata.get(TikaCoreProperties.LONGITUDE)
+            result.addBinding("place", latlon)
         }
 
         result
     }
 
+    def dc_terms(what: String) = "http://purl.org/dc/terms/" #> what
+    def schema(what: String) = "http://schema.org/" #> what
+    def foaf(what: String)   = "foaf:" #> what
+    def edm(what: String)    = "http://www.europeana.eu/schemas/edm/" #> what
+    def skos(what: String)   = "http://www.w3.org/2004/02/skos/core#" #> what
 
     def addOptionalProperties[T](root: Resource, property: Property, values: Iterable[T]) =
         if (values != null) values.foreach { value => root += (property % value) }
@@ -154,19 +185,39 @@ class TikaIndexer extends AbstractIndexer {
         // TODO: We might want to save the plain text in Virtuoso,
         // or other fields
 
-        addOptionalProperties(root, DC_11.title          , metadata.getValues("title"))
-        addOptionalProperties(root, DC_11.identifier     , metadata.getValues("reference"))
-        addOptionalProperties(root, DC_11.date           , metadata.getValues("date"))
-        addOptionalProperties(root, DC_11.`type`         , metadata.getValues("type"))
-        addOptionalProperties(root, DC_11.description    , metadata.getValues("description"))
-        addOptionalProperties(root, DC_11.publisher      , metadata.getValues("publisher"))
-        addOptionalProperties(root, DC_11.language       , metadata.getValues("lang"))
+        addOptionalProperties(root, DC_11.title           , metadata.getValues("title"))
+        addOptionalProperties(root, skos("prefLabel")     , metadata.getValues("title"))
+        addOptionalProperties(root, DC_11.identifier      , metadata.getValues("reference"))
+        addOptionalProperties(root, DC_11.date            , metadata.getValues("date"))
+        addOptionalProperties(root, DC_11.`type`          , metadata.getValues("type"))
+        addOptionalProperties(root, DC_11.description     , metadata.getValues("description"))
+        addOptionalProperties(root, DC_11.publisher       , metadata.getValues("publisher"))
+        addOptionalProperties(root, DC_11.language        , metadata.getValues("lang"))
+        addOptionalProperties(root, dc_terms("references"), metadata.getValues("reference"))
 
-        // addOptionalProperties(root, DC_11.format         , metadata.get("format"))
+        addOptionalProperties(root, DC_11.creator         , metadata.getValues("creator"))
+        addOptionalProperties(root, DC_11.contributor     , metadata.getValues("contributor"))
 
+        addOptionalProperties(root, DC_11.subject         , metadata.getValues("tag"))
+        addOptionalProperties(root, DC_11.coverage        , metadata.getValues("coverage"))
+        addOptionalProperties(root, DC_11.identifier      , metadata.getValues("identifier"))
+        addOptionalProperties(root, DC_11.relation        , metadata.getValues("relation"))
+        addOptionalProperties(root, DC_11.rights          , metadata.getValues("rights"))
+        addOptionalProperties(root, DC_11.source          , metadata.getValues("source"))
 
-        addOptionalProperties(root, DC_11.creator        , metadata.getValues("creator"))
-        addOptionalProperties(root, DC_11.contributor    , metadata.getValues("contributor"))
+        root ++=
+            resourceMention(resource, "organization", foaf("Organization"), metadata)
+                .map(schema("mentions") % _)
+        root ++=
+            resourceMention(resource, "event", edm("Event"), metadata)
+                .map(schema("mentions") % _)
+        root ++=
+            resourceMention(resource, "place", edm("Place"), metadata)
+                .map(schema("mentions") % _)
+        root ++=
+            resourceMention(resource, "person", foaf("Person"), metadata)
+                .map(schema("mentions") % _)
+
 
         Some(0.85)
     } catch {
@@ -174,6 +225,38 @@ class TikaIndexer extends AbstractIndexer {
             // logger info s"Tika failed: ${e}"
             resource writeLog s"TikaIndexer: Error: ${e}"
             None
+    }
+
+    def resourceMention(resource: ckan.Resource, key: String, what: Property, metadata: TikaMetadata): List[Resource] = {
+
+        val values = metadata.getValues(s"cendari:${key}")
+
+        if (values != null) {
+            // This is evil. And against the system design we had since the beginning.
+            // But the users want a smaller database...
+            values.flatMap { value =>
+                try {
+                    val entityResource = s"http://resources.cendari.dariah.eu/${key}s/" + java.net.URLEncoder.encode(value, "utf-8")
+                    val entitiesGraph = new VirtGraph("http://resources.cendari.dariah.eu/entitiesGraph", VirtuosoConfig.url, VirtuosoConfig.user, VirtuosoConfig.password)
+
+                    val model = ModelFactory.createModelForGraph(entitiesGraph)
+
+                    model.createResource(entityResource) ++= Seq(
+                        a % what,
+                        skos("prefLabel") % value
+                    )
+
+                    // entitiesGraph add entityResourceOb
+                    List(?:(entityResource))
+                } catch {
+                    case e: Exception =>
+                        resource.writeLog(s"resourceMention error ${e.toString}")
+                        List()
+                }
+            }.toList
+        } else {
+            List()
+        }
     }
 
     override
