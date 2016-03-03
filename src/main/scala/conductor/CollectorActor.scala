@@ -89,6 +89,13 @@ class CollectorActor
         // If the resource is a valid candidate for processing, passing it to the dispatcher,
         // otherwise write a note to self that we have failed.
         if (resource.isProcessable) {
+            val id = resource.id
+
+            database.withSession { implicit session =>
+                ResourceAttachmentTable.query.where { _.resourceId === id }.delete
+                ProcessedResourceTable.query.where { _.id === id }.delete
+            }
+
             // log.info("Sending the request to the dispatcher")
             dispatcherActor ! DispatcherActor.ProcessResource(resource)
         } else {
