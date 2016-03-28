@@ -130,6 +130,8 @@ class TikaIndexer extends AbstractIndexer {
             result.addBinding("place", latlon)
         }
 
+        result.addBinding("cendari_updated_timestamp", System.currentTimeMillis.toString)
+
         result
     }
 
