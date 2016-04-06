@@ -143,9 +143,7 @@ class TikaIndexer extends AbstractIndexer {
 
     def addOptionalProperties[T](root: Resource, property: Property, values: Iterable[T])(implicit ckanResource: ckan.Resource) {
         if (values != null) {
-            ckanResource writeLog s"TikaIndexer: property ${property} exists"
-
-            values.map { value => ckanResource.writeLog(value.toString) }
+            ckanResource.writeLog(s"TikaIndexer: property ${property} exists ${values.size}")
 
             root ++= values.map { property % _ }
         }
@@ -228,22 +226,22 @@ class TikaIndexer extends AbstractIndexer {
             resourceMention(resource, "person", foaf("Person"), metadata)
                 .map(schema("mentions") % _)
 
-        if (root.getModel() != null) {
-            resource.writeLog("vvv This is the data we got for into the resource:")
-            val props = root.listProperties()
-            while (props.hasNext()) {
-                val prop = props.next()
-                resource.writeLog(prop.getPredicate().getLocalName())
-            }
-
-            // root.getModel().write(
-            //     new java.io.FileOutputStream(
-            //         new java.io.File(conductor.ResourceAttachmentUtil.localDirectory(resource.id) + "/_log"),
-            //             true /* append = true */), "N3");
-            resource.writeLog("^^^")
-        } else {
-            resource.writeLog("Root's model is null...");
-        }
+        // if (root.getModel() != null) {
+        //     resource.writeLog("vvv This is the data we got for into the resource:")
+        //     val props = root.listProperties()
+        //     while (props.hasNext()) {
+        //         val prop = props.next()
+        //         resource.writeLog(prop.getPredicate().getLocalName())
+        //     }
+        //
+        //     // root.getModel().write(
+        //     //     new java.io.FileOutputStream(
+        //     //         new java.io.File(conductor.ResourceAttachmentUtil.localDirectory(resource.id) + "/_log"),
+        //     //             true /* append = true */), "N3");
+        //     resource.writeLog("^^^")
+        // } else {
+        //     resource.writeLog("Root's model is null...");
+        // }
 
 
         Some(0.9)
