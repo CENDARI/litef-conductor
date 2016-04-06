@@ -227,10 +227,18 @@ class TikaIndexer extends AbstractIndexer {
                 .map(schema("mentions") % _)
 
         if (root.getModel() != null) {
-            root.getModel().write(
-                new java.io.FileOutputStream(
-                    new java.io.File(conductor.ResourceAttachmentUtil.localDirectory(resource.id) + "/_log"),
-                        true /* append = true */), "N3");
+            resource.writeLog("vvv This is the data we got for into the resource:")
+            val props = root.listProperties()
+            while (props.hasNext()) {
+                val prop = props.next()
+                resource.writeLog(prop.getPredicate().getLocalName())
+            }
+
+            // root.getModel().write(
+            //     new java.io.FileOutputStream(
+            //         new java.io.File(conductor.ResourceAttachmentUtil.localDirectory(resource.id) + "/_log"),
+            //             true /* append = true */), "N3");
+            resource.writeLog("^^^")
         } else {
             resource.writeLog("Root's model is null...");
         }
