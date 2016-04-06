@@ -143,7 +143,9 @@ class TikaIndexer extends AbstractIndexer {
 
     def addOptionalProperties[T](root: Resource, property: Property, values: Iterable[T])(implicit ckanResource: ckan.Resource) {
         if (values != null) {
-            ckanResource.writeLog(s"TikaIndexer: property ${property} exists ${values.size}")
+            ckanResource writeLog s"TikaIndexer: property ${property} exists"
+
+            values.map { value => ckanResource.writeLog(value.toString) }
 
             root ++= values.map { property % _ }
         }
@@ -193,30 +195,25 @@ class TikaIndexer extends AbstractIndexer {
         // TODO: We might want to save the plain text in Virtuoso,
         // or other fields
 
-        val addOptionalPropertiesFromMetadata = (property: Property, key: String) => {
-            addOptionalProperties(root, property, key)
-            addOptionalProperties(root, property, "cendari:" + key)
-        }
+        addOptionalProperties(root, DC_11.title           , metadata.getValues("cendari:title"))
+        addOptionalProperties(root, skos("prefLabel")     , metadata.getValues("cendari:title"))
+        addOptionalProperties(root, DC_11.identifier      , metadata.getValues("cendari:reference"))
+        addOptionalProperties(root, DC_11.date            , metadata.getValues("cendari:date"))
+        addOptionalProperties(root, DC_11.`type`          , metadata.getValues("cendari:type"))
+        addOptionalProperties(root, DC_11.description     , metadata.getValues("cendari:description"))
+        addOptionalProperties(root, DC_11.publisher       , metadata.getValues("cendari:publisher"))
+        addOptionalProperties(root, DC_11.language        , metadata.getValues("cendari:lang"))
+        addOptionalProperties(root, dc_terms("references"), metadata.getValues("cendari:reference"))
 
-        addOptionalPropertiesFromMetadata(DC_11.title           , "title")
-        addOptionalPropertiesFromMetadata(skos("prefLabel")     , "title")
-        addOptionalPropertiesFromMetadata(DC_11.identifier      , "reference")
-        addOptionalPropertiesFromMetadata(DC_11.date            , "date")
-        addOptionalPropertiesFromMetadata(DC_11.`type`          , "type")
-        addOptionalPropertiesFromMetadata(DC_11.description     , "description")
-        addOptionalPropertiesFromMetadata(DC_11.publisher       , "publisher")
-        addOptionalPropertiesFromMetadata(DC_11.language        , "lang")
-        addOptionalPropertiesFromMetadata(dc_terms("references"), "reference")
+        addOptionalProperties(root, DC_11.creator         , metadata.getValues("cendari:creator"))
+        addOptionalProperties(root, DC_11.contributor     , metadata.getValues("cendari:contributor"))
 
-        addOptionalPropertiesFromMetadata(DC_11.creator         , "creator")
-        addOptionalPropertiesFromMetadata(DC_11.contributor     , "contributor")
-
-        addOptionalPropertiesFromMetadata(DC_11.subject         , "tag")
-        addOptionalPropertiesFromMetadata(DC_11.coverage        , "coverage")
-        addOptionalPropertiesFromMetadata(DC_11.identifier      , "identifier")
-        addOptionalPropertiesFromMetadata(DC_11.relation        , "relation")
-        addOptionalPropertiesFromMetadata(DC_11.rights          , "rights")
-        addOptionalPropertiesFromMetadata(DC_11.source          , "source")
+        addOptionalProperties(root, DC_11.subject         , metadata.getValues("cendari:tag"))
+        addOptionalProperties(root, DC_11.coverage        , metadata.getValues("cendari:coverage"))
+        addOptionalProperties(root, DC_11.identifier      , metadata.getValues("cendari:identifier"))
+        addOptionalProperties(root, DC_11.relation        , metadata.getValues("cendari:relation"))
+        addOptionalProperties(root, DC_11.rights          , metadata.getValues("cendari:rights"))
+        addOptionalProperties(root, DC_11.source          , metadata.getValues("cendari:source"))
 
         root ++=
             resourceMention(resource, "organization", foaf("Organization"), metadata)
