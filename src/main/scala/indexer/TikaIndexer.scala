@@ -142,7 +142,7 @@ class TikaIndexer extends AbstractIndexer {
     def skos(what: String)   = "http://www.w3.org/2004/02/skos/core#" #> what
 
     def addOptionalProperties[T](root: Resource, property: Property, values: Iterable[T]) =
-        if (values != null) values.foreach { value => root += (property % value) }
+        if (values != null) root ++= values.map { property % _ }
 
     def runTika(resource: ckan.Resource, file: java.io.File, root: => Resource): Option[Double] = try {
 
@@ -221,7 +221,8 @@ class TikaIndexer extends AbstractIndexer {
                 .map(schema("mentions") % _)
 
 
-        Some(0.85)
+
+        Some(0.9)
     } catch {
         case e: Throwable =>
             // logger info s"Tika failed: ${e}"

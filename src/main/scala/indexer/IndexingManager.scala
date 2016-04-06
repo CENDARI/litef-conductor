@@ -50,7 +50,7 @@ object IndexingManager {
     /**
      * The score treshold for the result inclusion into the main store
      */
-    val scoreTreshold = 0.9
+    val scoreTreshold = 0.5
 
     // TODO: Refactor attachment methods not to be copies of the Resource ones
     def saveGeneratedModel(
@@ -101,7 +101,7 @@ object IndexingManager {
 
         indexers flatMap {
             _.index(attachment, attachmentFile, attachment.format)
-                .filter(_.score > .75)
+                .filter(_.score > scoreTreshold)
                 .map(result => Result(attachmentFile, result.indexerName, result.model))
         } foreach {
             joinedModel add _.model
@@ -139,7 +139,7 @@ object IndexingManager {
         indexers flatMap { indexer =>
             try {
                 indexer.index(resource, resourceFile, mimetype)
-                    .filter(_.score > .75)
+                    .filter(_.score > scoreTreshold)
                     .map(result => Result(resourceFile, result.indexerName, result.model))
             } catch {
                 case e: Throwable =>
