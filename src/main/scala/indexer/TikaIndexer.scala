@@ -145,6 +145,8 @@ class TikaIndexer extends AbstractIndexer {
         if (values != null) {
             ckanResource writeLog s"TikaIndexer: property ${property} exists"
 
+            values.map { value => ckanResource.writeLog(value.toString) }
+
             root ++= values.map { property % _ }
         }
     }
