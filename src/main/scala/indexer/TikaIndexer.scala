@@ -141,10 +141,16 @@ class TikaIndexer extends AbstractIndexer {
     def edm(what: String)    = "http://www.europeana.eu/schemas/edm/" #> what
     def skos(what: String)   = "http://www.w3.org/2004/02/skos/core#" #> what
 
-    def addOptionalProperties[T](root: Resource, property: Property, values: Iterable[T]) =
-        if (values != null) root ++= values.map { property % _ }
+    def addOptionalProperties[T](root: Resource, property: Property, values: Iterable[T])(implicit ckanResource: ckan.Resource) {
+        if (values != null) {
+            ckanResource writeLog s"TikaIndexer: property ${property} exists"
+
+            root ++= values.map { property % _ }
+        }
+    }
 
     def runTika(resource: ckan.Resource, file: java.io.File, root: => Resource): Option[Double] = try {
+        implicit val ckanResource = resource;
 
         val metadata = tikaIndexer.parseDocument(file.getName, null, new java.io.FileInputStream(file), -1)
         val info = parseMetadata(metadata) //elasticIndexer convertMetadata metadata
