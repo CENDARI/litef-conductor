@@ -152,9 +152,8 @@ class TikaIndexer extends AbstractIndexer {
     def runTika(resource: ckan.Resource, file: java.io.File, root: => Resource): Option[Double] = try {
         implicit val ckanResource = resource;
         
-        val mimetype = resource.localMimetype
-        
-        val metadata = tikaIndexer.parseDocument(file.getName, mimetype, new java.io.FileInputStream(file), -1)
+        val filename = resource.url.split("/").last
+        val metadata = tikaIndexer.parseDocument(filename, null, new java.io.FileInputStream(file), -1)
         val info = parseMetadata(metadata) //elasticIndexer convertMetadata metadata
 
         // Looking for the dataspace
@@ -171,6 +170,7 @@ class TikaIndexer extends AbstractIndexer {
         info.addBinding("application", "repository")
         info.addBinding("resourceId",  resource.id)
 
+        val mimetype = resource.localMimetype
         info.addBinding("format", mimetype)
 
         if (mimetype == "application/ead+xml" || mimetype == "application/eag+xml") {
