@@ -207,7 +207,7 @@ class TikaIndexer extends AbstractIndexer {
         addOptionalProperties(root, DC_11.creator         , metadata.getValues("cendari:creator"))
         addOptionalProperties(root, DC_11.contributor     , metadata.getValues("cendari:contributor"))
 
-        addOptionalProperties(root, DC_11.subject         , metadata.getValues("cendari:tag"))
+        addOptionalProperties(root, DC_11.subject         , metadata.getValues("cendari:keywords"))
         addOptionalProperties(root, DC_11.coverage        , metadata.getValues("cendari:coverage"))
         addOptionalProperties(root, DC_11.identifier      , metadata.getValues("cendari:identifier"))
         addOptionalProperties(root, DC_11.relation        , metadata.getValues("cendari:relation"))
