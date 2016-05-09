@@ -196,13 +196,14 @@ class TikaIndexer extends AbstractIndexer {
 
         addOptionalProperties(root, DC_11.title           , metadata.getValues("cendari:title"))
         addOptionalProperties(root, skos("prefLabel")     , metadata.getValues("cendari:title"))
-        addOptionalProperties(root, DC_11.identifier      , metadata.getValues("cendari:reference"))
+        //addOptionalProperties(root, DC_11.identifier      , metadata.getValues("cendari:reference"))
         addOptionalProperties(root, DC_11.date            , metadata.getValues("cendari:date"))
         addOptionalProperties(root, DC_11.`type`          , metadata.getValues("cendari:type"))
         addOptionalProperties(root, DC_11.description     , metadata.getValues("cendari:description"))
         addOptionalProperties(root, DC_11.publisher       , metadata.getValues("cendari:publisher"))
         addOptionalProperties(root, DC_11.language        , metadata.getValues("cendari:lang"))
         addOptionalProperties(root, dc_terms("references"), metadata.getValues("cendari:reference"))
+        addOptionalProperties(root, dc_terms("isFormatOf"), resource.viewDataUrl)
 
         addOptionalProperties(root, DC_11.creator         , metadata.getValues("cendari:creator"))
         addOptionalProperties(root, DC_11.contributor     , metadata.getValues("cendari:contributor"))
