@@ -165,7 +165,7 @@ class TikaIndexer extends AbstractIndexer {
             info.addBinding("dataspaceId", dataspace.id)
         }
 
-        info.addBinding("uri", resource.webstoreUrl getOrElse resource.viewDataUrl)
+        info.addBinding("uri", resource.viewDataUrl)
         info.addBinding("url", resource.webstoreUrl getOrElse resource.viewDataUrl)
         info.addBinding("application", "repository")
         info.addBinding("resourceId",  resource.id)
