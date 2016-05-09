@@ -101,7 +101,8 @@ class NerdJsonIndexer extends AbstractIndexer {
             // This is evil. And against the system design we had since the beginning.
             // But the users want a smaller database...
             try {
-                val entityResource = s"http://resources.cendari.dariah.eu/${item.itemType.toLowerCase}s/" + java.net.URLEncoder.encode(item.text, "utf-8")
+                val entityType = if (item.itemType == "LOCATION") "place" else item.itemType.toLowerCase
+                val entityResource = s"http://resources.cendari.dariah.eu/${entityType}s/" + java.net.URLEncoder.encode(item.text, "utf-8")
                 val entitiesGraph = new VirtGraph("http://resources.cendari.dariah.eu/entitiesGraph", VirtuosoConfig.url, VirtuosoConfig.user, VirtuosoConfig.password)
 
                 val model = ModelFactory.createModelForGraph(entitiesGraph)
