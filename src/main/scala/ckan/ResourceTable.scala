@@ -145,10 +145,8 @@ case class Resource(
         } else {
             // Unfortunately, mimetype detection is c**p, we need to detect xml
             // ourselves
-
-            val src = scala.io.Source.fromFile(localFile)
-
             try {
+                val src = scala.io.Source.fromFile(localFile)
                 val reader = new scala.xml.pull.XMLEventReader(src)
                 if (reader.hasNext) {
                     var rootElement: scala.xml.pull.EvElemStart = null;
