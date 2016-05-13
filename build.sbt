@@ -2,7 +2,7 @@ import com.github.retronym.SbtOneJar._
 
 name := """conductor"""
 
-version := "2.03.13"
+version := "2.03.14"
 
 scalaVersion := "2.10.3"
 
@@ -58,7 +58,13 @@ libraryDependencies ++= {
         // "org.scalatest"       % "scalatest_2.10"     % "2.0",
         "ivan"               %% "javelin-ontologies" % "2.0",
         "ivan"               %% "javelin"            % "2.0",
-        "ivan"               %% "scala-utils"        % "2.0"        
+        "ivan"               %% "scala-utils"        % "2.0",
+        "org.apache.tika"    % "tika-core"           % "1.12",
+        "org.apache.tika"    % "tika-parsers"        % "1.12",
+        "commons-io"         % "commons-io"          % "2.4",
+        //"commons-lang"       % "commons-lang"        % "2.6",
+        "com.googlecode.json-simple" % "json-simple" % "1.1.1",
+        "org.jsoup"          % "jsoup"               % "1.8.3"
     )
 }
 
