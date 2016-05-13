@@ -2,7 +2,7 @@ import com.github.retronym.SbtOneJar._
 
 name := """conductor"""
 
-version := "2.03.11"
+version := "2.03.12"
 
 scalaVersion := "2.10.3"
 
@@ -58,7 +58,7 @@ libraryDependencies ++= {
         // "org.scalatest"       % "scalatest_2.10"     % "2.0",
         "ivan"               %% "javelin-ontologies" % "2.0",
         "ivan"               %% "javelin"            % "2.0",
-        "ivan"               %% "scala-utils"        % "2.0"
+        "ivan"               %% "scala-utils"        % "2.0"        
     )
 }
 

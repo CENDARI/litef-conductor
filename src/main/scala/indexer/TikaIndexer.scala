@@ -29,7 +29,7 @@ import com.hp.hpl.jena.vocabulary.RDF.{`type` => a}
 
 import org.apache.tika.metadata.{ Metadata => TikaMetadata, Property => TikaProperty }
 import org.apache.tika.metadata.TikaCoreProperties
-import fr.inria.aviz.tikaextensions.tika.CendariProperties
+import eu.cendari.dip.tikaextensions.tika.CendariProperties
 import common.Config.{ Virtuoso => VirtuosoConfig }
 
 import spray.json._
@@ -46,7 +46,7 @@ class TikaIndexer extends AbstractIndexer {
     ): Option[Double] =
         runTika(resource, file, root)
 
-    lazy val tikaIndexer = fr.inria.aviz.tikaextensions.TikaExtensions.instance
+    lazy val tikaIndexer = eu.cendari.dip.tikaextensions.TikaExtensions.instance
 
     def parseMetadata(metadata: TikaMetadata) = {
         val result = new MutableHashMap[String, MutableSet[String]] with MutableMultiMap[String, String]
