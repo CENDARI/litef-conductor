@@ -69,7 +69,7 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
                 import java.nio.file.Paths
 
                 resource writeLog s"\t -> Copying: ${sourcePath} to ${destinationPath}"
-                Files.copy(Paths.get(sourcePath), Paths.get(destinationPath))
+                Files.copy(Paths.get(sourcePath), Paths.get(destinationPath), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
 
                 // logger info s"\t -> Loading the file into Virtuoso: ${destinationPath}"
                 resource writeLog s"\t -> Loading the file into Virtuoso: ${destinationPath} into graph ${resourceGraph}"
