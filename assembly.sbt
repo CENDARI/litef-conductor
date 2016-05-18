@@ -2,12 +2,11 @@ import AssemblyKeys._ // put this at the top of the file
 
 assemblySettings
 
-val meta = """META.INF(.)*""".r
-
 mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
   {
-    case meta(_) => MergeStrategy.discard
-    case PathList("org", "apache", xs @ _*) => MergeStrategy.last
+    case PathList("META-INF", "cxf", "bus-extensions.txt") => MergeStrategy.first
+    case PathList("META-INF", "jdom-info.xml") => MergeStrategy.last
+    case PathList("org", "apache", "commons", "logging", xs @ _*) => MergeStrategy.first
     case PathList("org", "jdom2", xs @ _*) => MergeStrategy.last
     case x => old(x)
   }
