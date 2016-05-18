@@ -3,7 +3,7 @@ import com.github.retronym.SbtOneJar._
 
 name := """conductor"""
 
-version := "2.03.16"
+version := "2.03.17"
 
 scalaVersion := "2.10.3"
 
@@ -91,16 +91,3 @@ Twirl.settings
 javaOptions in Revolver.reStart += "-Dconfig.file=./application.conf"
 
 oneJarSettings
-
-assemblySettings
-
-val meta = """META.INF(.)*""".r
-
-mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
-  {
-    case meta(_) => MergeStrategy.discard
-    case PathList("org", "apache", xs @ _*) => MergeStrategy.last
-    case PathList("org", "jdom2", xs @ _*) => MergeStrategy.last
-    case x => old(x)
-  }
-}
