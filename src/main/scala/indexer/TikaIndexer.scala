@@ -216,7 +216,7 @@ class TikaIndexer extends AbstractIndexer {
         addOptionalProperties(root, DC_11.source          , metadata.getValues("cendari:source"))
 
         root ++=
-            resourceMention(resource, "organization", foaf("Organization"), metadata)
+            resourceMention(resource, "organization", foaf("Organisation"), metadata)
                 .map(schema("mentions") % _)
         root ++=
             resourceMention(resource, "event", edm("Event"), metadata)
@@ -263,7 +263,8 @@ class TikaIndexer extends AbstractIndexer {
             // But the users want a smaller database...
             values.flatMap { value =>
                 try {
-                    val entityResource = s"http://resources.cendari.dariah.eu/${key}s/" + java.net.URLEncoder.encode(value, "utf-8")
+                    val vkey = if (key == "organization") "organisation" else key
+                    val entityResource = s"http://resources.cendari.dariah.eu/${vkey}s/" + java.net.URLEncoder.encode(value, "utf-8")
                     val entitiesGraph = new VirtGraph("http://resources.cendari.dariah.eu/entitiesGraph", VirtuosoConfig.url, VirtuosoConfig.user, VirtuosoConfig.password)
 
                     val model = ModelFactory.createModelForGraph(entitiesGraph)
