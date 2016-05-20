@@ -55,17 +55,8 @@ class TikaIndexer extends AbstractIndexer {
             // "resourceName"                  -> "uri",    /*TikaMetadata.RESOURCE_NAME_KEY*/
             // "Content-Type"                  -> "format", /*TikaMetadata.CONTENT_TYPE*/
             "text"                          -> "text",
-
             "Application-Name"              -> "application",
-            "Creation-date"                 -> "date",
-            "cendari:nerd"                  -> "cleaner_text",
-            "cendari:coverage"              -> "coverage",
-            "cendari:identifier"            -> "identifier",
-            "cendari:provider"              -> "dataProvider",
-            "cendari:relation"              -> "relation",
-            "cendari:rights"                -> "rights",
-            "cendari:source"                -> "source",
-            "cendari:type"                  -> "resourceType"
+            "Creation-date"                 -> "date"
             )
 
         val pfields = Map[TikaProperty, String](
@@ -79,18 +70,22 @@ class TikaIndexer extends AbstractIndexer {
             CendariProperties.KEYWORDS      -> "tag",
             CendariProperties.PUBLISHER     -> "publisher",
             CendariProperties.CONTRIBUTOR   -> "contributorName",
-
             CendariProperties.DESCRIPTION   -> "description",
             CendariProperties.PERSON        -> "personName",
             CendariProperties.ORGANIZATION  -> "org",
-            // CendariProperties.TAG           -> "tag",
             CendariProperties.REFERENCE     -> "ref",
             CendariProperties.EVENT         -> "event",
             CendariProperties.PLACE         -> "place",
-            CendariProperties.FORMAT        -> "format",
-
-            CendariProperties.LANG          -> "language"
-            // TikaCoreProperties.LANGUAGE     -> "language"
+            CendariProperties.FORMAT        -> "dc_format",
+            CendariProperties.LANG          -> "language",
+            CendariProperties.NERD          -> "cleaner_text",
+            CendariProperties.COVERAGE      -> "coverage",
+            CendariProperties.IDENTIFIER    -> "identifier",
+            CendariProperties.PROVIDER      -> "dataProvider",
+            CendariProperties.RELATION      -> "relation",
+            CendariProperties.RIGHTS        -> "rights",
+            CendariProperties.SOURCE        -> "source",
+            CendariProperties.TYPE          -> "type"
             )
 
         // Geting values for string keys
@@ -108,18 +103,6 @@ class TikaIndexer extends AbstractIndexer {
                 if (values != null)
                     values.foreach { result.addBinding(m._2, _) }
         }
-
-        // Getting all our special keys - anything that starts with cendari:
-        metadata.names()
-            .filter(_.startsWith("cendari:"))
-            .map(_.replace("cendari:", "cendari_"))
-            .foreach { key =>
-                val values = metadata.getValues(key)
-                if (values != null)
-                    values.foreach {
-                        result.addBinding(key, _)
-                    }
-            }
 
         // Getting location properties
         if (metadata.get(TikaCoreProperties.LATITUDE) != null && metadata.get(TikaCoreProperties.LONGITUDE) != null) {
@@ -171,12 +154,17 @@ class TikaIndexer extends AbstractIndexer {
         info.addBinding("resourceId",  resource.id)
 
         val mimetype = resource.localMimetype
-        info.addBinding("format", mimetype)
-
+        
         if (mimetype == "application/ead+xml" || mimetype == "application/eag+xml") {
             info.addBinding("application", "archives")
         }
 
+        val tikaMimetype = metadata.get("Content-Type")
+        if(tikaMimetype!=null && tikaMimetype.nonEmpty)
+          info.addBinding("format", tikaMimetype)
+        else
+          info.addBinding("format", mimetype)
+        
         val text = info.get("cleaner_text").getOrElse(info.get("text").get)
 
         if (!text.head.isEmpty) {
