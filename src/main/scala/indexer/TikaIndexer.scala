@@ -204,7 +204,7 @@ class TikaIndexer extends AbstractIndexer {
         addOptionalProperties(root, DC_11.source          , metadata.getValues("cendari:source"))
 
         root ++=
-            resourceMention(resource, "organization", foaf("Organisation"), metadata)
+            resourceMention(resource, "organization", foaf("Organization"), metadata)
                 .map(schema("mentions") % _)
         root ++=
             resourceMention(resource, "event", edm("Event"), metadata)

@@ -92,7 +92,7 @@ class NerdJsonIndexer extends AbstractIndexer {
                     case "PERSON"       => foaf("Person")
                     case "EVENT"        => edm("Event")
                     case "LOCATION"     => edm("Place")
-                    case "ORGANISATION" => foaf("Organisation")
+                    case "ORGANISATION" => foaf("Organization")
                     case "PERIOD"       => edm("Event")
                     case _              => null
                 }
