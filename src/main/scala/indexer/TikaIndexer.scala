@@ -47,6 +47,8 @@ class TikaIndexer extends AbstractIndexer {
         runTika(resource, file, root)
 
     lazy val tikaIndexer = eu.cendari.dip.tikaextensions.TikaExtensions.instance
+    
+    lazy val df = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'")
 
     def parseMetadata(metadata: TikaMetadata) = {
         val result = new MutableHashMap[String, MutableSet[String]] with MutableMultiMap[String, String]
@@ -113,7 +115,8 @@ class TikaIndexer extends AbstractIndexer {
             result.addBinding("place", latlon)
         }
 
-        result.addBinding("cendari_updated_timestamp", System.currentTimeMillis.toString)
+        df.setTimeZone(java.util.TimeZone.getTimeZone("UTC"))
+        result.addBinding("cendari_updated_timestamp", df.format(new java.util.Date()))
 
         result
     }
@@ -266,7 +269,7 @@ class TikaIndexer extends AbstractIndexer {
                     List(?:(entityResource))
                 } catch {
                     case e: Exception =>
-                        resource.writeLog(s"resourceMention error ${e.toString}")
+                        resource.writeLog(s"resourceMention $key $value error ${e.toString}")
                         List()
                 }
             }.toList
