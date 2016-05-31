@@ -24,7 +24,6 @@ import org.foment.utils.Filesystem._
 
 abstract class ResourceData {
     def id            : String
-    def format        : Option[String]
     def description   : Option[String]
     def name          : Option[String]
     def mimetype      : Option[String]
@@ -33,8 +32,7 @@ abstract class ResourceData {
     def created       : Option[Timestamp]
     def packageId     : Option[String]
     def state         : Option[String]
-    def webstoreUrl   : Option[String]
-
+    
     private def getMime = {
         val tmp = java.nio.file.Paths.get(Config.Ckan.localStoragePrefix + "/" + id.substring(0,3) + "/" + id.substring(3,6) + "/" + id.substring(6))
         (mimetype getOrElse (
@@ -86,7 +84,6 @@ abstract class ResourceData {
             "viewDataUrl"    -> JsString(viewDataUrl),
             "name"           -> JsString(name        getOrElse ""),
             "description"    -> JsString(description getOrElse ""),
-            "format"         -> JsString(format      getOrElse ""),
             "mimetype"       -> JsString(getMime),
             "size"           -> JsNumber(fileSize),
             "created_epoch"  -> JsNumber(created.map  { _.getTime } getOrElse 0L),
@@ -101,26 +98,19 @@ abstract class ResourceData {
 
 case class Resource(
     id            : String,
-    group         : Option[String]    = None,
     url           : String,
-    format        : Option[String]    = None,
+    groupId       : Option[String]    = None,
+    dataspaceId   : Option[String]    = None,
     description   : Option[String]    = None,
-    position      : Option[Int]       = None,
-    revisionId    : Option[String]    = None,
-    hash          : Option[String]    = None,
     state         : Option[String]    = None,
     extras        : Option[String]    = None,
     name          : Option[String]    = None,
-    resourceType  : Option[String]    = None,
     mimetype      : Option[String]    = None,
-    mimetypeInner : Option[String]    = None,
     size          : Option[Long]      = None,
     modified      : Option[Timestamp] = None,
     created       : Option[Timestamp] = None,
-    cacheUrl      : Option[String]    = None,
     packageId     : Option[String]    = None,
-    urlType       : Option[String]    = None,
-    webstoreUrl   : Option[String]    = None
+    urlType       : Option[String]    = None
 ) extends ResourceData {
 
     lazy val isLocal = urlType == Some("upload")
@@ -189,7 +179,7 @@ case class Resource(
     lazy val isProcessable = isLocal // && isBelowSizeThreshold
     lazy val content = io.Source.fromFile(localPath).mkString
 
-    lazy val dataspace = DataspaceResourceTable.dataspaceForResource(id)
+    //lazy val dataspace = DataspaceResourceTable.dataspaceForResource(id)
 
     override
     def toString = s"resource://$id?$accessLink"
@@ -207,51 +197,37 @@ case class ResourceModification(
 class ResourceTable(tag: Tag)
     extends Table[ckan.Resource](tag, "litef_ckan_resource_view")
 {
-    val id            = column[ String            ]  ("id", O.PrimaryKey)
-    val url           = column[ String            ]  ("url", O.NotNull)
-    val group         = column[ Option[String]    ]  ("resource_group_id")
-    val format        = column[ Option[String]    ]  ("format")
+    val id              = column[ String            ]  ("id", O.PrimaryKey)
+    val url             = column[ String            ]  ("url", O.NotNull)
+    val groupId         = column[ Option[String]    ]  ("resource_group_id")
+    val dataspaceId     = column[ Option[String]    ]  ("dataspace_id")
     val description   = column[ Option[String]    ]  ("description")
-    val position      = column[ Option[Int]       ]  ("position")
-    val revisionId    = column[ Option[String]    ]  ("revision_id")
-    val hash          = column[ Option[String]    ]  ("hash")
     val state         = column[ Option[String]    ]  ("state")
     val extras        = column[ Option[String]    ]  ("extras")
     val name          = column[ Option[String]    ]  ("name")
-    val resourceType  = column[ Option[String]    ]  ("resource_type")
     val mimetype      = column[ Option[String]    ]  ("mimetype")
-    val mimetypeInner = column[ Option[String]    ]  ("mimetype_inner")
     val size          = column[ Option[Long]      ]  ("size")
     val modified      = column[ Option[Timestamp] ]  ("modified") // greatest(last_modified, created), better than just coalesce
     val created       = column[ Option[Timestamp] ]  ("created")
-    val cacheUrl      = column[ Option[String]    ]  ("cache_url")
     val packageId     = column[ Option[String]    ]  ("package_id")
     val urlType       = column[ Option[String]    ]  ("url_type")
-    val webstoreUrl   = column[ Option[String]    ]  ("webstore_url")
-
+    
     // Every table needs a * projection with the same type as the table's type parameter
     def * = (
         id             ,
-        group          ,
         url            ,
-        format         ,
+        groupId        ,
+        dataspaceId    ,
         description    ,
-        position       ,
-        revisionId     ,
-        hash           ,
         state          ,
         extras         ,
         name           ,
-        resourceType   ,
         mimetype       ,
-        mimetypeInner  ,
         size           ,
         modified       ,
         created        ,
-        cacheUrl       ,
         packageId      ,
-        urlType        ,
-        webstoreUrl
+        urlType
     ) <> (Resource.tupled, Resource.unapply)
 }
 

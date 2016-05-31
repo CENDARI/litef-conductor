@@ -48,7 +48,13 @@ class ElasticFeederPlugin extends AbstractPluginActor("ElasticFeeder")
     // lazy val logger = org.slf4j.LoggerFactory getLogger getClass
 
     override
-    def process(resource: ckan.Resource) = Future {
+    def process(resource: ckan.Resource) = {
+        if(resource.state == Some("deleted")) {
+            deleteDocument(resource)
+                .map { response =>
+                    resource writeLog s"ElasticFeederPlugin : Service responded with ${response}"
+                }
+        } else Future {}
     }
 
     def sendDocument[T](attachment: conductor.ResourceAttachment): Future[HttpResponse] = {
@@ -60,6 +66,15 @@ class ElasticFeederPlugin extends AbstractPluginActor("ElasticFeeder")
 
         (IO(Http) ? (
             Put(ElasticConfig.namespace + "cendari/document/" + attachment.resourceId, data)
+            )).mapTo[HttpResponse]
+    }
+    
+    def deleteDocument[T](resource: ckan.Resource): Future[HttpResponse] = {
+        
+        resource writeLog s"ElasticFeederPlugin: -> Deleting document from Elastic: ${resource.id}"
+        
+        (IO(Http) ? (
+            Delete(ElasticConfig.namespace + "cendari/document/" + resource.id)
             )).mapTo[HttpResponse]
     }
 

@@ -25,10 +25,11 @@ class DocumentIndexerPlugin extends AbstractPluginActor("Litef Indexer")
 {
 
     override
-    def process(resource: ckan.Resource): Future[Unit] = Future {
-        indexer.IndexingManager index resource
+    def process(resource: ckan.Resource): Future[Unit] = {
+        if(resource.state == Some("active")) Future { indexer.IndexingManager index resource }
+        else Future {}
     }
-
+    
     override
     def process(attachment: conductor.ResourceAttachment) = Future {
         indexer.IndexingManager index attachment

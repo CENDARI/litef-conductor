@@ -42,40 +42,52 @@ class VirtuosoFeederPlugin extends AbstractPluginActor("VirtuosoFeeder")
         try {
 
             val resourceGraph = graphForResource(resource.id)
-            val dataspaceGraph = graphForDataspace(resource.group.get)
+            val dataspaceGraph = graphForDataspace(resource.dataspaceId.get)
 
             // If we are processing a resource, we need to empty out
             // all the data from Virtuoso that we used to have
-            VirtuosoFeederPlugin.clearGraph("litef://resource/" + resource.id) // old URI for the graph
+            //VirtuosoFeederPlugin.clearGraph("litef://resource/" + resource.id) // old URI for the graph
             VirtuosoFeederPlugin.clearGraph(resourceGraph)
-
-            for (group <- resource.group) {
+            resource writeLog s"VirtuosoFeeder -> graph $resourceGraph clear"
+            
+            VirtuosoFeederPlugin.
+            execute(s"""|SPARQL DELETE FROM GRAPH <${graphForDataspace("")}> {
+                        |?ds rdfs:member <${resourceGraph}> .
+                        |<${resourceGraph}> <http://resources.cendari.dariah.eu/ontologies/cao#dataspace> ?ds .
+                        |}
+                        |WHERE {
+                        |?ds rdfs:member <${resourceGraph}> .
+                        |<${resourceGraph}> <http://resources.cendari.dariah.eu/ontologies/cao#dataspace> ?ds .
+                        |}""".stripMargin)
+            
+            resource writeLog s"\t -> corresponding triples deleted from the dataspace graph"
+            
+            if(resource.state == Some("active")) {
                 VirtuosoFeederPlugin.
                 execute(s"""|SPARQL INSERT IN GRAPH <${graphForDataspace("")}> {
                             |<${dataspaceGraph}> a <http://www.w3.org/2004/03/trix/rdfg-1/Graph> .
                             |<${dataspaceGraph}> rdfs:member <${resourceGraph}> .
                             |<${resourceGraph}> <http://resources.cendari.dariah.eu/ontologies/cao#dataspace> <${dataspaceGraph}> .
                             |}""".stripMargin)
+                
+                resource writeLog s"\t -> Mimetype is ${resource.localMimetype}"
+
+                // Loading the file, if it is a RDF
+                if (resource.localMimetype == "application/rdf+xml") {
+                    val sourcePath = resource.localPath
+                    val destinationPath = conductor.ResourceAttachment(resource.id, "_copy").localPath
+
+                    import java.nio.file.Files
+                    import java.nio.file.Paths
+
+                    resource writeLog s"\t -> Copying: ${sourcePath} to ${destinationPath}"
+                    Files.copy(Paths.get(sourcePath), Paths.get(destinationPath), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+
+                    // logger info s"\t -> Loading the file into Virtuoso: ${destinationPath}"
+                    resource writeLog s"\t -> Loading the file into Virtuoso: ${destinationPath} into graph ${resourceGraph}"
+                    VirtuosoFeederPlugin.loadFileInfoGraph(destinationPath, resourceGraph)
+                }
             }
-
-            resource writeLog s"VirtuosoFeeder -> Mimetype is ${resource.localMimetype}"
-
-            // Loading the file, if it is a RDF
-            if (resource.localMimetype == "application/rdf+xml") {
-                val sourcePath = resource.localPath
-                val destinationPath = conductor.ResourceAttachment(resource.id, "_copy").localPath
-
-                import java.nio.file.Files
-                import java.nio.file.Paths
-
-                resource writeLog s"\t -> Copying: ${sourcePath} to ${destinationPath}"
-                Files.copy(Paths.get(sourcePath), Paths.get(destinationPath), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
-
-                // logger info s"\t -> Loading the file into Virtuoso: ${destinationPath}"
-                resource writeLog s"\t -> Loading the file into Virtuoso: ${destinationPath} into graph ${resourceGraph}"
-                VirtuosoFeederPlugin.loadFileInfoGraph(destinationPath, resourceGraph)
-            }
-
         } catch {
             case e: Exception =>
                 resource writeLog s"VirtuosoFeeder -> exception ${e}"

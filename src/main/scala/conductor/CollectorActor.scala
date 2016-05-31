@@ -186,7 +186,7 @@ class CollectorActor
         val nextQuery =
             ckan.ResourceTable.query
                 .filter(_.modified.isNotNull)
-                .filter(_.state === "active")
+                //.filter(_.state === "active")
                 .filter(_.urlType === "upload")
                 .filterNot(resource =>
                     resource.id in ProcessedResourceTable.query

@@ -73,7 +73,7 @@ class NerdPlugin extends AbstractPluginActor("NERD")
 
     override
     def process(resource: ckan.Resource) = {
-        if (resource.mimetype == "text/plain") {
+        if (resource.mimetype == "text/plain" && resource.state == Some("active")) {
             nerdProcess(resource.localPath)
                 .map { response => response.status match {
                 case StatusCodes.OK =>
