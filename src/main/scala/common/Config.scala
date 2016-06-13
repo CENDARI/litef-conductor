@@ -49,9 +49,11 @@ object Config {
     }
 
     object Nerd {
-        lazy val namespace     = config getString "nerd.namespace"
+        lazy val namespace       = config getString "nerd.namespace"
+        lazy val namespaceMultilingual  = config getString "nerd.namespaceMultilingual"
+        lazy val fileSizeLimit          = config getLong "nerd.fileSizeLimit"
     }
-
+    
     object Conductor {
         lazy val fileSizeLimit = config getLong "conductor.fileSizeLimit"
         lazy val plugins       = config getString "conductor.plugins" split ','

@@ -47,16 +47,22 @@ class NerdPlugin extends AbstractPluginActor("NERD")
     // lazy val logger = org.slf4j.LoggerFactory getLogger getClass
 
     def nerdProcess[T](dataFile: String): Future[HttpResponse] = {
-        // logger.info("NerdPlugin: Processing " + dataFile)
         val data = java.net.URLEncoder.encode(scala.io.Source.fromFile(dataFile).mkString, "utf-8")
-        // val data = java.net.URLEncoder.encode(
-        //     "Austria invaded and fought the Serbian army at the Battle of Cer and Battle of Kolubara beginning on 12 August.",
-        //     "utf-8")
+        
         (IO(Http) ? (
-            Post(NerdConfig.namespace + "processNERDText?text=" + data)
+            Post(NerdConfig.namespace + "processNERDText?onlyNER=true&text=" + data)
             )).mapTo[HttpResponse]
     }
-
+    
+//    def nerdMultilingProcess[T](dataFile: String): Future[HttpResponse] = {
+//        val data = scala.io.Source.fromFile(dataFile).mkString
+//        val requestData = Map("text" -> data)
+//        
+//        (IO(Http) ? (
+//            Post(NerdConfig.namespaceMultilingual + "processNERDText", FormData(requestData))
+//            )).mapTo[HttpResponse]
+//    }
+    
     def saveResponse(
             resourceId: String,
             resourceCreated: Option[Timestamp],
@@ -74,19 +80,42 @@ class NerdPlugin extends AbstractPluginActor("NERD")
     override
     def process(resource: ckan.Resource) = {
         if (resource.mimetype == "text/plain" && resource.state == Some("active")) {
-            nerdProcess(resource.localPath)
-                .map { response => response.status match {
-                case StatusCodes.OK =>
-                    saveResponse(resource.id,
-                                 resource.created,
-                                 resource.modified,
-                                 response)
-                    resource writeLog s"NerdPlugin: Success"
+            val fileSize = (new java.io.File(resource.localPath)).length
+            
+            if(fileSize > NerdConfig.fileSizeLimit) {
+                Future { resource writeLog s"NerdPlugin: Size limit exceeded. Resource size is $fileSize bytes" }
+            }
+            else {
+                resource writeLog "NerdPlugin: Sending content to the English NERD service"
+                
+                nerdProcess(resource.localPath)
+                    .map { response => response.status match {
+                    case StatusCodes.OK =>
+                        saveResponse(resource.id,
+                                     resource.created,
+                                     resource.modified,
+                                     response)
+                        resource writeLog s"\t -> English NERD Success"
 
-                case _ =>
-                    // logger info s"NerdPlugin: Error ${response.header}"
-                    resource writeLog s"NerdPlugin: Error ${response.header}"
-
+                    case _ =>
+                        resource writeLog s"\t -> English NERD Error \n${response.entity.asString}"
+//                        resource writeLog "\t -> Sending content to the Multilingual NERD service" 
+//                       
+//                        nerdMultilingProcess(resource.localPath)
+//                            .map { response => response.status match {
+//                            case StatusCodes.OK =>
+//                                saveResponse(resource.id,
+//                                             resource.created,
+//                                             resource.modified,
+//                                             response)
+//                                resource writeLog "\t -> Multilingual NER Success"
+//
+//                            case _ =>
+//                                resource writeLog s"\t -> Multilingual NER Error \n${response.entity.asString}"
+//
+//                            }
+//                        }
+                    }
                 }
             }
         } else Future {}
@@ -96,19 +125,42 @@ class NerdPlugin extends AbstractPluginActor("NERD")
     override
     def process(attachment: conductor.ResourceAttachment) = {
         if (attachment.format == "text/plain") {
-            nerdProcess(attachment.localPath)
-                .map { response => response.status match {
-                case StatusCodes.OK =>
-                    saveResponse(attachment.resourceId,
-                                 Some(attachment.created),
-                                 Some(attachment.modified),
-                                 response)
-                    attachment writeLog s"NerdPlugin: Success"
+            val fileSize = (new java.io.File(attachment.localPath)).length
+            
+            if(fileSize > NerdConfig.fileSizeLimit) {
+                Future { attachment writeLog s"NerdPlugin: Size limit exceeded. Attachment size is $fileSize bytes" }
+            }
+            else {
+                attachment writeLog "NerdPlugin: Sending content to the English NERD service"
+                
+                nerdProcess(attachment.localPath)
+                    .map { response => response.status match {
+                    case StatusCodes.OK =>
+                        saveResponse(attachment.resourceId,
+                                     Some(attachment.created),
+                                     Some(attachment.modified),
+                                     response)
+                        attachment writeLog "\t -> English NERD Success"
 
-                case _ =>
-                    // logger info s"NerdPlugin: Error ${response.status}"
-                    attachment writeLog s"NerdPlugin: Error ${response.header}"
-
+                    case _ =>
+                        attachment writeLog s"\t -> English NERD Error \n${response.entity.asString}"
+//                        attachment writeLog "\t -> Sending content to the Multilingual NERD service"
+//                
+//                        nerdMultilingProcess(attachment.localPath)
+//                            .map { response => response.status match {
+//                            case StatusCodes.OK =>
+//                                saveResponse(attachment.resourceId,
+//                                             Some(attachment.created),
+//                                             Some(attachment.modified),
+//                                             response)
+//                                attachment writeLog s"\t -> Multilingual NERD Success"
+//
+//                            case _ =>
+//                                attachment writeLog s"\t -> Multilingual NERD Error \n${response.entity.asString}"
+//
+//                            }
+//                        }
+                    }
                 }
             }
         } else Future {}
