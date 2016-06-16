@@ -123,7 +123,7 @@ class TikaIndexer extends AbstractIndexer {
 
     def dc_terms(what: String) = "http://purl.org/dc/terms/" #> what
     def schema(what: String) = "http://schema.org/" #> what
-    def foaf(what: String)   = "foaf:" #> what
+    def foaf(what: String)   = "http://xmlns.com/foaf/0.1/" #> what
     def edm(what: String)    = "http://www.europeana.eu/schemas/edm/" #> what
     def skos(what: String)   = "http://www.w3.org/2004/02/skos/core#" #> what
 
