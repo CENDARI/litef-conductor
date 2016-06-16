@@ -56,7 +56,7 @@ object ResourceAttachmentUtil {
                             new java.io.File(localDirectory(resourceId) + "/_log"),
                             true /* append = true */
                     ))
-        writer.write(message+"\n")
+        writer.write(s"${new java.util.Date()} "+message+"\n")
         writer.close
     }
 
